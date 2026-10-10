@@ -176,7 +176,7 @@ li.item.s-bad{border-color:var(--bad);box-shadow:inset -4px 0 0 var(--bad)}
       <label class="f full">المخالفة <span class="req">*</span>
         <select class="in" id="typeSel"></select>
       </label>
-      <label class="f">رقم المخالفة <span class="req">*</span><input class="in" data-f="vno" dir="ltr" placeholder="V-0000000"></label>
+      <label class="f">رقم الزيارة <span class="req">*</span><input class="in" data-f="vno" dir="ltr" placeholder="SWA-000000"></label>
       <label class="f">المخالف <span class="req">*</span><input class="in" data-f="name" placeholder="اسم المخالف"></label>
       <label class="f">رقم هوية المخالف<input class="in" data-f="nid" inputmode="numeric" dir="ltr"></label>
       <label class="f">رقم جوال المخالف<input class="in" data-f="phone" inputmode="tel" dir="ltr" placeholder="05xxxxxxxx"></label>
@@ -365,10 +365,10 @@ function renderQueue(){
     if(qFilter==="ret"&&s!=="ret")return false; if(qFilter==="ok"&&s!=="ok")return false;
     if(qSearch){const h=norm([r.vno,r.visit,r.officer,r.item,r.loc,r.name].join(" "));return h.includes(norm(qSearch))||r.vno.toLowerCase().includes(qSearch.toLowerCase())}
     return true});
-  body.innerHTML=`<div class="queue-tools"><input class="in" id="qSearch" placeholder="بحث برقم المخالفة أو المأمور أو المحافظة" value="${esc(qSearch)}"></div>
+  body.innerHTML=`<div class="queue-tools"><input class="in" id="qSearch" placeholder="بحث برقم الزيارة أو المأمور أو المحافظة" value="${esc(qSearch)}"></div>
    <div class="pill-row" style="margin-bottom:10px">${fl.map(([k,t])=>`<button type="button" class="pill" data-qf="${k}" aria-pressed="${qFilter===k}">${t} (${counts[k]})</button>`).join("")}</div>
    <div class="queue">${list.length?list.map(r=>{const s=statusOf(r.vno);const t=r.type>=0?GUIDE[r.type].name:(r.item||"بند غير محدد");
-     return `<button type="button" class="qrow" data-id="${esc(r.vno)}" aria-current="${current===r.vno}"><span class="id">${esc(r.vno)}</span><span class="badge ${ST[s][1]}">${ST[s][0]}</span><span class="t">${esc(t)}</span><span class="m">${esc(r.officer)} — ${esc(r.loc.split(" — ")[0])} — ${esc(r.date)}</span></button>`}).join(""):`<div class="empty">لا توجد مخالفات بهذا التصنيف</div>`}</div>
+     return `<button type="button" class="qrow" data-id="${esc(r.vno)}" aria-current="${current===r.vno}"><span class="id">${esc(r.visit||r.vno)}</span><span class="badge ${ST[s][1]}">${ST[s][0]}</span><span class="t">${esc(t)}</span><span class="m">${esc(r.officer)} — ${esc(r.loc.split(" — ")[0])} — ${esc(r.date)}</span></button>`}).join(""):`<div class="empty">لا توجد مخالفات بهذا التصنيف</div>`}</div>
    <div style="margin-top:8px;text-align:left"><button type="button" class="linkbtn" id="clearRows">إزالة الملف من هذا الجهاز</button></div>`;
   const qs=$("#qSearch");qs.oninput=e=>{qSearch=e.target.value;const pos=e.target.selectionStart;renderQueue();const n=$("#qSearch");n.focus();n.setSelectionRange(pos,pos)};
   $$("[data-qf]").forEach(b=>b.onclick=()=>{qFilter=b.dataset.qf;renderQueue()});
@@ -381,8 +381,9 @@ function A(){
   if(!audits[current]){
     const r=rows.find(x=>x.vno===current);
     audits[current]={type:r?r.type:-1,cas:null,ans:{},stage:"مدقق الشركة",status:null,
-      f:r?{vno:r.vno,name:r.name,nid:r.nid,phone:"",meter:"",date:r.date,loc:r.loc,officer:r.officer,explain:r.explain,gnotes:""}:{}};
+      f:r?{vno:r.visit||r.vno,name:r.name,nid:r.nid,phone:"",meter:"",date:r.date,loc:r.loc,officer:r.officer,explain:r.explain,gnotes:""}:{}};
   }
+  {const r=rows.find(x=>x.vno===current),f=audits[current].f;if(r&&r.visit&&f&&(!f.vno||/^V-/i.test(f.vno)))f.vno=r.visit;}
   audits[current].stage="مدقق الشركة";
   return audits[current];
 }
@@ -483,7 +484,7 @@ function attDoc(){const its=allItems().filter(i=>attsOf(i.key).length);if(!its.l
   return `<h2 class="pbk">المرفقات</h2>`+its.map(i=>`<div class="ai"><div class="at">${esc(i.t)}</div>${attsOf(i.key).map(r=>`<div class="an">${esc(r.name)}${r.pdf&&r.total>r.pages.length?` (أول ${r.pages.length} من ${r.total} صفحة)`:""}</div>`+r.pages.map(p=>`<img src="${p}" alt="">`).join("")).join("")}</div>`).join("")}
 
 /* ===================== الشريط السفلي ===================== */
-function missingFields(){const a=A(),m=[];if(a.type<0)m.push("اسم المخالفة");if(!(a.f.vno||"").trim())m.push("رقم المخالفة");if(!(a.f.name||"").trim())m.push("اسم المخالف");if(!$("#auditor").value.trim())m.push("اسم المدقق");return m}
+function missingFields(){const a=A(),m=[];if(a.type<0)m.push("اسم المخالفة");if(!(a.f.vno||"").trim())m.push("رقم الزيارة");if(!(a.f.name||"").trim())m.push("اسم المخالف");if(!$("#auditor").value.trim())m.push("اسم المدقق");return m}
 function updateBar(){
   const a=A(),items=allItems(),n=items.length,ok=items.filter(i=>a.ans[i.key]?.s==="ok").length,bad=items.filter(i=>a.ans[i.key]?.s==="bad").length;
   $("#trG").style.width=n?ok/n*100+"%":"0";$("#trR").style.width=n?bad/n*100+"%":"0";
@@ -499,7 +500,7 @@ function updateBar(){
 /* ===================== الإعادة لمأمور الضبط ===================== */
 function returnText(){
   const a=A(),f=a.f,g=GUIDE[a.type],bad=allItems().filter(i=>a.ans[i.key]?.s==="bad");
-  let t=`إعادة مخالفة لمأمور الضبط لاستكمال المتطلبات\n\nرقم المخالفة: ${f.vno||"-"}\nالمخالفة: ${g.name}${a.cas?" ("+a.cas+")":""}\nالمخالف: ${f.name||"-"}\nالموقع: ${f.loc||"-"}\nتاريخ الضبط: ${f.date||"-"}\nمأمور الضبط: ${f.officer||"-"}\n\nالمتطلبات غير المكتملة:\n`;
+  let t=`إعادة مخالفة لمأمور الضبط لاستكمال المتطلبات\n\nرقم الزيارة: ${f.vno||"-"}\nالمخالفة: ${g.name}${a.cas?" ("+a.cas+")":""}\nالمخالف: ${f.name||"-"}\nالموقع: ${f.loc||"-"}\nتاريخ الضبط: ${f.date||"-"}\nمأمور الضبط: ${f.officer||"-"}\n\nالمتطلبات غير المكتملة:\n`;
   bad.forEach((b,i)=>{t+=`${i+1}. ${b.t}${a.ans[b.key].n?"\n   الملاحظة: "+a.ans[b.key].n:""}\n`});
   if((f.gnotes||"").trim())t+=`\nملاحظات عامة: ${f.gnotes.trim()}\n`;
   t+=`\nيرجى مراجعة المتطلبات والتحقق منها، ثم إعادة رفع المخالفة مع المستند الداعم بصيغة PDF شاملاً جميع المرفقات.\n\nالمدقق: ${$("#auditor").value||"-"} — ${a.stage}`;
@@ -542,7 +543,7 @@ function docHTML(){
   @page{size:A4;margin:14mm}
   </style>
   <div class="hd"><div><h1>المستند الداعم لتدقيق مخالفة</h1><p>وفق دليل دراسة المخالفات وآلية ضبطها</p></div><div class="stamp">مكتملة المتطلبات<br>${today}</div></div>
-  <table class="kv">${row("المخالفة",g.name+(a.cas?" — "+a.cas:""))}${row("التصنيف",g.cat)}${row("رقم المخالفة",f.vno)}${row("المخالف",f.name)}${row("رقم هوية المخالف",f.nid)}${row("رقم جوال المخالف",f.phone)}${row("رقم العداد",f.meter)}${row("الموقع",f.loc)}${row("تاريخ الضبط",f.date)}${row("اسم مأمور الضبط",f.officer)}${row("يتم ضبطها من قبل",g.by)}${row("اسم المدقق",$("#auditor").value)}${row("مرحلة التدقيق",a.stage)}</table>
+  <table class="kv">${row("المخالفة",g.name+(a.cas?" — "+a.cas:""))}${row("التصنيف",g.cat)}${row("رقم الزيارة",f.vno)}${row("المخالف",f.name)}${row("رقم هوية المخالف",f.nid)}${row("رقم جوال المخالف",f.phone)}${row("رقم العداد",f.meter)}${row("الموقع",f.loc)}${row("تاريخ الضبط",f.date)}${row("اسم مأمور الضبط",f.officer)}${row("يتم ضبطها من قبل",g.by)}${row("اسم المدقق",$("#auditor").value)}${row("مرحلة التدقيق",a.stage)}</table>
   <h2>شرح المخالفة من مأمور الضبط</h2><div class="box">${esc(f.explain||"")}</div>
   <h2>نتيجة التحقق من المتطلبات</h2><table>${secs}</table>
   ${(f.gnotes||"").trim()?`<h2>ملاحظات عامة</h2><div class="box">${esc(f.gnotes)}</div>`:""}
