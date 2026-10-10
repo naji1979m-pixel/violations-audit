@@ -3,23 +3,29 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>نظام التحقق من متطلبات والإجراءات للمخالفات</title>
+<title>نظام الجودة والتحقق من متطلبات والاشتراطات اللازمة للمخالفات</title>
 <meta name="description" content="تدقيق ملفات المخالفات وفق دليل دراسة المخالفات وآلية ضبطها">
 <meta property="og:type" content="website">
 <meta property="og:locale" content="ar_SA">
-<meta property="og:site_name" content="نظام التحقق من متطلبات والإجراءات للمخالفات">
-<meta property="og:title" content="نظام التحقق من متطلبات والإجراءات للمخالفات">
+<meta property="og:site_name" content="نظام الجودة والتحقق من متطلبات والاشتراطات اللازمة للمخالفات">
+<meta property="og:title" content="نظام الجودة والتحقق من متطلبات والاشتراطات اللازمة للمخالفات">
 <meta property="og:description" content="تدقيق ملفات المخالفات وفق دليل دراسة المخالفات وآلية ضبطها">
 <meta property="og:url" content="https://naji1979m-pixel.github.io/violations-audit/">
 <meta property="og:image" content="https://naji1979m-pixel.github.io/violations-audit/og-image.png">
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
 <meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:title" content="نظام التحقق من متطلبات والإجراءات للمخالفات">
+<meta name="twitter:title" content="نظام الجودة والتحقق من متطلبات والاشتراطات اللازمة للمخالفات">
 <meta name="twitter:description" content="تدقيق ملفات المخالفات وفق دليل دراسة المخالفات وآلية ضبطها">
 <meta name="twitter:image" content="https://naji1979m-pixel.github.io/violations-audit/og-image.png">
 <link rel="icon" type="image/png" href="favicon.png">
-<link rel="apple-touch-icon" href="favicon.png">
+<link rel="manifest" href="manifest.json">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="نظام الجودة">
+<meta name="application-name" content="نظام الجودة">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
 <meta name="theme-color" content="#0E3557">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -149,7 +155,7 @@ li.item.s-bad{border-color:var(--bad);box-shadow:inset -4px 0 0 var(--bad)}
 <div class="wrap">
   <header class="top">
     <div>
-      <h1>نظام التحقق من متطلبات والإجراءات للمخالفات</h1>
+      <h1>نظام الجودة والتحقق من متطلبات والاشتراطات اللازمة للمخالفات</h1>
       <p>وفق دليل دراسة المخالفات وآلية ضبطها (بعد التحديث)</p>
     </div>
     <button class="upload" id="upBtn" type="button" aria-label="رفع ملف المخالفات">
@@ -580,5 +586,6 @@ buildTypeSel();
 if(current!=="manual"&&!rows.find(r=>r.vno===current)&&!audits[current])current="manual";
 renderAll();
 </script>
+<script>if("serviceWorker" in navigator){window.addEventListener("load",()=>{navigator.serviceWorker.register("sw.js").catch(()=>{})})}</script>
 </body>
 </html>
