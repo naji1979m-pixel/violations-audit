@@ -173,8 +173,14 @@ button.attbtn{background:none;font:inherit}
     <div id="queueBody"></div>
   </section>
 
+  <section class="block" id="doneBlock">
+    <h2>المعاملات المنجزة <span class="sub" id="dCount"></span></h2>
+    <input class="in" id="dSearch" type="search" dir="rtl" placeholder="ابحث برقم الزيارة (مثال: 488028)" style="margin-bottom:10px">
+    <div id="doneBody"></div>
+  </section>
+
   <section class="block">
-    <h2>نموذج تدقيق المخالفات</h2>
+    <h2>نموذج تدقيق المخالفات <button type="button" class="linkbtn" id="newManual">＋ تدقيق يدوي جديد</button></h2>
     <div class="grid">
       <label class="f full">المخالفة <span class="req">*</span>
         <select class="in" id="typeSel"></select>
@@ -354,6 +360,7 @@ let qFilter="all",qSearch="";
 function statusOf(id){const a=audits[id];if(!a)return "new";return a.status||"prog"}
 const ST={new:["لم يُدقق","b-new"],prog:["قيد التدقيق","b-prog"],ok:["مكتملة","b-ok"],ret:["معادة لمأمور الضبط","b-ret"]};
 function renderQueue(){
+  renderDone();
   const body=$("#queueBody");
   if(!rows.length){
     $("#qCount").textContent="";
@@ -378,6 +385,36 @@ function renderQueue(){
   $$(".qrow").forEach(b=>b.onclick=()=>{openAudit(b.dataset.id);window.scrollTo({top:$("#typeSel").closest("section").offsetTop-8,behavior:"smooth"})});
   $("#clearRows").onclick=()=>{if(confirm("إزالة ملف المخالفات من هذا الجهاز؟ (تبقى نتائج التدقيق المحفوظة)")){rows=[];LS.del("vv:rows");renderQueue()}};
 }
+
+/* ===================== المعاملات المنجزة ===================== */
+let dSearch="";
+function doneList(){return Object.entries(audits).filter(([id,a])=>a&&a.doneAt&&a.f).map(([id,a])=>({id,a})).sort((x,y)=>(y.a.doneAt||0)-(x.a.doneAt||0))}
+function fmtD(t){if(!t)return "";const d=new Date(t);return `${d.getDate()}/${d.getMonth()+1}/${d.getFullYear()}`}
+function renderDone(){
+  const body=$("#doneBody");if(!body)return;
+  const all=doneList();$("#dCount").textContent=all.length?`${all.length} معاملة`:"";
+  const q=dSearch.trim().toLowerCase().replace(/\s+/g,"");
+  const list=q?all.filter(({a})=>String(a.f.vno||"").toLowerCase().replace(/\s+/g,"").includes(q)):all;
+  if(!all.length){body.innerHTML=`<div class="empty">لا توجد معاملات منجزة بعد. كل مخالفة تكتمل متطلباتها ويُصدر مستندها الداعم تُحفظ هنا تلقائياً.</div>`;return}
+  if(!list.length){body.innerHTML=`<div class="empty">لا توجد معاملة منجزة برقم الزيارة «${esc(dSearch)}»</div>`;return}
+  const shown=q?list:list.slice(0,30);
+  body.innerHTML=`<div class="queue">${shown.map(({id,a})=>{const g=a.type>=0&&GUIDE[a.type]?GUIDE[a.type].name:"";const okNow=a.status==="ok";
+    return `<button type="button" class="qrow" data-done="${esc(id)}" aria-current="${current===id}"><span class="id">${esc(a.f.vno||"-")}</span><span class="badge ${okNow?"b-ok":"b-prog"}">${okNow?"منجزة "+esc(fmtD(a.doneAt)):"معدّلة بعد الإنجاز"}</span><span class="t">${esc(g)}</span><span class="m">${esc(a.f.name||"")}${a.f.officer?" — "+esc(a.f.officer):""}${a.auditor?" — المدقق: "+esc(a.auditor):""}</span></button>`}).join("")}</div>${!q&&list.length>30?`<div class="sub" style="margin-top:6px">يظهر آخر 30 معاملة، استخدم البحث للوصول لغيرها.</div>`:""}`;
+  $$("[data-done]").forEach(b=>b.onclick=()=>{openAudit(b.dataset.done);window.scrollTo({top:$("#typeSel").closest("section").offsetTop-8,behavior:"smooth"})});
+}
+$("#dSearch").oninput=e=>{dSearch=e.target.value;renderDone()};
+async function clearAtt(aud){try{const l=await tx("readonly",s=>s.index("audit").getAll(aud));for(const r of (l||[]))await tx("readwrite",s=>s.delete(r.id))}catch(e){}}
+async function promoteManual(){
+  const a=audits.manual;if(!a)return;
+  let id="m:"+String(a.f.vno||"").trim();if(audits[id])id+="-"+Date.now().toString(36);
+  audits[id]=a;delete audits.manual;
+  try{const l=await tx("readonly",s=>s.index("audit").getAll("manual"));for(const r of (l||[])){r.audit=id;await tx("readwrite",s=>s.put(r))}}catch(e){}
+  current=id;save();await loadAtt();
+}
+$("#newManual").onclick=async()=>{
+  if(audits.manual&&!audits.manual.doneAt&&(audits.manual.type>=0||Object.keys(audits.manual.ans||{}).length)&&!confirm("بدء تدقيق يدوي جديد؟ سيُمسح التدقيق اليدوي غير المكتمل."))return;
+  delete audits.manual;await clearAtt("manual");activeKey=null;openAudit("manual");toast("نموذج تدقيق جديد جاهز");
+};
 
 /* ===================== حالة التدقيق ===================== */
 function A(){
@@ -574,10 +611,12 @@ function docHTML(){
   ${(f.gnotes||"").trim()?`<h2>ملاحظات عامة</h2><div class="box">${esc(f.gnotes)}</div>`:""}
   <div class="sig"><div>توقيع المدقق</div><div>الاعتماد</div></div>${attDoc()}</div>`;
 }
-function openPrint(){
+async function openPrint(){
   const m=missingFields();
   if(m.length){toast("أكمل الحقول الإلزامية: "+m.join("، "));return}
-  A().status="ok";save();renderQueue();
+  if(current==="manual")await promoteManual();
+  {const _a=A();_a.status="ok";if(!_a.doneAt)_a.doneAt=Date.now();_a.lastDone=Date.now();_a.auditor=$("#auditor").value.trim()}
+  save();renderQueue();
   $("#sheet").innerHTML=`<h3>المستند الداعم جاهز</h3><div class="sub">اختر طريقة الإخراج: ملف PDF يشمل التدقيق وجميع المرفقات، أو طباعة مباشرة.</div>
   <div class="btns" style="margin-top:14px"><button type="button" class="btn2 pri" id="doPdf">📄 مستند PDF</button><button type="button" class="btn2" id="doPrint">🖨️ طباعة</button><button type="button" class="btn2" id="closeSh">إغلاق</button></div>
   <div style="margin-top:14px;border:1px solid var(--line);border-radius:12px;background:#fff;overflow:auto;max-height:50vh">${docHTML()}</div>`;
