@@ -1,0 +1,584 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>نظام التحقق من متطلبات والإجراءات للمخالفات</title>
+<meta name="description" content="تدقيق ملفات المخالفات وفق دليل دراسة المخالفات وآلية ضبطها">
+<meta property="og:type" content="website">
+<meta property="og:locale" content="ar_SA">
+<meta property="og:site_name" content="نظام التحقق من متطلبات والإجراءات للمخالفات">
+<meta property="og:title" content="نظام التحقق من متطلبات والإجراءات للمخالفات">
+<meta property="og:description" content="تدقيق ملفات المخالفات وفق دليل دراسة المخالفات وآلية ضبطها">
+<meta property="og:url" content="https://naji1979m-pixel.github.io/violations-audit/">
+<meta property="og:image" content="https://naji1979m-pixel.github.io/violations-audit/og-image.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="نظام التحقق من متطلبات والإجراءات للمخالفات">
+<meta name="twitter:description" content="تدقيق ملفات المخالفات وفق دليل دراسة المخالفات وآلية ضبطها">
+<meta name="twitter:image" content="https://naji1979m-pixel.github.io/violations-audit/og-image.png">
+<link rel="icon" type="image/png" href="favicon.png">
+<link rel="apple-touch-icon" href="favicon.png">
+<meta name="theme-color" content="#0E3557">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<style>
+:root{
+  --bg:#F3F6F9; --paper:#FFFFFF; --ink:#13283D; --muted:#5A6B7C; --line:#D6DFE7;
+  --navy:#0E3557; --navy-ink:#FFFFFF; --ok:#1C7A4B; --ok-bg:#E3F3EA; --bad:#B42318; --bad-bg:#FCE9E7;
+  --warn:#9A5B07; --warn-bg:#FDF1DC; --field:#F8FAFC;
+  box-sizing:border-box; padding-top:env(safe-area-inset-top,0px); padding-bottom:env(safe-area-inset-bottom,0px);
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#0D1722; --paper:#14212E; --ink:#E4ECF3; --muted:#93A5B6; --line:#26384A;
+    --navy:#2D6A9F; --ok:#4CC38A; --ok-bg:#12301F; --bad:#F2796C; --bad-bg:#3A1714; --warn:#E8B04B; --warn-bg:#33270F; --field:#101B26;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#0D1722; --paper:#14212E; --ink:#E4ECF3; --muted:#93A5B6; --line:#26384A;
+  --navy:#2D6A9F; --ok:#4CC38A; --ok-bg:#12301F; --bad:#F2796C; --bad-bg:#3A1714; --warn:#E8B04B; --warn-bg:#33270F; --field:#101B26;
+}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*,*::before,*::after{box-sizing:inherit}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:"IBM Plex Sans Arabic",Tahoma,"Segoe UI",Arial,sans-serif;font-size:15px;line-height:1.6}
+button,input,select,textarea{font:inherit;color:inherit}
+.wrap{max-width:760px;margin:0 auto;padding:16px 14px 140px}
+header.top{display:flex;align-items:flex-start;gap:12px;justify-content:space-between;padding:6px 2px 16px}
+header.top h1{font-size:21px;line-height:1.35;margin:0;font-weight:700}
+header.top p{margin:4px 0 0;color:var(--muted);font-size:13px}
+.upload{flex:none;display:flex;flex-direction:column;align-items:center;gap:4px;background:var(--navy);color:var(--navy-ink);border:0;border-radius:14px;padding:10px 12px;cursor:pointer;font-size:12px;font-weight:600}
+.upload svg{width:24px;height:24px}
+.upload:focus-visible,button:focus-visible,select:focus-visible,input:focus-visible,textarea:focus-visible{outline:3px solid #5AA0DA;outline-offset:2px}
+section.block{background:var(--paper);border:1px solid var(--line);border-radius:16px;padding:16px;margin-bottom:14px}
+section.block > h2{font-size:16px;margin:0 0 12px;font-weight:700;display:flex;align-items:center;justify-content:space-between;gap:8px}
+.sub{color:var(--muted);font-size:13px;font-weight:400}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:10px 12px}
+.grid .full{grid-column:1/-1}
+@media (max-width:520px){.grid{grid-template-columns:1fr}}
+label.f{display:flex;flex-direction:column;gap:4px;font-size:13px;color:var(--muted);font-weight:500}
+label.f .req{color:var(--bad)}
+input.in,select.in,textarea.in{width:100%;background:var(--field);border:1px solid var(--line);border-radius:10px;padding:9px 11px;color:var(--ink);min-height:42px}
+textarea.in{min-height:84px;resize:vertical;line-height:1.7}
+.pill-row{display:flex;flex-wrap:wrap;gap:8px}
+.pill{border:1px solid var(--line);background:var(--field);border-radius:999px;padding:6px 14px;cursor:pointer;font-size:13px}
+.pill[aria-pressed="true"]{background:var(--navy);color:var(--navy-ink);border-color:var(--navy)}
+/* queue */
+.queue-tools{display:flex;gap:8px;margin-bottom:10px;flex-wrap:wrap}
+.queue-tools input{flex:1 1 180px}
+.queue{max-height:340px;overflow:auto;border:1px solid var(--line);border-radius:12px}
+.qrow{display:grid;grid-template-columns:1fr auto;gap:2px 10px;padding:10px 12px;border-bottom:1px solid var(--line);cursor:pointer;background:var(--paper);width:100%;text-align:right;border-left:0;border-right:0;border-top:0}
+.qrow:last-child{border-bottom:0}
+.qrow[aria-current="true"]{background:var(--field);box-shadow:inset -4px 0 0 var(--navy)}
+.qrow .id{font-weight:700;font-size:14px;direction:ltr;text-align:right}
+.qrow .t{grid-column:1/2;font-size:13px}
+.qrow .m{grid-column:1/-1;font-size:12px;color:var(--muted)}
+.badge{font-size:11px;font-weight:600;border-radius:6px;padding:2px 8px;white-space:nowrap;align-self:start}
+.b-new{background:var(--field);color:var(--muted);border:1px solid var(--line)}
+.b-ok{background:var(--ok-bg);color:var(--ok)}
+.b-ret{background:var(--bad-bg);color:var(--bad)}
+.b-prog{background:var(--warn-bg);color:var(--warn)}
+.empty{padding:18px;text-align:center;color:var(--muted);font-size:14px}
+.linkbtn{background:none;border:0;color:var(--muted);text-decoration:underline;cursor:pointer;font-size:12px;padding:0}
+/* inspector explanation */
+.explain{border-radius:12px;padding:12px;background:var(--field);border:1px solid var(--line)}
+.explain.short{border-color:var(--warn);background:var(--warn-bg)}
+.explain .hint{font-size:12px;color:var(--warn);margin-top:6px;font-weight:600}
+/* checklist */
+.by{font-size:13px;color:var(--muted);margin:2px 0 12px}
+.alert{border-radius:12px;padding:10px 12px;font-size:13px;margin:10px 0;background:var(--warn-bg);color:var(--warn)}
+h3.sec{font-size:14px;margin:18px 0 8px;font-weight:700;display:flex;justify-content:space-between}
+h3.sec span{font-weight:500;color:var(--muted);font-size:12px}
+ol.items{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:8px}
+li.item{border:1px solid var(--line);border-radius:12px;padding:10px 12px;background:var(--paper);transition:border-color .15s}
+li.item.s-ok{border-color:var(--ok);box-shadow:inset -4px 0 0 var(--ok)}
+li.item.s-bad{border-color:var(--bad);box-shadow:inset -4px 0 0 var(--bad)}
+.item .txt{font-size:14px;margin-bottom:8px}
+.item .txt b{color:var(--muted);font-weight:600;margin-left:4px}
+.seg{display:inline-flex;border:1px solid var(--line);border-radius:10px;overflow:hidden}
+.seg button{border:0;background:var(--field);padding:6px 14px;cursor:pointer;font-size:13px;min-width:92px}
+.seg button + button{border-right:1px solid var(--line)}
+.seg button.on-ok{background:var(--ok);color:#fff}
+.seg button.on-bad{background:var(--bad);color:#fff}
+.item textarea{margin-top:8px;min-height:56px;font-size:13px}
+/* bottom bar */
+.bar{position:fixed;left:0;right:0;bottom:0;background:var(--paper);border-top:1px solid var(--line);padding:10px 14px calc(10px + env(safe-area-inset-bottom,0px));z-index:5}
+.bar-in{max-width:760px;margin:0 auto;display:flex;align-items:center;gap:12px}
+.meter{flex:1;min-width:0}
+.meter .lbl{font-size:13px;display:flex;justify-content:space-between;gap:8px;margin-bottom:5px}
+.meter .lbl b{font-size:15px}
+.track{height:8px;background:var(--line);border-radius:99px;overflow:hidden;display:flex}
+.track i{display:block;height:100%}
+.track .g{background:var(--ok)} .track .r{background:var(--bad)}
+.act{border:0;border-radius:12px;padding:11px 16px;font-weight:700;cursor:pointer;white-space:nowrap;font-size:14px}
+.act.print{background:var(--ok);color:#fff}
+.act.ret{background:var(--bad);color:#fff}
+.act.wait{background:var(--line);color:var(--muted);cursor:not-allowed}
+/* sheet */
+.sheet-bg{position:fixed;inset:0;background:rgba(5,15,25,.5);display:none;z-index:9;align-items:flex-end;justify-content:center}
+.sheet-bg.open{display:flex}
+.sheet{background:var(--paper);width:100%;max-width:760px;border-radius:18px 18px 0 0;padding:18px 16px calc(18px + env(safe-area-inset-bottom,0px));max-height:86%;overflow:auto}
+.sheet h3{margin:0 0 6px;font-size:17px}
+.sheet pre{white-space:pre-wrap;background:var(--field);border:1px solid var(--line);border-radius:12px;padding:12px;font-family:inherit;font-size:13px;line-height:1.8;margin:10px 0}
+.sheet .btns{display:flex;gap:8px;flex-wrap:wrap}
+.btn2{border:1px solid var(--line);background:var(--field);border-radius:10px;padding:10px 14px;cursor:pointer;font-weight:600;font-size:14px}
+.btn2.pri{background:var(--navy);color:var(--navy-ink);border-color:var(--navy)}
+.toast{position:fixed;top:calc(12px + env(safe-area-inset-top,0px));left:50%;transform:translateX(-50%);background:var(--ink);color:var(--paper);padding:8px 16px;border-radius:10px;font-size:13px;opacity:0;pointer-events:none;transition:opacity .2s;z-index:20}
+.toast.show{opacity:1}
+.att{margin-top:8px;display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.attbtn{position:relative;display:inline-flex;align-items:center;gap:6px;border:1px dashed var(--muted);border-radius:10px;padding:6px 12px;font-size:13px;cursor:pointer;color:var(--muted);min-height:40px}
+.attbtn input{position:absolute;inset:0;width:100%;height:100%;opacity:0;cursor:pointer}
+.attbtn:focus-within{outline:3px solid #5AA0DA;outline-offset:2px}
+.th{position:relative;width:56px;height:56px;border:1px solid var(--line);border-radius:8px;overflow:hidden;padding:0;cursor:pointer;background:#fff}
+.th img{width:100%;height:100%;object-fit:cover;display:block}
+.th span{position:absolute;bottom:0;left:0;right:0;background:rgba(14,53,87,.88);color:#fff;font-size:10px;text-align:center;line-height:1.6}
+.viewer img{width:100%;border:1px solid var(--line);border-radius:8px;margin-bottom:8px;background:#fff;display:block}
+#printDoc{display:none}
+@media (prefers-reduced-motion: reduce){*{transition:none!important}}
+@media print{
+  body{background:#fff;color:#000}
+  .wrap,.bar,.sheet-bg,.toast{display:none!important}
+  #printDoc{display:block}
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="top">
+    <div>
+      <h1>نظام التحقق من متطلبات والإجراءات للمخالفات</h1>
+      <p>وفق دليل دراسة المخالفات وآلية ضبطها (بعد التحديث)</p>
+    </div>
+    <button class="upload" id="upBtn" type="button" aria-label="رفع ملف المخالفات">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5"/><path d="M12 17v-6"/><path d="M9.5 13.5 12 11l2.5 2.5"/></svg>
+      ملف المخالفات
+    </button>
+    <input type="file" id="fileIn" accept=".xlsx,.xls,.csv" hidden>
+  </header>
+
+  <section class="block" id="queueBlock">
+    <h2>المخالفات بانتظار التدقيق <span class="sub" id="qCount"></span></h2>
+    <div id="queueBody"></div>
+  </section>
+
+  <section class="block">
+    <h2>نموذج تدقيق المخالفات</h2>
+    <div class="grid">
+      <label class="f full">المخالفة <span class="req">*</span>
+        <select class="in" id="typeSel"></select>
+      </label>
+      <label class="f">رقم المخالفة <span class="req">*</span><input class="in" data-f="vno" dir="ltr" placeholder="V-0000000"></label>
+      <label class="f">المخالف <span class="req">*</span><input class="in" data-f="name" placeholder="اسم المخالف"></label>
+      <label class="f">رقم هوية المخالف<input class="in" data-f="nid" inputmode="numeric" dir="ltr"></label>
+      <label class="f">رقم جوال المخالف<input class="in" data-f="phone" inputmode="tel" dir="ltr" placeholder="05xxxxxxxx"></label>
+      <label class="f">رقم العداد<input class="in" data-f="meter" dir="ltr"></label>
+      <label class="f">تاريخ الضبط<input class="in" data-f="date" placeholder="يوم/شهر/سنة"></label>
+      <label class="f full">الموقع<input class="in" data-f="loc" placeholder="المحافظة، الحي، الإحداثيات"></label>
+      <label class="f">اسم مأمور الضبط<input class="in" data-f="officer"></label>
+      <label class="f">اسم المدقق <span class="req">*</span><input class="in" id="auditor"></label>
+    </div>
+  </section>
+
+  <section class="block">
+    <h2>شرح المخالفة من مأمور الضبط</h2>
+    <div class="explain" id="explainBox">
+      <textarea class="in" data-f="explain" placeholder="الشرح المفصل كما كتبه مأمور الضبط، شاملاً الآثار والأضرار المترتبة على المخالفة"></textarea>
+      <div class="hint" id="explainHint" hidden></div>
+    </div>
+  </section>
+
+  <section class="block" id="checkBlock">
+    <h2>قائمة التحقق</h2>
+    <div id="checkBody"></div>
+  </section>
+
+  <section class="block">
+    <h2>ملاحظات عامة على المعاملة</h2>
+    <textarea class="in" data-f="gnotes" placeholder="ملاحظات لا تخص فقرة بعينها"></textarea>
+  </section>
+</div>
+
+<div class="bar">
+  <div class="bar-in">
+    <div class="meter">
+      <div class="lbl"><span id="barState">اختر المخالفة لبدء التدقيق</span><b id="barNum"></b></div>
+      <div class="track"><i class="g" id="trG" style="width:0"></i><i class="r" id="trR" style="width:0"></i></div>
+    </div>
+    <button type="button" class="act wait" id="actBtn" disabled>أكمل التدقيق</button>
+  </div>
+</div>
+
+<div class="sheet-bg" id="sheetBg" role="dialog" aria-modal="true">
+  <div class="sheet" id="sheet"></div>
+</div>
+<div class="toast" id="toast" role="status"></div>
+<div id="printDoc"></div>
+
+<script>
+/* ===================== دليل المتطلبات ===================== */
+const P1="التأكد من توافق الموقع في صور المخالفة";
+const P2="عدم اختلاف تاريخ الضبط في صور ضبط المخالفة";
+const PROP="صورة توضح العقار المخالف من كافة الجوانب لتوضيح حجم العقار";
+const LINK="إرفاق مستند من النظام يوضح ارتباط العقار بالمخالف";
+const DIA="توضيح حجم قطر العداد";
+const HIDE="صور توضح ما يثبت الإخفاء (أثر الإخفاء، التغطية.. إلخ)";
+const BRK=["صورة واضحة للكسر من عدة اتجاهات","تقديم مخطط الإذن بالحفر","إضافة مساحة المقطع المثقوب"];
+const BRKP="صورة واضحة للكسر لإثبات ضبط المخالفة";
+const DMG3=["صور واضحة لموضع الكسر أو الإتلاف","تفعيل وصف المخالفة في تحديد نوع الضرر (جزئي / كلي)","توضيح أثر الضرر (تسرب / تعطيل)"];
+const TAMPER=[PROP,LINK,"صورة توضح موضع العداد قبل فك العداد للفحص","صورة واضحة لنوع التلاعب أو العبث بتاريخ بعد الفحص","إرفاق تقرير فحص العداد يثبت التلاعب","توحيد مستند فحص العداد","إرفاق مستند الفحص بصيغة PDF وعدم تصويره من الورق",DIA];
+const TAMPERP=[P1,P2,"مطابقة بيانات المخالف مع البيانات في فحص العداد"];
+const SAMPLE=["صورة واضحة للمادة الملقاة","صورة واضحة للخطوط المعتدى عليها","مستند عينة فحص للخطوط المعتدى عليها"];
+const SAMPLEP=[P1,P2,"صورة واضحة للإلقاء لإثبات ضبط المخالفة","مطابقة فحص العينة باسم المخالف والتأكد أن المستند موثق من شركة المياه الوطنية"];
+const SEWER=["صورة واضحة للخطوط التي تم التعدي عليها","تصوير الأدوات المستخدمة في الاعتداء"];
+const NWC="شركة المياه الوطنية", BOTH="شركة المياه الوطنية / الهيئة السعودية للمياه";
+const GENERAL=[
+  "شرح المخالفة بشكل مفصل من مأمور الضبط، شاملاً الآثار والأضرار المترتبة عليها",
+  "إرفاق المستند الداعم بصيغة PDF متضمناً جميع مرفقات المخالفة"
+];
+const V=(cat,name,req,proc,by=NWC)=>({cat,name,req,proc,by});
+const C1="مخالفات العبث بالعداد",C2="مخالفات تدفق المياه",C3="مخالفات الاعتداء على الخطوط الفرعية والرئيسية",C4="مخالفات البنية الأساسية",C5="مخالفات مياه الشرب",C6="مخالفات المرخص لهم",C7="مخالفات التوصيل بطريقة غير نظامية",C8="مخالفات التوصيل بالصرف الصحي بطريقة غير نظامية",C9="مخالفات إلحاق الضرر بشبكات الصرف الصحي";
+const GUIDE=[
+ V(C1,"إخفاء العداد",[PROP,"إرفاق مستند من النظام يوضح العداد وموقع العداد وبيانات المخالف","صورة توضح موضع العداد وإخفاءه",DIA],[P1,P2,"صور واضحة لنوع الإخفاء لإثبات ضبط المخالفة","مطابقة بيانات المخالف مع البيانات في المستند"]),
+ V(C1,"تغيير موضع العداد بدون إذن من الجهة المختصة",[PROP,LINK,"صورة واضحة لموقع العداد الجديد","صورة توضح موقع العداد السابق",DIA],[P1,P2]),
+ V(C1,"فك وتركيب العداد بشكل معكوس",[PROP,"إرفاق صورة للعداد",LINK,"إرفاق مستند من النظام لقراءات العداد المعكوسة",DIA],[P1,P2,"وجود الفرق في القراءات لإثبات ضبط المخالفة"]),
+ V(C1,"فتح العداد بشكل غير نظامي بعد قفله من قبل مقدم الخدمة",[PROP,LINK,"إرفاق مستند لقراءات إقفال العداد من النظام","صورة لقفل العداد ولقراءات العداد بعد قفله","صورة لإشعار العميل بقفل العداد (إشعار ورقي أو SMS)","صور لقراءات فتح العداد بعد تاريخ إقفال العداد",DIA],["التأكد من توافق الموقع وعدم اختلاف تاريخ الضبط","التحقق من قراءات الاستهلاك والتأكد من الاستهلاك بعد تاريخ القفل","التأكد من أن تاريخ القفل يسبق تاريخ الفتح","التحقق من تطابق رقم العداد","مطابقة بيانات المخالف مع البيانات في المستندات"]),
+ V(C1,"كسر العداد أو زجاجته",[PROP,LINK,"صورة واضحة للكسر من عدة اتجاهات","إرفاق مستند لقراءات العداد من النظام",DIA],[P1,P2,"وضوح الكسر لإثبات ضبط المخالفة"]),
+ V(C1,"كسر صندوق عداد المياه أو ملحقاته",[PROP,LINK,"صورة واضحة للكسر من عدة اتجاهات","إرفاق مستند لقراءات العداد من النظام",DIA],[P1,P2,"وضوح الكسر لإثبات ضبط المخالفة"]),
+ V(C1,"التلاعب بالجهاز الداخلي أو الخارجي للعداد",TAMPER,TAMPERP),
+ V(C1,"إتلاف مكونات قراء العداد باللمس أو القراءة عن بعد",TAMPER,TAMPERP),
+ V(C1,"استعمال أية مواد أو أدوات أو آلات لوقف أو إبطاء سير العداد",TAMPER,TAMPERP),
+ V(C1,"استبدال العداد من قبل المستهلك",[PROP,LINK,"صورة واضحة للعداد الجديد",DIA],[P1,P2]),
+ V(C2,"تدفق المياه خارج حدود المباني العامة والخاصة، أو تسربها من الخزانات أو الشبكات الداخلية أو الصهاريج",[PROP,"صورة واضحة لمصدر التدفق","صورة واضحة لامتداد التسرب وكمية الضرر","استمارة المركبة في حال ضبط المخالفة على صهريج"],[P1,P2,"التأكد من أن مصدر التدفق واضح ومرتبط بالعقار المخالف"],BOTH),
+ V(C2,"القيام بأي نشاط يؤدي إلى شح المياه، أو تلوثها",[PROP,LINK,"صورة توضح الأداة المستخدمة","في حال وجود تلوث يجب تقديم فحص جودة المياه","أن تكون المضخة مرتبطة بالعداد مباشرة"],[P1,P2,"وجود مضخة بالقرب من العداد"],BOTH),
+ V(C3,"تعطيل أو إلحاق الضرر بخط مياه رئيسي / فرعي",["صورة واضحة للضرر من عدة اتجاهات","تقديم مخطط الإذن بالحفر"],[P1,P2,"صورة واضحة للضرر لإثبات ضبط المخالفة","صورة لحجم الضرر"]),
+ V(C3,"كسر تمديدات المياه الرئيسية / الفرعية",BRK,[P1,P2,BRKP,"صورة لحجم كسر خط المياه"]),
+ V(C3,"كسر أو إتلاف طبة خط مياه رئيسي / فرعي",BRK,[P1,P2,BRKP]),
+ V(C3,"كسر أو إتلاف صمام خط مياه رئيسي / فرعي",BRK,[P1,P2,BRKP]),
+ V(C3,"كسر أو إتلاف أو تعطيل وحدة الشرب",[...DMG3,"إضافة مساحة المقطع المثقوب"],[P1,P2]),
+ V(C3,"كسر أو إتلاف توصيلة منزلية أو ملحقاتها",BRK,[P1,P2,BRKP,"صورة لحجم ضرر خط المياه"]),
+ Object.assign(V(C3,"إخفاء معالم أو فتح أو قفل أحد صمامات خطوط المياه الرئيسية / الفرعية أو كسر أو إتلاف أي من ملحقاتها جزئياً أو كلياً",null,[P1,P2]),{cases:{
+   "إخفاء":[HIDE,"تفعيل وصف المخالفة في حال مواجهة صعوبة في الوصول للصمام","صورة بعد إزالة الإخفاء تثبت وجود الصمام"],
+   "فتح / قفل الصمام":["صورة واضحة لوضعية الصمام (مفتوح / مغلق)","إرفاق ما يثبت أن وضعية الصمام مخالفة للوضع النظامي","وجود آثار عبث"],
+   "كسر / إتلاف":DMG3}}),
+ V(C3,"كسر أو إتلاف صندوق صمام مياه أو غرفة تفتيش أو كسر أو إتلاف محبس مياه أو صندوق محبس مياه",["صورة واضحة للكسر من عدة اتجاهات","إضافة مساحة المقطع المثقوب"],[P1,P2,BRKP,"صورة لحجم ضرر خط المياه"]),
+ Object.assign(V(C3,"كسر أو إتلاف حنفية إطفاء الحريق أو ماسورة الحنفية أو الحاجز المخصص لحمايتها أو إخفاء معالمها",null,[P1,P2]),{cases:{
+   "كسر / إتلاف":DMG3,
+   "إخفاء":[HIDE,"صورة بعد إزالة الإخفاء"]}}),
+ V(C3,"إلقاء أو وضع أو التسبب في وصول مواد ضارة، صلبة أو سائلة أو غازية أو أي ملوث إلى الخزانات أو المحطات أو خطوط المياه أو الصرف الصحي أو توصيلاتها أو الطابق أو غرف التفتيش",SAMPLE,SAMPLEP),
+ V(C3,"الاعتداء على حرم خطوط المياه الرئيسية والفرعية وكذلك حرم الآبار التابعة للمرخص لهم",["إرفاق ما يثبت موقع الخط / البئر ونطاق الحرم","صور توضح وقوع التعدي داخل الحرم (بناء / حفر... إلخ)","تفعيل وصف المخالفة بربط (التعدي + الحرم + الأثر)"],[P1,P2,"صورة واضحة للاعتداء لإثبات ضبط المخالفة"]),
+ V(C3,"إخفاء غطاء محبس شبكة المياه",[HIDE,"صورة بعد إزالة الإخفاء"],[P1,P2]),
+ V(C3,"تحويل مسار أو منسوب خط مياه، بدون التنسيق مع الجهة ذات الاختصاص",[],[]),
+ V(C3,"عدم صيانة ومتابعة عمل مصائد الدهون أو الزيوت من قبل المنشآت المعنية",["صورة توضح العقار المخالف من كافة الجوانب لتوضيح حجم المنشأة","صورة توضح عدم صيانة الفلتر في مصائد الدهون"],[P1,P2,"التأكد من إضافة رقم الجوال بشكل صحيح","التأكد من عدم صيانة فلتر المصيدة في المنشأة"]),
+ V(C3,"عدم توفير أو تركيب مصائد الدهون أو الزيوت من قبل المنشآت المعنية",["صورة توضح العقار المخالف من كافة الجوانب لتوضيح حجم المنشأة","صورة توضح مكان توفير مصائد الدهون"],[P1,P2,"التأكد من إضافة رقم الجوال بشكل صحيح","التأكد من عدم توفر المصيدة في المنشأة"]),
+ V(C4,"إقامة منشآت أو أي تمديدات خدمات عامة فوق خط مياه رئيسي / فرعي مما يؤدي إلى إلحاق ضرر به",["صور توضح وجود المنشأة / التمديد فوق مسار الخط","إثبات مسار الخط (إحداثيات / مخطط كروكي مثلاً)","توضيح نوع الضرر الواقع على الخط","تفعيل وصف المخالفة ببيان العلاقة بين التمديد والضرر"],[P1,P2]),
+ V(C4,"تعطيل أو إتلاف أو إلحاق الضرر بالمعدات أو محطات الضخ أو ملحقاتها",["تقرير فني يوضح وجود التعطيل أو الإتلاف","الآثار الناتجة عن التعطيل أو الإتلاف","صور واضحة للتعطيل أو الإتلاف"],[P1,P2]),
+ V(C4,"قطع أو إتلاف كيبل التشغيل ذات العلاقة بأي من أنشطة تقديم الخدمة",[],[]),
+ V(C4,"عدم مطابقة نوعية المياه (في أنظمة الإنتاج، والنقل، والتوزيع، والتخزين) للمعايير والمواصفات المعتمدة من الوزارة",["إرفاق نتيجة تحليل المياه","تصوير المنشأة وتحديد موقع العينة (إنتاج / نقل / توزيع / تخزين)","تفعيل وصف المخالفة بربط (النتيجة + المعيار + الأثر)"],[P1,P2]),
+ V(C5,"إعطاء المشترك الماء للغير لغرض الشرب ولغير أغراض الشرب",[PROP,LINK,"إرفاق صورة واضحة تبين وسيلة الإمداد من العقار المشترك إلى العقار المستفيد"],[P1,P2]),
+ V(C5,"إعطاء المشترك الماء للغير بواسطة تمديدات ثابتة لغرض الشرب",[PROP,LINK,"إرفاق صورة واضحة للتمديدات الثابتة من العقار المشترك ومسارها باتجاه العقار المستفيد"],[P1,P2]),
+ V(C6,"مساعدة الغير على القيام بأي مخالفة من مخالفات النظام، أو لوائح الوزارة، أو لوائح الهيئة، أو شروط الرخص",[],[]),
+ V(C6,"منع المراقبين والمختصين بالتفتيش، والضبط، والتحقيق، من أداء عملهم، أو إعاقتهم عن ذلك",[],[]),
+ V(C7,"التوصيل بشبكة المياه بطريقة غير نظامية",[PROP,"صورة واضحة للتوصيلة غير النظامية محل المخالفة","توضيح المستفيد من التوصيلة غير النظامية","توضيح امتداد التوصيلة","مدى تطابق التوصيلات للمواصفات والجودة"],[P1,P2,"صورة واضحة للتوصيلة غير النظامية محل المخالفة ولطريقة التوصيل"]),
+ V(C7,"ربط مياه البئر بخزان الشرب",[],[]),
+ V(C8,"الاعتداء على خط صرف صحي رئيسي (قطر 500 ملم فأكبر) أو مطبق بقصد الارتفاق بالخدمات البيئية",SEWER,[P1,P2,"وضوح الخطوط المعتدى عليها"]),
+ V(C8,"الاعتداء على خط صرف صحي فرعي (أصغر من 500 ملم) أو مطبق بقصد الارتفاق بالخدمات البيئية",SEWER,[P1,P2,"وضوح الخطوط المعتدى عليها"]),
+ V(C8,"الاعتداء على توصيلة صرف صحي منزلية أو غرفة تفتيش بقصد الارتفاق بالصرف",["صور توضح وقوع الاعتداء",...SEWER],[P1,P2,"صورة واضحة للاعتداء لإثبات ضبط المخالفة"]),
+ V(C8,"عدم اتخاذ التدابير اللازمة لتفادي تسرب مياه الصرف إلى مصادر المياه، أو أنظمة نقلها، أو توزيعها، أو خزاناتها",[],[]),
+ V(C8,"كسر أو إتلاف أو التسبب في انسداد مطبق صرف صحي أو غرفة تفتيش أو تمديدات المياه والصرف الصحي",["صورة واضحة للكسر من عدة اتجاهات","تقديم مخطط الإذن بالحفر"],[P1,P2,BRKP]),
+ V(C8,"عدم الربط بشبكة الصرف الصحي بعد توفرها",[PROP,"إرفاق صورة واضحة للإشعار، والتأكد من انقضاء مدة (30) يوماً من تاريخ الإشعار قبل ضبط المخالفة"],[P1,P2]),
+ V(C9,"إخفاء معالم مطبق صرف صحي",[HIDE,"صورة بعد إزالة الإخفاء"],[P1,P2]),
+ V(C9,"الاعتداء على غرفة تفتيش أو مطبق بقصد ضخ أو حقن مياه جوفية أو مياه سطحية أو أمطار سواء برفع الغطاء أو إحداث ثقوب فيه",SAMPLE,SAMPLEP),
+];
+
+/* ===================== التخزين المحلي ===================== */
+const LS={get(k,d){try{const v=localStorage.getItem(k);return v?JSON.parse(v):d}catch(e){return d}},set(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}},del(k){try{localStorage.removeItem(k)}catch(e){}}};
+let rows=LS.get("vv:rows",[]);
+let audits=LS.get("vv:audits",{});
+let current=LS.get("vv:current","manual");
+const $=s=>document.querySelector(s), $$=s=>[...document.querySelectorAll(s)];
+const esc=s=>String(s??"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+
+/* ===================== مطابقة نص البند ===================== */
+function norm(s){return String(s||"").replace(/[\u064B-\u0652\u0640]/g,"").replace(/[أإآ]/g,"ا").replace(/ة/g,"ه").replace(/ى/g,"ي").replace(/[^\u0600-\u06FF0-9 ]/g," ").replace(/\s+/g," ").trim()}
+function matchType(txt){
+  const a=new Set(norm(txt).split(" ").filter(w=>w.length>1));if(!a.size)return -1;
+  let best=-1,score=0;
+  GUIDE.forEach((g,i)=>{const b=new Set(norm(g.name).split(" ").filter(w=>w.length>1));let inter=0;a.forEach(w=>{if(b.has(w))inter++});const s=inter/Math.max(a.size,Math.min(b.size,a.size+3));if(s>score){score=s;best=i}});
+  return score>=0.6?best:-1;
+}
+
+/* ===================== قراءة ملف الإكسل ===================== */
+const COLS={vno:"معرف المخالفة",visit:"رقم الزيارة",name:"اسم المخالف",nid:"هوية المخالف",coords:"موقع المخالفة",coords2:"الاحداثيات",gov:"المحافظة",date:"تاريخ بدء الزيارة",date2:"تاريخ انشاء الزيارة",officer:"اسم المفتش",explain:"ملاحظات المفتش",item:"وصف بند اللائحة",prop:"نوع العقار",sev:"نوع المخالفة",status:"حالة المخالفة"};
+function fmtDate(v){
+  if(v instanceof Date&&!isNaN(v))return `${v.getDate()}/${v.getMonth()+1}/${v.getFullYear()}`;
+  const s=String(v||"").trim();let m=s.match(/^(\d{1,2})\/(\d{1,2})\/(\d{2,4})/);
+  if(m){let y=+m[3];if(y<100)y+=2000;return `${+m[2]}/${+m[1]}/${y}`}
+  m=s.match(/^(\d{4})-(\d{2})-(\d{2})/);if(m)return `${+m[3]}/${+m[2]}/${m[1]}`;
+  return s.split(" ")[0];
+}
+$("#upBtn").onclick=()=>$("#fileIn").click();
+$("#fileIn").onchange=async e=>{
+  const f=e.target.files[0];if(!f)return;
+  if(typeof XLSX==="undefined"){toast("تعذر تحميل قارئ ملفات الإكسل، أعد فتح الصفحة");return}
+  try{
+    const wb=XLSX.read(await f.arrayBuffer(),{type:"array",cellDates:true});
+    const data=XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]],{defval:""});
+    const g=(r,k)=>String(r[COLS[k]]??"").trim();
+    const out=data.map(r=>{
+      const coords=g(r,"coords")||g(r,"coords2");
+      return {vno:g(r,"vno"),visit:g(r,"visit"),name:g(r,"name"),nid:g(r,"nid"),
+        loc:[g(r,"gov"),coords].filter(Boolean).join(" — "),coords,
+        date:fmtDate(r[COLS.date]||r[COLS.date2]),officer:g(r,"officer"),explain:g(r,"explain"),
+        item:g(r,"item"),prop:g(r,"prop"),sev:g(r,"sev"),type:matchType(g(r,"item"))};
+    }).filter(r=>r.vno||r.visit);
+    if(!out.length){toast("لم أجد عمود «معرف المخالفة» في الملف");return}
+    rows=out;LS.set("vv:rows",rows);renderQueue();toast(`تم تحميل ${rows.length} مخالفة`);
+  }catch(err){toast("تعذرت قراءة الملف، تأكد أنه ملف إكسل")}
+  e.target.value="";
+};
+
+/* ===================== قائمة المخالفات ===================== */
+let qFilter="all",qSearch="";
+function statusOf(id){const a=audits[id];if(!a)return "new";return a.status||"prog"}
+const ST={new:["لم يُدقق","b-new"],prog:["قيد التدقيق","b-prog"],ok:["مكتملة","b-ok"],ret:["معادة لمأمور الضبط","b-ret"]};
+function renderQueue(){
+  const body=$("#queueBody");
+  if(!rows.length){
+    $("#qCount").textContent="";
+    body.innerHTML=`<div class="empty">ارفع ملف المخالفات من أيقونة «ملف المخالفات» بالأعلى، ثم اختر مخالفة لتعبئة النموذج تلقائياً.<br>أو اختر نوع المخالفة من النموذج وعبّئ البيانات يدوياً.</div>`;
+    return;
+  }
+  const counts={all:rows.length,new:0,ret:0,ok:0};rows.forEach(r=>{const s=statusOf(r.vno);if(s==="new"||s==="prog")counts.new++;else counts[s]++});
+  $("#qCount").textContent=`${rows.length} مخالفة`;
+  const fl=[["all","الكل"],["new","بانتظار التدقيق"],["ret","معادة"],["ok","مكتملة"]];
+  const list=rows.filter(r=>{const s=statusOf(r.vno);
+    if(qFilter==="new"&&!(s==="new"||s==="prog"))return false;
+    if(qFilter==="ret"&&s!=="ret")return false; if(qFilter==="ok"&&s!=="ok")return false;
+    if(qSearch){const h=norm([r.vno,r.visit,r.officer,r.item,r.loc,r.name].join(" "));return h.includes(norm(qSearch))||r.vno.toLowerCase().includes(qSearch.toLowerCase())}
+    return true});
+  body.innerHTML=`<div class="queue-tools"><input class="in" id="qSearch" placeholder="بحث برقم المخالفة أو المأمور أو المحافظة" value="${esc(qSearch)}"></div>
+   <div class="pill-row" style="margin-bottom:10px">${fl.map(([k,t])=>`<button type="button" class="pill" data-qf="${k}" aria-pressed="${qFilter===k}">${t} (${counts[k]})</button>`).join("")}</div>
+   <div class="queue">${list.length?list.map(r=>{const s=statusOf(r.vno);const t=r.type>=0?GUIDE[r.type].name:(r.item||"بند غير محدد");
+     return `<button type="button" class="qrow" data-id="${esc(r.vno)}" aria-current="${current===r.vno}"><span class="id">${esc(r.vno)}</span><span class="badge ${ST[s][1]}">${ST[s][0]}</span><span class="t">${esc(t)}</span><span class="m">${esc(r.officer)} — ${esc(r.loc.split(" — ")[0])} — ${esc(r.date)}</span></button>`}).join(""):`<div class="empty">لا توجد مخالفات بهذا التصنيف</div>`}</div>
+   <div style="margin-top:8px;text-align:left"><button type="button" class="linkbtn" id="clearRows">إزالة الملف من هذا الجهاز</button></div>`;
+  const qs=$("#qSearch");qs.oninput=e=>{qSearch=e.target.value;const pos=e.target.selectionStart;renderQueue();const n=$("#qSearch");n.focus();n.setSelectionRange(pos,pos)};
+  $$("[data-qf]").forEach(b=>b.onclick=()=>{qFilter=b.dataset.qf;renderQueue()});
+  $$(".qrow").forEach(b=>b.onclick=()=>{openAudit(b.dataset.id);window.scrollTo({top:$("#typeSel").closest("section").offsetTop-8,behavior:"smooth"})});
+  $("#clearRows").onclick=()=>{if(confirm("إزالة ملف المخالفات من هذا الجهاز؟ (تبقى نتائج التدقيق المحفوظة)")){rows=[];LS.del("vv:rows");renderQueue()}};
+}
+
+/* ===================== حالة التدقيق ===================== */
+function A(){
+  if(!audits[current]){
+    const r=rows.find(x=>x.vno===current);
+    audits[current]={type:r?r.type:-1,cas:null,ans:{},stage:"مدقق الشركة",status:null,
+      f:r?{vno:r.vno,name:r.name,nid:r.nid,phone:"",meter:"",date:r.date,loc:r.loc,officer:r.officer,explain:r.explain,gnotes:""}:{}};
+  }
+  audits[current].stage="مدقق الشركة";
+  return audits[current];
+}
+function save(){LS.set("vv:audits",audits);LS.set("vv:current",current)}
+function openAudit(id){current=id;A();save();renderAll()}
+
+/* ===================== النموذج ===================== */
+function buildTypeSel(){
+  const sel=$("#typeSel");let html=`<option value="-1">— اختر اسم المخالفة —</option>`,cat="";
+  GUIDE.forEach((g,i)=>{if(g.cat!==cat){if(cat)html+="</optgroup>";cat=g.cat;html+=`<optgroup label="${esc(cat)}">`}html+=`<option value="${i}">${esc(g.name)}</option>`});
+  sel.innerHTML=html+"</optgroup>";
+  sel.onchange=()=>{const a=A();a.type=+sel.value;a.cas=null;a.ans={};a.status=null;save();renderAll()};
+}
+$$("[data-f]").forEach(el=>el.addEventListener("input",()=>{A().f[el.dataset.f]=el.value;if(A().status==="ok")A().status=null;save();if(el.dataset.f==="explain")explainHint();if(current!=="manual"&&rows.length)renderQueueSoft();updateBar()}));
+$("#auditor").value=LS.get("vv:auditor","");
+$("#auditor").oninput=e=>{LS.set("vv:auditor",e.target.value);updateBar()};
+$$("[data-stage]").forEach(b=>b.onclick=()=>{A().stage=b.dataset.stage;save();renderStage()});
+function renderStage(){$$("[data-stage]").forEach(b=>b.setAttribute("aria-pressed",String(A().stage===b.dataset.stage)))}
+function explainHint(){
+  const t=(A().f.explain||"").trim(),w=t?t.split(/\s+/).length:0,h=$("#explainHint"),box=$("#explainBox");
+  const short=w<10;box.classList.toggle("short",short);h.hidden=!short;
+  h.textContent=!t?"لا يوجد شرح من مأمور الضبط. الشرح المفصل إلزامي ويجب أن يشمل الآثار والأضرار.":"الشرح مختصر (" + w + " كلمات) ولا يكفي لبيان المخالفة وآثارها وأضرارها.";
+}
+let qTimer;function renderQueueSoft(){clearTimeout(qTimer);qTimer=setTimeout(renderQueue,400)}
+
+/* ===================== قائمة التحقق ===================== */
+function sections(){
+  const a=A();if(a.type<0)return [];
+  const g=GUIDE[a.type];let req=g.req;
+  if(g.cases){req=a.cas&&g.cases[a.cas]?g.cases[a.cas]:[]}
+  const out=[];
+  if(req&&req.length)out.push({k:"r",t:"أولاً: المتطلبات والمستندات الداعمة",items:req});
+  if(g.proc.length)out.push({k:"p",t:"ثانياً: إجراءات صحة الضبط",items:g.proc});
+  out.push({k:"g",t:(out.length?"ثالثاً: ":"")+"متطلبات إلزامية لجميع المخالفات",items:GENERAL});
+  return out;
+}
+function allItems(){return sections().flatMap(s=>s.items.map(t=>({key:s.k+":"+t,t,sec:s.t})))}
+function renderCheck(){
+  const a=A(),body=$("#checkBody");
+  if(a.type<0){body.innerHTML=`<div class="empty">اختر اسم المخالفة لتظهر متطلباتها وإجراءات صحة الضبط الخاصة بها.</div>`;return}
+  const g=GUIDE[a.type];let h=`<div class="by"><b>${esc(g.cat)}</b><br>يتم ضبطها من قبل: ${esc(g.by)}</div>`;
+  const r=rows.find(x=>x.vno===current);
+  if(r&&r.item&&r.type<0)h+=`<div class="alert">بند المخالفة في الملف: «${esc(r.item)}» — لم يُطابق تلقائياً، تأكد من اختيار المخالفة الصحيحة.</div>`;
+  if(g.cases){h+=`<div style="font-size:13px;color:var(--muted);margin-bottom:6px">حدد نوع المخالفة لعرض متطلباته:</div><div class="pill-row">${Object.keys(g.cases).map(c=>`<button type="button" class="pill" data-case="${esc(c)}" aria-pressed="${a.cas===c}">في حال كانت المخالفة ${esc(c)}</button>`).join("")}</div>`;
+    if(!a.cas)h+=`<div class="alert">اختر الحالة أعلاه لإظهار المتطلبات الخاصة بها.</div>`}
+  if(!g.req?.length&&!g.cases)h+=`<div class="alert">لم يحدد الدليل متطلبات أو إجراءات خاصة لهذه المخالفة حتى الآن، فتُطبق المتطلبات الإلزامية العامة فقط.</div>`;
+  sections().forEach(s=>{
+    const done=s.items.filter(t=>a.ans[s.k+":"+t]?.s==="ok").length;
+    h+=`<h3 class="sec">${esc(s.t)}<span>${done} / ${s.items.length}</span></h3><ol class="items">`;
+    s.items.forEach((t,i)=>{const k=s.k+":"+t,v=a.ans[k]||{};
+      h+=`<li class="item ${v.s==="ok"?"s-ok":v.s==="bad"?"s-bad":""}"><div class="txt"><b>${i+1}.</b>${esc(t)}</div>
+      <div class="seg" role="group"><button type="button" data-k="${esc(k)}" data-v="ok" class="${v.s==="ok"?"on-ok":""}" aria-pressed="${v.s==="ok"}">✓ مكتمل</button><button type="button" data-k="${esc(k)}" data-v="bad" class="${v.s==="bad"?"on-bad":""}" aria-pressed="${v.s==="bad"}">✕ غير مكتمل</button></div>
+      ${v.s==="bad"?`<textarea class="in" data-note="${esc(k)}" placeholder="وضّح الخلل والمستند المطلوب استكماله">${esc(v.n||"")}</textarea>`:""}${attBlock(k)}</li>`});
+    h+=`</ol>`;
+  });
+  h+=`<div style="display:flex;gap:8px;margin-top:14px;flex-wrap:wrap"><button type="button" class="btn2" id="allOk">تعليم الكل مكتمل</button><button type="button" class="btn2" id="resetAns">مسح الإجابات</button></div>`;
+  body.innerHTML=h;
+  $$("[data-case]").forEach(b=>b.onclick=()=>{a.cas=b.dataset.case;a.ans=Object.fromEntries(Object.entries(a.ans).filter(([k])=>!k.startsWith("r:")));save();renderCheck();updateBar()});
+  $$(".seg button").forEach(b=>b.onclick=()=>{const k=b.dataset.k;const cur=a.ans[k]||{};a.ans[k]={...cur,s:cur.s===b.dataset.v?undefined:b.dataset.v};if(a.status==="ok"&&b.dataset.v==="bad")a.status=null;save();renderCheck();updateBar();renderQueueSoft()});
+  $$("[data-note]").forEach(t=>t.oninput=()=>{a.ans[t.dataset.note].n=t.value;save()});
+  $$("[data-att]").forEach(inp=>inp.onchange=e=>{const fs=[...e.target.files];e.target.value="";addFiles(inp.dataset.att,fs)});
+  $$("[data-view]").forEach(b=>b.onclick=()=>viewAtt(b.dataset.view));
+  $("#allOk").onclick=()=>{if(!confirm("تأكيد أن جميع الفقرات مكتملة بعد مراجعة المرفقات؟"))return;allItems().forEach(it=>a.ans[it.key]={s:"ok"});save();renderCheck();updateBar();renderQueueSoft()};
+  $("#resetAns").onclick=()=>{a.ans={};a.status=null;save();renderCheck();updateBar();renderQueueSoft()};
+}
+
+/* ===================== المرفقات ===================== */
+let attCache=[],attFor=null,dbp=null,pdfLib=null;
+function idb(){if(!dbp)dbp=new Promise((res,rej)=>{try{const r=indexedDB.open("vv-att",1);r.onupgradeneeded=()=>{r.result.createObjectStore("att",{keyPath:"id"}).createIndex("audit","audit")};r.onsuccess=()=>res(r.result);r.onerror=()=>rej(r.error)}catch(e){rej(e)}});return dbp}
+function tx(mode,fn){return idb().then(db=>new Promise((res,rej)=>{const t=db.transaction("att",mode);const q=fn(t.objectStore("att"));t.oncomplete=()=>res(q&&q.result);t.onerror=()=>rej(t.error);t.onabort=()=>rej(t.error)}))}
+async function loadAtt(){const id=current;try{const l=await tx("readonly",s=>s.index("audit").getAll(id));if(id===current){attCache=(l||[]).sort((a,b)=>a.t-b.t);attFor=id}}catch(e){if(id===current){attCache=[];attFor=id}}}
+function attsOf(k){return attCache.filter(r=>r.key===k)}
+const CLIP='<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m21.4 11.1-9.2 9.2a6 6 0 0 1-8.5-8.5l9.2-9.2a4 4 0 0 1 5.7 5.7l-9.2 9.2a2 2 0 0 1-2.8-2.8l8.5-8.5"/></svg>';
+function attBlock(k){const l=attsOf(k);return `<div class="att"><label class="attbtn">${CLIP}${l.length?"إضافة مرفق":"إرفاق صورة أو مستند"}<input type="file" accept="image/*,application/pdf" multiple data-att="${esc(k)}"></label>${l.map(r=>`<button type="button" class="th" data-view="${r.id}" aria-label="عرض ${esc(r.name)}"><img src="${r.pages[0]||""}" alt="">${r.pdf?`<span>PDF ${r.total} ص</span>`:""}</button>`).join("")}</div>`}
+function loadImg(file){return new Promise((res,rej)=>{const u=URL.createObjectURL(file),im=new Image();im.onload=()=>{res(im);setTimeout(()=>URL.revokeObjectURL(u),2000)};im.onerror=()=>{URL.revokeObjectURL(u);rej(new Error("img"))};im.src=u})}
+function toJpeg(src,w,h,max=1600){const sc=Math.min(1,max/Math.max(w,h)),c=document.createElement("canvas");c.width=Math.round(w*sc);c.height=Math.round(h*sc);const x=c.getContext("2d");x.fillStyle="#fff";x.fillRect(0,0,c.width,c.height);x.drawImage(src,0,0,c.width,c.height);return c.toDataURL("image/jpeg",.82)}
+function loadScript(u){return new Promise((res,rej)=>{const s=document.createElement("script");s.src=u;s.onload=res;s.onerror=rej;document.head.appendChild(s)})}
+function pdfjs(){if(!pdfLib){const b="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/";pdfLib=(async()=>{await loadScript(b+"pdf.min.js");await loadScript(b+"pdf.worker.min.js");window.pdfjsLib.GlobalWorkerOptions.workerSrc=b+"pdf.worker.min.js";return window.pdfjsLib})();pdfLib.catch(()=>{pdfLib=null})}return pdfLib}
+async function pdfPages(file){const lib=await pdfjs();const doc=await lib.getDocument({data:new Uint8Array(await file.arrayBuffer())}).promise;const out=[],n=Math.min(doc.numPages,20);for(let i=1;i<=n;i++){const p=await doc.getPage(i);const v1=p.getViewport({scale:1});const vp=p.getViewport({scale:Math.min(2,1400/v1.width)});const c=document.createElement("canvas");c.width=Math.floor(vp.width);c.height=Math.floor(vp.height);const ctx=c.getContext("2d");ctx.fillStyle="#fff";ctx.fillRect(0,0,c.width,c.height);await p.render({canvasContext:ctx,viewport:vp}).promise;out.push(c.toDataURL("image/jpeg",.8))}return {pages:out,total:doc.numPages}}
+async function addFiles(k,files){
+  if(!files.length)return;toast("جارٍ تجهيز المرفقات…");let okN=0;const aud=current;
+  for(const f of files){try{
+    const isPdf=f.type==="application/pdf"||/\.pdf$/i.test(f.name);
+    const rec={id:Date.now().toString(36)+Math.random().toString(36).slice(2,7),audit:aud,key:k,name:f.name,t:Date.now(),pdf:isPdf,total:1};
+    if(isPdf){const r=await pdfPages(f);rec.pages=r.pages;rec.total=r.total}
+    else if((f.type||"").startsWith("image/")||/\.(jpe?g|png|webp|gif|heic)$/i.test(f.name)){const im=await loadImg(f);rec.pages=[toJpeg(im,im.naturalWidth,im.naturalHeight)]}
+    else{toast("نوع الملف غير مدعوم: "+f.name);continue}
+    await tx("readwrite",s=>s.put(rec));okN++;
+  }catch(e){toast("تعذرت قراءة الملف: "+f.name)}}
+  if(aud!==current)return;await loadAtt();renderCheck();if(okN)toast(okN===1?"تم إرفاق الملف":`تم إرفاق ${okN} ملفات`);
+}
+function viewAtt(id){const r=attCache.find(x=>x.id===id);if(!r)return;const it=allItems().find(i=>i.key===r.key);
+  $("#sheet").innerHTML=`<h3>${esc(r.name)}</h3><div class="sub">${esc(it?it.t:"")}${r.pdf?` — ${r.total} صفحة${r.total>r.pages.length?` (يظهر أول ${r.pages.length})`:""}`:""}</div><div class="viewer" style="margin:12px 0">${r.pages.map(p=>`<img src="${p}" alt="">`).join("")}</div><div class="btns"><button type="button" class="btn2" id="delAtt" style="color:var(--bad)">حذف المرفق</button><button type="button" class="btn2" id="closeSh">إغلاق</button></div>`;
+  openSheet();$("#closeSh").onclick=closeSheet;
+  $("#delAtt").onclick=async()=>{if(!confirm("حذف هذا المرفق؟"))return;try{await tx("readwrite",s=>s.delete(id))}catch(e){}await loadAtt();closeSheet();renderCheck();toast("تم حذف المرفق")};
+}
+function attDoc(){const its=allItems().filter(i=>attsOf(i.key).length);if(!its.length)return "";
+  return `<h2 class="pbk">المرفقات</h2>`+its.map(i=>`<div class="ai"><div class="at">${esc(i.t)}</div>${attsOf(i.key).map(r=>`<div class="an">${esc(r.name)}${r.pdf&&r.total>r.pages.length?` (أول ${r.pages.length} من ${r.total} صفحة)`:""}</div>`+r.pages.map(p=>`<img src="${p}" alt="">`).join("")).join("")}</div>`).join("")}
+
+/* ===================== الشريط السفلي ===================== */
+function missingFields(){const a=A(),m=[];if(a.type<0)m.push("اسم المخالفة");if(!(a.f.vno||"").trim())m.push("رقم المخالفة");if(!(a.f.name||"").trim())m.push("اسم المخالف");if(!$("#auditor").value.trim())m.push("اسم المدقق");return m}
+function updateBar(){
+  const a=A(),items=allItems(),n=items.length,ok=items.filter(i=>a.ans[i.key]?.s==="ok").length,bad=items.filter(i=>a.ans[i.key]?.s==="bad").length;
+  $("#trG").style.width=n?ok/n*100+"%":"0";$("#trR").style.width=n?bad/n*100+"%":"0";
+  $("#barNum").textContent=n?`${ok} / ${n}`:"";
+  const btn=$("#actBtn");btn.className="act";btn.disabled=false;
+  const needCase=a.type>=0&&GUIDE[a.type].cases&&!a.cas;
+  if(a.type<0){$("#barState").textContent="اختر المخالفة لبدء التدقيق";btn.classList.add("wait");btn.textContent="أكمل التدقيق";btn.disabled=true;btn.onclick=null;return}
+  if(bad){$("#barState").textContent=`${bad} متطلب غير مكتمل`;btn.classList.add("ret");btn.textContent="إعادة لمأمور الضبط";btn.onclick=openReturn;return}
+  if(ok===n&&!needCase){$("#barState").textContent="جميع المتطلبات مكتملة";btn.classList.add("print");btn.textContent="طباعة المستند الداعم";btn.onclick=openPrint;return}
+  $("#barState").textContent=`متبقٍ ${n-ok} فقرة للتحقق`;btn.classList.add("wait");btn.textContent="أكمل التدقيق";btn.disabled=true;btn.onclick=null;
+}
+
+/* ===================== الإعادة لمأمور الضبط ===================== */
+function returnText(){
+  const a=A(),f=a.f,g=GUIDE[a.type],bad=allItems().filter(i=>a.ans[i.key]?.s==="bad");
+  let t=`إعادة مخالفة لمأمور الضبط لاستكمال المتطلبات\n\nرقم المخالفة: ${f.vno||"-"}\nالمخالفة: ${g.name}${a.cas?" ("+a.cas+")":""}\nالمخالف: ${f.name||"-"}\nالموقع: ${f.loc||"-"}\nتاريخ الضبط: ${f.date||"-"}\nمأمور الضبط: ${f.officer||"-"}\n\nالمتطلبات غير المكتملة:\n`;
+  bad.forEach((b,i)=>{t+=`${i+1}. ${b.t}${a.ans[b.key].n?"\n   الملاحظة: "+a.ans[b.key].n:""}\n`});
+  if((f.gnotes||"").trim())t+=`\nملاحظات عامة: ${f.gnotes.trim()}\n`;
+  t+=`\nيرجى مراجعة المتطلبات والتحقق منها، ثم إعادة رفع المخالفة مع المستند الداعم بصيغة PDF شاملاً جميع المرفقات.\n\nالمدقق: ${$("#auditor").value||"-"} — ${a.stage}`;
+  return t;
+}
+function openReturn(){
+  const t=returnText();
+  $("#sheet").innerHTML=`<h3>إعادة المخالفة لمأمور الضبط</h3><div class="sub">أرسل هذه الملاحظات لمأمور الضبط ليستكمل المتطلبات ويتحقق منها.</div><pre id="retTxt">${esc(t)}</pre>
+  <div class="btns"><button type="button" class="btn2 pri" id="cpRet">نسخ الملاحظات</button><a class="btn2" style="text-decoration:none;color:inherit" target="_blank" rel="noopener" href="https://wa.me/?text=${encodeURIComponent(t)}" id="waRet">إرسال عبر واتساب</a><button type="button" class="btn2" id="markRet">تسجيلها كمعادة</button><button type="button" class="btn2" id="closeSh">إغلاق</button></div>`;
+  openSheet();
+  $("#cpRet").onclick=()=>copy(t);
+  const mark=()=>{A().status="ret";save();renderQueue();toast("سُجلت المخالفة كمعادة لمأمور الضبط")};
+  $("#waRet").onclick=mark;$("#markRet").onclick=()=>{mark();closeSheet()};$("#closeSh").onclick=closeSheet;
+}
+
+/* ===================== المستند الداعم ===================== */
+function docHTML(){
+  const a=A(),f=a.f,g=GUIDE[a.type],now=new Date();
+  const today=`${now.getDate()}/${now.getMonth()+1}/${now.getFullYear()}`;
+  const row=(k,v)=>`<tr><th>${k}</th><td>${esc(v||"—")}</td></tr>`;
+  let secs="";sections().forEach(s=>{secs+=`<tr class="sh"><td colspan="3">${esc(s.t)}</td></tr>`;s.items.forEach((t,i)=>{secs+=`<tr><td class="n">${i+1}</td><td>${esc(t)}${attsOf(s.k+":"+t).length?` <small>(${attsOf(s.k+":"+t).length} مرفق)</small>`:""}</td><td class="st">مكتمل ✓</td></tr>`})});
+  return `<div class="pd"><style>
+  .pd{font-family:"IBM Plex Sans Arabic",Tahoma,Arial,sans-serif;color:#000;direction:rtl;font-size:12.5px;line-height:1.7;max-width:780px;margin:0 auto;padding:8px}
+  .pd .hd{display:flex;justify-content:space-between;align-items:flex-end;border-bottom:2px solid #0E3557;padding-bottom:8px;margin-bottom:12px}
+  .pd h1{font-size:18px;margin:0;color:#0E3557}.pd .hd p{margin:2px 0 0;font-size:11.5px;color:#333}
+  .pd .stamp{border:2px solid #1C7A4B;color:#1C7A4B;font-weight:700;padding:4px 10px;border-radius:6px;font-size:12px;text-align:center}
+  .pd table{width:100%;border-collapse:collapse;margin-bottom:12px}
+  .pd th,.pd td{border:1px solid #9AA8B5;padding:5px 8px;vertical-align:top;text-align:right}
+  .pd .kv th{width:30%;background:#EEF3F7;font-weight:600}
+  .pd .sh td{background:#0E3557;color:#fff;font-weight:700}
+  .pd .n{width:28px;text-align:center}.pd .st{width:80px;color:#1C7A4B;font-weight:700;white-space:nowrap}
+  .pd h2{font-size:13.5px;margin:12px 0 6px;color:#0E3557}
+  .pd .box{border:1px solid #9AA8B5;padding:8px;min-height:40px;white-space:pre-wrap}
+  .pd .sig{display:flex;gap:24px;margin-top:22px}.pd .sig div{flex:1;border-top:1px solid #000;padding-top:4px;text-align:center}
+  .pd .pbk{break-before:page;page-break-before:always}
+  .pd .ai{margin-bottom:10px}
+  .pd .at{font-weight:700;background:#EEF3F7;border:1px solid #9AA8B5;padding:4px 8px}
+  .pd .an{font-size:11px;color:#444;margin:6px 0 2px}
+  .pd .ai img{display:block;max-width:100%;max-height:245mm;margin:6px auto;border:1px solid #ccc;break-inside:avoid;page-break-inside:avoid}
+  @page{size:A4;margin:14mm}
+  </style>
+  <div class="hd"><div><h1>المستند الداعم لتدقيق مخالفة</h1><p>وفق دليل دراسة المخالفات وآلية ضبطها</p></div><div class="stamp">مكتملة المتطلبات<br>${today}</div></div>
+  <table class="kv">${row("المخالفة",g.name+(a.cas?" — "+a.cas:""))}${row("التصنيف",g.cat)}${row("رقم المخالفة",f.vno)}${row("المخالف",f.name)}${row("رقم هوية المخالف",f.nid)}${row("رقم جوال المخالف",f.phone)}${row("رقم العداد",f.meter)}${row("الموقع",f.loc)}${row("تاريخ الضبط",f.date)}${row("اسم مأمور الضبط",f.officer)}${row("يتم ضبطها من قبل",g.by)}${row("اسم المدقق",$("#auditor").value)}${row("مرحلة التدقيق",a.stage)}</table>
+  <h2>شرح المخالفة من مأمور الضبط</h2><div class="box">${esc(f.explain||"")}</div>
+  <h2>نتيجة التحقق من المتطلبات</h2><table>${secs}</table>
+  ${(f.gnotes||"").trim()?`<h2>ملاحظات عامة</h2><div class="box">${esc(f.gnotes)}</div>`:""}
+  <div class="sig"><div>توقيع المدقق</div><div>الاعتماد</div></div>${attDoc()}</div>`;
+}
+function openPrint(){
+  const m=missingFields();
+  if(m.length){toast("أكمل الحقول الإلزامية: "+m.join("، "));return}
+  A().status="ok";save();renderQueue();
+  $("#sheet").innerHTML=`<h3>المستند الداعم جاهز</h3><div class="sub">اطبعه أو احفظه، ومن نافذة الطباعة اختر «حفظ كـ PDF» لإرفاقه مع مرفقات المخالفة.</div>
+  <div class="btns" style="margin-top:14px"><button type="button" class="btn2 pri" id="doPrint">طباعة</button><button type="button" class="btn2" id="doSave" hidden>حفظ المستند كملف</button><button type="button" class="btn2" id="closeSh">إغلاق</button></div>
+  <div style="margin-top:14px;border:1px solid var(--line);border-radius:12px;background:#fff;overflow:auto;max-height:50vh">${docHTML()}</div>`;
+  openSheet();
+  $("#doPrint").onclick=()=>{$("#printDoc").innerHTML=docHTML();closeSheet();setTimeout(()=>{try{window.print()}catch(e){toast("الطباعة غير متاحة هنا، استخدم «حفظ المستند كملف»")}},150)};
+  $("#closeSh").onclick=closeSheet;
+  if(dl){const b=$("#doSave");b.hidden=false;b.onclick=saveDoc}
+}
+async function saveDoc(){
+  const html=`<!doctype html><html lang="ar" dir="rtl"><head><meta charset="utf-8"><title>مستند داعم ${esc(A().f.vno||"")}</title><link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;600;700&display=swap" rel="stylesheet"><style>body{margin:0;background:#fff}.pb{position:fixed;top:10px;left:10px;padding:8px 16px;font:inherit;cursor:pointer}@media print{.pb{display:none}}</style></head><body><button class="pb" onclick="print()">طباعة / حفظ PDF</button>${docHTML()}</body></html>`;
+  try{await dl.save({filename:`مستند-داعم-${(A().f.vno||"مخالفة").replace(/[^\w\u0600-\u06FF-]/g,"")}.html`,data:html});toast("تم حفظ المستند")}
+  catch(e){if(e&&e.code!=="declined")toast("تعذر حفظ الملف")}
+}
+
+/* ===================== أدوات ===================== */
+function openSheet(){$("#sheetBg").classList.add("open")}
+function closeSheet(){$("#sheetBg").classList.remove("open")}
+$("#sheetBg").onclick=e=>{if(e.target.id==="sheetBg")closeSheet()};
+document.addEventListener("keydown",e=>{if(e.key==="Escape")closeSheet()});
+async function copy(t){try{await navigator.clipboard.writeText(t);toast("تم النسخ")}catch(e){const ta=document.createElement("textarea");ta.value=t;document.body.appendChild(ta);ta.select();try{document.execCommand("copy");toast("تم النسخ")}catch(_){toast("تعذر النسخ")}ta.remove()}}
+let tt;function toast(m){const t=$("#toast");t.textContent=m;t.classList.add("show");clearTimeout(tt);tt=setTimeout(()=>t.classList.remove("show"),2600)}
+
+function renderAll(){
+  const a=A();$("#typeSel").value=String(a.type);
+  $$("[data-f]").forEach(el=>el.value=a.f[el.dataset.f]||"");
+  if(attFor!==current)attCache=[];
+  renderStage();explainHint();renderCheck();updateBar();renderQueue();
+  loadAtt().then(()=>{if(attFor===current)renderCheck()});
+}
+let dl=null;
+buildTypeSel();
+if(current!=="manual"&&!rows.find(r=>r.vno===current)&&!audits[current])current="manual";
+renderAll();
+</script>
+</body>
+</html>
