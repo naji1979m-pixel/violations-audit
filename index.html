@@ -578,13 +578,85 @@ function openPrint(){
   const m=missingFields();
   if(m.length){toast("أكمل الحقول الإلزامية: "+m.join("، "));return}
   A().status="ok";save();renderQueue();
-  $("#sheet").innerHTML=`<h3>المستند الداعم جاهز</h3><div class="sub">اطبعه أو احفظه، ومن نافذة الطباعة اختر «حفظ كـ PDF» لإرفاقه مع مرفقات المخالفة.</div>
-  <div class="btns" style="margin-top:14px"><button type="button" class="btn2 pri" id="doPrint">طباعة</button><button type="button" class="btn2" id="doSave" hidden>حفظ المستند كملف</button><button type="button" class="btn2" id="closeSh">إغلاق</button></div>
+  $("#sheet").innerHTML=`<h3>المستند الداعم جاهز</h3><div class="sub">اختر طريقة الإخراج: ملف PDF يشمل التدقيق وجميع المرفقات، أو طباعة مباشرة.</div>
+  <div class="btns" style="margin-top:14px"><button type="button" class="btn2 pri" id="doPdf">📄 مستند PDF</button><button type="button" class="btn2" id="doPrint">🖨️ طباعة</button><button type="button" class="btn2" id="closeSh">إغلاق</button></div>
   <div style="margin-top:14px;border:1px solid var(--line);border-radius:12px;background:#fff;overflow:auto;max-height:50vh">${docHTML()}</div>`;
   openSheet();
-  $("#doPrint").onclick=()=>{$("#printDoc").innerHTML=docHTML();closeSheet();setTimeout(()=>{try{window.print()}catch(e){toast("الطباعة غير متاحة هنا، استخدم «حفظ المستند كملف»")}},150)};
+  $("#doPrint").onclick=()=>{$("#printDoc").innerHTML=docHTML();closeSheet();setTimeout(()=>{try{window.print()}catch(e){toast("الطباعة غير متاحة هنا، استخدم «مستند PDF»")}},150)};
   $("#closeSh").onclick=closeSheet;
-  if(dl){const b=$("#doSave");b.hidden=false;b.onclick=saveDoc}
+  $("#doPdf").onclick=e=>savePdf(e.currentTarget);
+}
+let jspdfP=null;
+function jspdfLib(){if(!jspdfP){jspdfP=loadScript("https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js").then(()=>window.jspdf.jsPDF);jspdfP.catch(()=>{jspdfP=null})}return jspdfP}
+function loadI(src){return new Promise((res,rej)=>{const i=new Image();i.onload=()=>res(i);i.onerror=rej;i.src=src})}
+async function buildPdfPages(){
+  try{await document.fonts.ready}catch(e){}
+  const a=A(),f=a.f,g=GUIDE[a.type];
+  const W=1240,H=1754,M=80,CW=W-2*M,R=W-M,BOT=H-M-40;
+  const FF='"IBM Plex Sans Arabic",Tahoma,Arial,sans-serif';
+  const NAVY="#0E3557",LINE="#9AA8B5",LIGHT="#EEF3F7",GREEN="#1C7A4B";
+  const pages=[];let c,x,y;
+  function newPage(){c=document.createElement("canvas");c.width=W;c.height=H;c.setAttribute("dir","rtl");x=c.getContext("2d");x.fillStyle="#fff";x.fillRect(0,0,W,H);try{x.direction="rtl"}catch(e){}x.textBaseline="top";x.lineWidth=2;pages.push(c);y=M}
+  function font(sz,w){x.font=`${w||400} ${sz}px ${FF}`}
+  function wrap(t,maxW){const out=[];String(t==null?"":t).split(/\n/).forEach(par=>{const ws=par.split(/\s+/).filter(Boolean);let line="";if(!ws.length){out.push("");return}ws.forEach(w=>{const tr=line?line+" "+w:w;if(x.measureText(tr).width>maxW&&line){out.push(line);line=w}else line=tr});out.push(line)});return out}
+  function ensure(h){if(y+h>BOT){newPage();return true}return false}
+  function txt(s,xr,yy,col,align){x.fillStyle=col||"#000";x.textAlign=align||"right";x.fillText(s,xr,yy)}
+  newPage();
+  const now=new Date(),today=`${now.getDate()}/${now.getMonth()+1}/${now.getFullYear()}`;
+  font(40,700);txt("المستند الداعم لتدقيق مخالفة",R,y,NAVY);
+  font(22);txt("وفق دليل دراسة المخالفات وآلية ضبطها",R,y+58,"#333");
+  x.strokeStyle=GREEN;x.lineWidth=4;x.strokeRect(M,y,260,92);x.lineWidth=2;font(24,700);txt("مكتملة المتطلبات",M+130,y+14,GREEN,"center");font(22);txt(today,M+130,y+52,GREEN,"center");
+  y+=112;x.fillStyle=NAVY;x.fillRect(M,y,CW,4);y+=26;
+  const LBW=330,PAD=12,LH=34;
+  const kv=[["المخالفة",g.name+(a.cas?" — "+a.cas:"")],["التصنيف",g.cat],["رقم الزيارة",f.vno],["المخالف",f.name],["رقم هوية المخالف",f.nid],["رقم جوال المخالف",f.phone],["رقم العداد",f.meter],["الموقع",f.loc],["تاريخ الضبط",f.date],["اسم مأمور الضبط",f.officer],["يتم ضبطها من قبل",g.by],["اسم المدقق",$("#auditor").value],["مرحلة التدقيق",a.stage]];
+  kv.forEach(([k,v])=>{font(23);const lines=wrap((v||"").trim()||"—",CW-LBW-2*PAD);const h=lines.length*LH+2*PAD-4;ensure(h);
+    x.fillStyle=LIGHT;x.fillRect(R-LBW,y,LBW,h);x.strokeStyle=LINE;x.strokeRect(M,y,CW,h);x.beginPath();x.moveTo(R-LBW,y);x.lineTo(R-LBW,y+h);x.stroke();
+    font(23,600);txt(k,R-PAD,y+PAD);font(23);lines.forEach((l,i)=>txt(l,R-LBW-PAD,y+PAD+i*LH));y+=h});
+  y+=28;
+  function heading(t){ensure(64);font(28,700);txt(t,R,y,NAVY);y+=50}
+  function box(t){font(23);const lines=wrap((t||"").trim()||"—",CW-2*PAD);let i=0;while(i<lines.length){ensure(LH+2*PAD);font(23);const room=Math.max(1,Math.floor((BOT-y-2*PAD)/LH));const chunk=lines.slice(i,i+room);const h=chunk.length*LH+2*PAD;x.strokeStyle=LINE;x.strokeRect(M,y,CW,h);chunk.forEach((l,j)=>txt(l,R-PAD,y+PAD+j*LH));y+=h;i+=chunk.length}y+=28}
+  heading("شرح المخالفة من مأمور الضبط");box(f.explain);
+  heading("نتيجة التحقق من المتطلبات");
+  const NW=60,SW=170;
+  sections().forEach(s=>{ensure(110);x.fillStyle=NAVY;x.fillRect(M,y,CW,50);font(24,700);txt(s.t,R-PAD,y+11,"#fff");y+=50;
+    s.items.forEach((t,i)=>{const n=attsOf(s.k+":"+t).length;font(22);const lines=wrap(t+(n?` (${n} مرفق)`:""),CW-NW-SW-2*PAD);const h=lines.length*32+2*PAD-2;ensure(h);font(22);
+      x.strokeStyle=LINE;x.strokeRect(M,y,CW,h);x.beginPath();x.moveTo(R-NW,y);x.lineTo(R-NW,y+h);x.moveTo(M+SW,y);x.lineTo(M+SW,y+h);x.stroke();
+      txt(String(i+1),R-NW/2,y+PAD,"#000","center");lines.forEach((l,j)=>txt(l,R-NW-PAD,y+PAD+j*32));
+      font(22,700);txt("مكتمل ✓",M+SW/2,y+PAD,GREEN,"center");y+=h});
+    y+=18});
+  if((f.gnotes||"").trim()){y+=10;heading("ملاحظات عامة");box(f.gnotes)}
+  ensure(140);y+=70;x.strokeStyle="#000";const sw=(CW-80)/2;
+  [[R-sw,R,"توقيع المدقق"],[M,M+sw,"الاعتماد"]].forEach(([x1,x2,l])=>{x.beginPath();x.moveTo(x1,y);x.lineTo(x2,y);x.stroke();font(22);txt(l,(x1+x2)/2,y+12,"#000","center")});
+  y+=60;
+  const its=allItems().filter(i=>attsOf(i.key).length);
+  if(its.length){newPage();heading("المرفقات");
+    for(const it of its){font(23,700);const tl=wrap(it.t,CW-2*PAD);const th=tl.length*32+2*PAD;ensure(th+220);font(23,700);x.fillStyle=LIGHT;x.fillRect(M,y,CW,th);x.strokeStyle=LINE;x.strokeRect(M,y,CW,th);tl.forEach((l,j)=>txt(l,R-PAD,y+PAD+j*32));y+=th+10;
+      for(const r of attsOf(it.key)){ensure(44);font(19);txt(r.name+(r.pdf&&r.total>r.pages.length?` (أول ${r.pages.length} من ${r.total} صفحة)`:""),R,y,"#444");y+=34;
+        for(const p of r.pages){let im;try{im=await loadI(p)}catch(e){continue}
+          let sc=Math.min(CW/im.width,(BOT-M)/im.height,1.6);
+          if(y+im.height*sc>BOT){if(BOT-y>=320)sc=Math.min(sc,(BOT-y)/im.height);else newPage()}
+          const w=im.width*sc,h=im.height*sc;x.drawImage(im,M+(CW-w)/2,y,w,h);x.strokeStyle="#ccc";x.lineWidth=1;x.strokeRect(M+(CW-w)/2,y,w,h);x.lineWidth=2;y+=h+18}}
+      y+=14}}
+  pages.forEach((pc,i)=>{const cx=pc.getContext("2d");try{cx.direction="rtl"}catch(e){}cx.textBaseline="top";cx.font=`400 18px ${FF}`;cx.fillStyle="#666";cx.textAlign="center";cx.fillText(`صفحة ${i+1} من ${pages.length} — رقم الزيارة: ${f.vno||"-"}`,W/2,H-M+12)});
+  return pages;
+}
+async function makePdf(){
+  const JsPDF=await jspdfLib();const pages=await buildPdfPages();
+  const doc=new JsPDF({unit:"mm",format:"a4",orientation:"portrait",compress:true});
+  pages.forEach((pc,i)=>{if(i)doc.addPage();doc.addImage(pc.toDataURL("image/jpeg",0.85),"JPEG",0,0,210,297)});
+  return doc.output("blob");
+}
+function pdfName(){return `مستند-داعم-${(A().f.vno||"مخالفة").replace(/[^\w\u0600-\u06FF-]/g,"")}.pdf`}
+async function savePdf(btn){
+  const old=btn.textContent;btn.disabled=true;btn.textContent="جارٍ تجهيز PDF…";
+  try{
+    const blob=await makePdf(),name=pdfName();
+    if(dl){await dl.save({filename:name,data:blob});toast("تم حفظ ملف PDF")}
+    else{const file=new File([blob],name,{type:"application/pdf"});
+      if(/iPhone|iPad|Android/i.test(navigator.userAgent)&&navigator.canShare&&navigator.canShare({files:[file]})){await navigator.share({files:[file],title:name})}
+      else{const u=URL.createObjectURL(blob),el=document.createElement("a");el.href=u;el.download=name;document.body.appendChild(el);el.click();el.remove();setTimeout(()=>URL.revokeObjectURL(u),5000);toast("تم تنزيل ملف PDF")}}
+  }catch(e){if(!(e&&(e.name==="AbortError"||e.code==="declined")))toast("تعذر إنشاء ملف PDF، جرّب «طباعة» ثم «حفظ كـ PDF»")}
+  btn.disabled=false;btn.textContent=old;
 }
 async function saveDoc(){
   const html=`<!doctype html><html lang="ar" dir="rtl"><head><meta charset="utf-8"><title>مستند داعم ${esc(A().f.vno||"")}</title><link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;600;700&display=swap" rel="stylesheet"><style>body{margin:0;background:#fff}.pb{position:fixed;top:10px;left:10px;padding:8px 16px;font:inherit;cursor:pointer}@media print{.pb{display:none}}</style></head><body><button class="pb" onclick="print()">طباعة / حفظ PDF</button>${docHTML()}</body></html>`;
