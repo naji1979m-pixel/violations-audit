@@ -199,6 +199,7 @@ button.attbtn{background:none;font:inherit}
 .tbl.mtx th:first-child{background:var(--navy)}
 .tbl .pp{display:block;font-size:11px;color:var(--muted);font-weight:600}.tbl .z{color:var(--line)}
 .minibar{height:8px;background:var(--line);border-radius:99px;overflow:hidden}.minibar i{display:block;height:100%;background:var(--navy)}
+.repbox{border:1px solid var(--bad);background:var(--bad-bg);border-radius:12px;padding:8px 10px;margin:10px 0}.repbox .chk{align-items:flex-start}.repbox .chk input{margin-top:3px}
 #printDoc{display:none}
 @media (prefers-reduced-motion: reduce){*{transition:none!important}}
 @media print{
@@ -429,13 +430,44 @@ function fmtDate(v){
   return s.split(" ")[0];
 }
 $("#upBtn").onclick=()=>{
-  if(!window.lastOut){$("#fileIn").click();return}
-  $("#sheet").innerHTML=`<h3>ملف المخالفات</h3><div class="sub">الملف الأخير محفوظ مؤقتاً (${lastOut.length.toLocaleString("en-US")} مخالفة)، تقدر تختار منه مرة ثانية بدون إعادة قراءته.</div>
-   <div class="btns" style="margin-top:14px;flex-direction:column"><button type="button" class="btn2 pri" id="upSame">اختيار مخالفات أخرى من نفس الملف</button><button type="button" class="btn2" id="upNew">رفع ملف جديد</button><button type="button" class="btn2" id="closeSh">إلغاء</button></div>`;
+  const canDel=me&&(me.role==="admin"||me.role==="manager");
+  if(!window.lastOut&&!canDel){$("#fileIn").click();return}
+  $("#sheet").innerHTML=`<h3>ملف المخالفات</h3><div class="sub">القائمة الحالية فيها ${rows.length.toLocaleString("en-US")} مخالفة.</div>
+   <div class="btns" style="margin-top:14px;flex-direction:column">
+   ${window.lastOut?`<button type="button" class="btn2 pri" id="upSame">اختيار مخالفات أخرى من نفس الملف (${lastOut.length.toLocaleString("en-US")})</button>`:""}
+   <button type="button" class="btn2 ${window.lastOut?"":"pri"}" id="upNew">رفع ملف جديد (استبدال أو إضافة)</button>
+   ${canDel&&rows.length?`<button type="button" class="btn2" id="upDel" style="color:var(--bad);border-color:var(--bad)">🗑 حذف المخالفات المرفوعة</button>`:""}
+   <button type="button" class="btn2" id="closeSh">إلغاء</button></div>`;
   openSheet();$("#closeSh").onclick=closeSheet;
-  $("#upSame").onclick=()=>{closeSheet();setTimeout(()=>importDialog(lastOut),150)};
+  if($("#upSame"))$("#upSame").onclick=()=>{closeSheet();setTimeout(()=>importDialog(lastOut),150)};
   $("#upNew").onclick=()=>{closeSheet();$("#fileIn").click()};
+  if($("#upDel"))$("#upDel").onclick=deleteDialog;
 };
+function deleteDialog(){
+  const fr=vrows(),on=!!(F.reg||F.gov||F.vst);
+  $("#sheet").innerHTML=`<h3>حذف المخالفات المرفوعة</h3>
+   <div class="sub">يحذف المخالفات من قائمة النظام فقط. التدقيقات المنجزة ومرفقاتها تبقى محفوظة ولا تُحذف.</div>
+   <div class="btns" style="margin-top:14px;flex-direction:column">
+   ${on?`<button type="button" class="btn2" id="delF" style="color:var(--bad);border-color:var(--bad)">حذف حسب التصفية الحالية: ${esc(fLabel())} (${fr.length.toLocaleString("en-US")})</button>`:""}
+   <button type="button" class="btn2" id="delAll" style="color:#fff;background:var(--bad);border-color:var(--bad)">حذف كل المخالفات (${rows.length.toLocaleString("en-US")})</button>
+   <button type="button" class="btn2" id="closeSh">إلغاء</button></div>
+   ${on?"":`<div class="sub" style="margin-top:10px">للحذف الجزئي (منطقة أو حالة معينة): اختر التصفية من الشريط أولاً، ثم افتح هذه النافذة.</div>`}`;
+  openSheet();$("#closeSh").onclick=closeSheet;
+  if($("#delF"))$("#delF").onclick=()=>doDelete(fr.map(r=>r.vno),fLabel());
+  $("#delAll").onclick=()=>doDelete(null,"كل المخالفات");
+}
+async function doDelete(keys,label){
+  const n=keys?keys.length:rows.length;
+  if(!n){toast("لا توجد مخالفات للحذف");return}
+  if(!confirm(`تأكيد حذف ${n.toLocaleString("en-US")} مخالفة (${label}) من قائمة النظام؟\nلا يمكن التراجع، ويمكنك رفعها مرة أخرى من الملف.`))return;
+  closeSheet();
+  try{
+    if(!keys){toast("جارٍ الحذف…");const {error}=await sb.from("quality_queue").delete().neq("visit_no","__none__");if(error)throw error}
+    else for(let i=0;i<keys.length;i+=300){toast(`جارٍ الحذف… ${Math.min(i+300,keys.length)} من ${keys.length}`);const {error}=await sb.from("quality_queue").delete().in("visit_no",keys.slice(i,i+300));if(error)throw error}
+  }catch(e){toast("تعذر الحذف: "+(e.message||""));return}
+  await loadData();if(current!=="manual"&&!audits[current]&&!rows.find(r=>r.vno===current))current="manual";renderAll();go(page);toast(`تم حذف ${n.toLocaleString("en-US")} مخالفة`);
+}
+
 $("#fileIn").onchange=async e=>{
   const f=e.target.files[0];if(!f)return;
   if(typeof XLSX==="undefined"){toast("تعذر تحميل قارئ ملفات الإكسل، أعد فتح الصفحة");return}
@@ -452,7 +484,7 @@ $("#fileIn").onchange=async e=>{
         item:g(r,"item"),prop:g(r,"prop"),sev:g(r,"sev"),decision:g(r,"decision"),reason:g(r,"reason")};
     }).filter(r=>r.vno||r.visit);
     if(!out.length){toast("لم أجد عمود «معرف المخالفة» في الملف");return}
-    importDialog(out);
+    importDialog(out,true);
   }catch(err){toast("تعذرت قراءة الملف، تأكد أنه ملف إكسل")}
   e.target.value="";
 };
@@ -1232,14 +1264,15 @@ function editUser(u){
 }
 
 /* ===================== رفع التقرير مع التصفية ===================== */
-function importDialog(out){
-  window.lastOut=out;
+function importDialog(out,fresh){
+  window.lastOut=out;const canRep=me&&(me.role==="admin"||me.role==="manager")&&rows.length>0;
   const K=r=>r.visitSt||"غير محدد",RG=r=>r.region||"غير محدد";
   const vs=[...new Set(out.map(K))].sort(),regs=[...new Set(out.map(RG))].sort();
   const defSt=vs.includes("بانتظار المراجعة والاعتماد")?["بانتظار المراجعة والاعتماد"]:vs;
   const defReg=me&&me.sector&&regs.includes(me.sector)?[me.sector]:regs;
   const box=(id,list,def)=>`<div class="chks" id="${id}">${list.map(v=>`<label class="chk"><input type="checkbox" value="${esc(v)}"${def.includes(v)?" checked":""}><span>${esc(v)}</span><small></small></label>`).join("")}</div>`;
   $("#sheet").innerHTML=`<h3>اختر ما يدخل قائمة التدقيق</h3><div class="sub">الملف فيه ${out.length.toLocaleString("en-US")} مخالفة</div>
+   ${canRep?`<div class="repbox"><label class="chk"><input type="checkbox" id="impRep"${fresh?" checked":""}><span><b>استبدال الملف الحالي</b><br><small style="margin:0">يحذف كل المخالفات الموجودة الآن (${rows.length.toLocaleString("en-US")}) ويضع بدلها مخالفات هذا الملف. التدقيقات المنجزة تبقى محفوظة.</small></span></label><div class="sub" style="margin-top:4px">بدون تحديد: تُضاف المخالفات للموجود وتتحدث المكررة.</div></div>`:""}
    <h3 class="sec">حالة الزيارة</h3>${box("impSt",vs,defSt)}
    <h3 class="sec">المنطقة <span><button type="button" class="linkbtn" id="impAll">تحديد الكل</button> · <button type="button" class="linkbtn" id="impNone">إلغاء الكل</button></span></h3>${box("impReg",regs,defReg)}
    <div class="btns" style="margin-top:14px"><button type="button" class="btn2 pri" id="impGo">رفع</button><button type="button" class="btn2" id="closeSh">إلغاء</button></div>`;
@@ -1254,13 +1287,14 @@ function importDialog(out){
   document.querySelectorAll("#impSt input,#impReg input").forEach(i=>i.onchange=upd);
   $("#impAll").onclick=()=>{document.querySelectorAll("#impReg input").forEach(i=>i.checked=true);upd()};
   $("#impNone").onclick=()=>{document.querySelectorAll("#impReg input").forEach(i=>i.checked=false);upd()};
-  $("#impGo").onclick=()=>{const l=sel();closeSheet();doImport(l)};
+  $("#impGo").onclick=()=>{const l=sel(),rp=!!($("#impRep")&&$("#impRep").checked);if(rp&&!confirm(`سيتم حذف ${rows.length.toLocaleString("en-US")} مخالفة الحالية ووضع ${l.length.toLocaleString("en-US")} مخالفة من الملف الجديد بدلها. متابعة؟`))return;closeSheet();doImport(l,rp)};
   upd();
 }
-async function doImport(list){
+async function doImport(list,replace){
   const seen=new Set(),uniq=[];let dup=0;
   list.forEach(r=>{const k=r.visit||r.vno;if(!k)return;if(seen.has(k)){dup++;return}seen.add(k);uniq.push(r)});
   const up=uniq.map(r=>({visit_no:r.visit||r.vno,violation_id:r.vno||null,violator_name:r.name,violator_nid:r.nid,sector:r.gov||null,region:r.region||null,location:r.loc,visit_date:r.date,officer:r.officer,explanation:r.explain,item:r.item,property_type:r.prop,extra:{sev:r.sev||"",vstatus:r.vstatus||"",visit_status:r.visitSt||"",decision:r.decision||"",reason:r.reason||""}}));
+  if(replace){toast("جارٍ إزالة الملف السابق…");const {error}=await sb.from("quality_queue").delete().neq("visit_no","__none__");if(error){toast("تعذر إزالة الملف السابق: "+error.message);return}}
   for(let i=0;i<up.length;i+=400){toast(`جارٍ الرفع… ${Math.min(i+400,up.length)} من ${up.length}`);
     const {error}=await sb.from("quality_queue").upsert(up.slice(i,i+400),{onConflict:"visit_no"});if(error){toast("تعذر الرفع: "+error.message);return}}
   await loadData();renderQueue();toast(`تم رفع ${up.length} مخالفة. للاختيار مرة ثانية اضغط «ملف المخالفات»`+(dup?` (تجاهل ${dup} مكررة)`:""));
