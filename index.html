@@ -412,7 +412,14 @@ function fmtDate(v){
   m=s.match(/^(\d{4})-(\d{2})-(\d{2})/);if(m)return `${+m[3]}/${+m[2]}/${m[1]}`;
   return s.split(" ")[0];
 }
-$("#upBtn").onclick=()=>$("#fileIn").click();
+$("#upBtn").onclick=()=>{
+  if(!window.lastOut){$("#fileIn").click();return}
+  $("#sheet").innerHTML=`<h3>ملف المخالفات</h3><div class="sub">الملف الأخير محفوظ مؤقتاً (${lastOut.length.toLocaleString("ar-SA")} مخالفة)، تقدر تختار منه مرة ثانية بدون إعادة قراءته.</div>
+   <div class="btns" style="margin-top:14px;flex-direction:column"><button type="button" class="btn2 pri" id="upSame">اختيار مخالفات أخرى من نفس الملف</button><button type="button" class="btn2" id="upNew">رفع ملف جديد</button><button type="button" class="btn2" id="closeSh">إلغاء</button></div>`;
+  openSheet();$("#closeSh").onclick=closeSheet;
+  $("#upSame").onclick=()=>{closeSheet();setTimeout(()=>importDialog(lastOut),150)};
+  $("#upNew").onclick=()=>{closeSheet();$("#fileIn").click()};
+};
 $("#fileIn").onchange=async e=>{
   const f=e.target.files[0];if(!f)return;
   if(typeof XLSX==="undefined"){toast("تعذر تحميل قارئ ملفات الإكسل، أعد فتح الصفحة");return}
@@ -1129,6 +1136,7 @@ function editUser(u){
 
 /* ===================== رفع التقرير مع التصفية ===================== */
 function importDialog(out){
+  window.lastOut=out;
   const K=r=>r.visitSt||"غير محدد",RG=r=>r.region||"غير محدد";
   const vs=[...new Set(out.map(K))].sort(),regs=[...new Set(out.map(RG))].sort();
   const defSt=vs.includes("بانتظار المراجعة والاعتماد")?["بانتظار المراجعة والاعتماد"]:vs;
@@ -1158,7 +1166,7 @@ async function doImport(list){
   const up=uniq.map(r=>({visit_no:r.visit||r.vno,violation_id:r.vno||null,violator_name:r.name,violator_nid:r.nid,sector:r.gov||null,region:r.region||null,location:r.loc,visit_date:r.date,officer:r.officer,explanation:r.explain,item:r.item,property_type:r.prop,extra:{sev:r.sev||"",vstatus:r.vstatus||"",visit_status:r.visitSt||""}}));
   for(let i=0;i<up.length;i+=400){toast(`جارٍ الرفع… ${Math.min(i+400,up.length)} من ${up.length}`);
     const {error}=await sb.from("quality_queue").upsert(up.slice(i,i+400),{onConflict:"visit_no"});if(error){toast("تعذر الرفع: "+error.message);return}}
-  await loadData();renderQueue();toast(`تم رفع ${up.length} مخالفة للقائمة المشتركة`+(dup?` (تجاهل ${dup} مكررة برقم الزيارة)`:""));
+  await loadData();renderQueue();toast(`تم رفع ${up.length} مخالفة. للاختيار مرة ثانية اضغط «ملف المخالفات»`+(dup?` (تجاهل ${dup} مكررة)`:""));
 }
 
 buildTypeSel();
