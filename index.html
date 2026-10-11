@@ -189,6 +189,12 @@ button.attbtn{background:none;font:inherit}
 .fbar select{min-height:38px;padding:4px 8px;font-size:14px}
 .fbar.on{border-color:var(--navy);box-shadow:0 0 0 2px rgba(14,53,87,.12)}
 .ftag{display:inline-block;font-size:12px;background:var(--field);border:1px solid var(--line);border-radius:999px;padding:2px 10px;margin-inline-start:6px;font-weight:500;color:var(--muted)}
+.kpi small{display:block;font-size:13px;font-weight:700;color:var(--muted);margin-top:2px}
+.kpi.k-gray{border-inline-start-color:#A7B4C2}
+.sbar{display:flex;height:14px;border-radius:99px;overflow:hidden;background:var(--line);margin:4px 0 8px}
+.sbar i{display:block;height:100%}
+.slegend{display:flex;flex-wrap:wrap;gap:6px 14px;font-size:12.5px;color:var(--muted);margin-bottom:6px}
+.slegend b{display:inline-block;width:10px;height:10px;border-radius:3px;margin-inline-end:5px;vertical-align:middle}
 #printDoc{display:none}
 @media (prefers-reduced-motion: reduce){*{transition:none!important}}
 @media print{
@@ -420,7 +426,7 @@ function fmtDate(v){
 }
 $("#upBtn").onclick=()=>{
   if(!window.lastOut){$("#fileIn").click();return}
-  $("#sheet").innerHTML=`<h3>ملف المخالفات</h3><div class="sub">الملف الأخير محفوظ مؤقتاً (${lastOut.length.toLocaleString("ar-SA")} مخالفة)، تقدر تختار منه مرة ثانية بدون إعادة قراءته.</div>
+  $("#sheet").innerHTML=`<h3>ملف المخالفات</h3><div class="sub">الملف الأخير محفوظ مؤقتاً (${lastOut.length.toLocaleString("en-US")} مخالفة)، تقدر تختار منه مرة ثانية بدون إعادة قراءته.</div>
    <div class="btns" style="margin-top:14px;flex-direction:column"><button type="button" class="btn2 pri" id="upSame">اختيار مخالفات أخرى من نفس الملف</button><button type="button" class="btn2" id="upNew">رفع ملف جديد</button><button type="button" class="btn2" id="closeSh">إلغاء</button></div>`;
   openSheet();$("#closeSh").onclick=closeSheet;
   $("#upSame").onclick=()=>{closeSheet();setTimeout(()=>importDialog(lastOut),150)};
@@ -460,16 +466,16 @@ function renderQueue(){
     body.innerHTML=`<div class="empty">ارفع ملف المخالفات من أيقونة «ملف المخالفات» بالأعلى، ثم اختر مخالفة لتعبئة النموذج تلقائياً.<br>أو اختر نوع المخالفة من النموذج وعبّئ البيانات يدوياً.</div>`;
     return;
   }
-  const counts={all:rows.length,new:0,ret:0,ok:0};rows.forEach(r=>{const s=statusOf(r.vno);if(s==="new"||s==="prog")counts.new++;else counts[s]++});
+    const counts={all:rows.length,new:0,prog:0,ret:0,ok:0};rows.forEach(r=>{counts[statusOf(r.vno)]++});const pc=k=>rows.length?Math.round(counts[k]/rows.length*1000)/10+"%":"0%";
   $("#qCount").textContent=`${rows.length} مخالفة`;
-  const fl=[["all","الكل"],["new","بانتظار التدقيق"],["ret","معادة"],["ok","مكتملة"]];
+  const fl=[["all","الكل"],["ok","مكتملة"],["ret","معادة"],["prog","قيد التدقيق"],["new","غير مقيّمة"]];
   const list=rows.filter(r=>{const s=statusOf(r.vno);
-    if(qFilter==="new"&&!(s==="new"||s==="prog"))return false;
+    if(qFilter==="new"&&s!=="new")return false;if(qFilter==="prog"&&s!=="prog")return false;
     if(qFilter==="ret"&&s!=="ret")return false; if(qFilter==="ok"&&s!=="ok")return false;
     if(qSearch){const h=r._h||norm([r.vno,r.vid,r.officer,r.item,r.region,r.sector,r.name].join(" "));return h.includes(norm(qSearch))||r.vno.toLowerCase().includes(qSearch.toLowerCase())}
     return true});
   body.innerHTML=`<div class="queue-tools"><input class="in" id="qSearch" placeholder="بحث برقم الزيارة أو المفتش أو المحافظة" value="${esc(qSearch)}"></div>
-   <div class="pill-row" style="margin-bottom:10px">${fl.map(([k,t])=>`<button type="button" class="pill" data-qf="${k}" aria-pressed="${qFilter===k}">${t} (${counts[k]})</button>`).join("")}</div>
+   <div class="pill-row" style="margin-bottom:10px">${fl.map(([k,t])=>`<button type="button" class="pill" data-qf="${k}" aria-pressed="${qFilter===k}">${t} ${counts[k].toLocaleString("en-US")}${k!=="all"?` · ${pc(k)}`:""}</button>`).join("")}</div>
    <div class="queue">${list.length?list.slice(0,60).map(r=>{const s=statusOf(r.vno);const t=r.type>=0?GUIDE[r.type].name:(r.item||"بند غير محدد");
      return `<button type="button" class="qrow" data-id="${esc(r.vno)}" aria-current="${current===r.vno}"><span class="id">${esc(r.visit||r.vno)}</span><span class="badge ${ST[s][1]}">${ST[s][0]}</span><span class="t">${esc(t)}</span><span class="m">${esc(r.officer)} — ${esc([r.region,r.sector].filter(Boolean).join(" — "))} — ${esc(r.date)}</span></button>`}).join(""):`<div class="empty">لا توجد مخالفات بهذا التصنيف</div>`}</div>${list.length>60?`<div class="sub" style="margin-top:6px">يظهر أول 60 من ${list.length}، استخدم البحث للوصول لغيرها.</div>`:""}
    `;
@@ -953,7 +959,7 @@ function buildFilters(){
   const regC=cnt(base,"region");
   const govBase=base.filter(r=>!F.reg||(r.region||"غير محدد")===F.reg);const govC=cnt(govBase,"sector");
   const vBase=rows.filter(r=>(!F.reg||(r.region||"غير محدد")===F.reg)&&(!F.gov||(r.sector||"غير محدد")===F.gov));const vC=cnt(vBase,"vvisit");
-  const opt=(m,sel,all,total)=>`<option value="">${all} (${total.toLocaleString("ar-SA")})</option>`+Object.keys(m).sort((a,b)=>m[b]-m[a]).map(k=>`<option value="${esc(k)}"${k===sel?" selected":""}>${esc(k)} (${m[k].toLocaleString("ar-SA")})</option>`).join("");
+  const opt=(m,sel,all,total)=>`<option value="">${all} (${total.toLocaleString("en-US")})</option>`+Object.keys(m).sort((a,b)=>m[b]-m[a]).map(k=>`<option value="${esc(k)}"${k===sel?" selected":""}>${esc(k)} (${m[k].toLocaleString("en-US")})</option>`).join("");
   $("#fReg").innerHTML=opt(regC,F.reg,"كل المناطق",base.length);
   $("#fGov").innerHTML=opt(govC,F.gov,"كل المحافظات",govBase.length);$("#fGov").disabled=!F.reg;
   $("#fVst").innerHTML=opt(vC,F.vst,"كل الحالات",vBase.length);
@@ -965,6 +971,13 @@ $("#fGov").onchange=e=>setF("gov",e.target.value);
 $("#fVst").onchange=e=>setF("vst",e.target.value);
 $("#fClr").onclick=()=>{F={reg:"",gov:"",vst:""};setF("reg","")};
 
+function statusBlock(st){
+  const T=st.tot.total||0,p=v=>T?Math.round(v/T*1000)/10:0;
+  const items=[["مكتملة",st.tot.completed,"k-ok",C.green],["معادة للمفتش",st.tot.returned,"k-bad",C.red],["قيد التدقيق",st.tot.progress,"k-warn",C.amber],["غير المقيّمة",st.tot.pending,"k-gray",C.gray]];
+  return `<div class="kpis">${kpi("إجمالي المخالفات",T.toLocaleString("en-US"),"k-navy","100%")}${items.map(i=>kpi(i[0],i[1].toLocaleString("en-US"),i[2],p(i[1])+"%")).join("")}</div>
+  <div class="sbar" role="img" aria-label="توزيع الحالات">${items.map(i=>T&&i[1]?`<i style="width:${i[1]/T*100}%;background:${i[3]}" title="${i[0]}: ${p(i[1])}%"></i>`:"").join("")}</div>
+  <div class="slegend">${items.map(i=>`<span><b style="background:${i[3]}"></b>${i[0]} ${p(i[1])}%</span>`).join("")}</div>`;
+}
 function chartItems(st){return F.reg&&st.bySec.length===1?st.bySec[0].govList:st.bySec}
 function computeStats(period){
   const since=periodStart(period||"all");const inP=a=>!since||((a.doneAt||a.retAt||a.updated||0)>=since);
@@ -982,10 +995,10 @@ function computeStats(period){
       Object.entries(a.ans||{}).forEach(([k,v])=>{if(v&&v.s==="bad"){const t=k.slice(2);fail[t]=(fail[t]||0)+1}})}
   });
   Object.values(byUser).forEach(U=>{U.evaluated=U.completed+U.returned;U.list.sort((x,y)=>(y.a.updated||0)-(x.a.updated||0))});
-  Object.values(bySec).forEach(S=>{S.evaluated=S.completed+S.returned;S.notEval=S.pending+S.progress;S.govList=Object.values(S.govs).map(G=>(G.evaluated=G.completed+G.returned,G.notEval=G.pending+G.progress,G)).sort((a,b)=>b.total-a.total)});
+  Object.values(bySec).forEach(S=>{S.evaluated=S.completed+S.returned;S.notEval=S.pending;S.govList=Object.values(S.govs).map(G=>(G.evaluated=G.completed+G.returned,G.notEval=G.pending,G)).sort((a,b)=>b.total-a.total)});
   const evaluated=tot.completed+tot.returned;
   users.filter(u=>u.role==="staff"&&u.active&&!byUser[u.id]).forEach(u=>{byUser[u.id]={id:u.id,label:u.full_name,total:0,completed:0,returned:0,progress:0,pending:0,last:0,list:[],evaluated:0}});
-  return {period:period||"all",tot,evaluated,notEval:tot.pending+tot.progress,rate:tot.total?evaluated/tot.total:0,retRate:evaluated?tot.returned/evaluated:0,
+  return {period:period||"all",tot,evaluated,notEval:tot.pending,rate:tot.total?evaluated/tot.total:0,retRate:evaluated?tot.returned/evaluated:0,
     bySec:Object.values(bySec).sort((a,b)=>b.total-a.total),byGov:Object.values(bySec).sort((a,b)=>b.total-a.total).flatMap(S=>S.govList),byUser:Object.values(byUser).sort((a,b)=>b.evaluated-a.evaluated||b.total-a.total),
     byType:Object.values(byType).sort((a,b)=>b.total-a.total),fail:Object.entries(fail).sort((a,b)=>b[1]-a[1]).slice(0,10)};
 }
@@ -1029,7 +1042,7 @@ function renderDash(){
   $("#dashBody").innerHTML=`
   <section class="block"><h2>إنجازي</h2><div class="kpis">${kpi("قيّمتها",mine.evaluated,"k-navy")}${kpi("مكتملة",mine.completed,"k-ok")}${kpi("معادة للمفتش",mine.returned,"k-bad")}${kpi("قيد التدقيق",mine.progress,"k-warn")}</div></section>
   ${mySec?`<section class="block"><h2>منطقتي: ${esc(mySec.label)}</h2><div class="kpis">${kpi("الإجمالي",mySec.total)}${kpi("المقيّمة",mySec.evaluated,"k-ok")}${kpi("غير المقيّمة",mySec.notEval,"k-warn")}</div></section>`:""}
-  <section class="block"><h2>المخالفات حسب المنطقة</h2><div class="kpis">${kpi("إجمالي المخالفات",st.tot.total)}${kpi("المقيّمة",st.evaluated,"k-ok")}${kpi("غير المقيّمة",st.notEval,"k-warn")}${kpi("نسبة الإنجاز",pct(st.rate),"k-navy")}</div>
+  <section class="block"><h2>حالات المخالفات</h2>${statusBlock(st)}</section><section class="block"><h2>المخالفات حسب المنطقة</h2>
   <div class="chart">${svgBars(chartItems(st),SEC_SERIES,"المخالفات حسب المنطقة")}</div><div class="sub" style="margin-bottom:6px">اضغط على المنطقة لعرض محافظاتها</div>${secTable(st.bySec)}</section>`;
   bindReg($("#dashBody"));
 }
@@ -1055,7 +1068,7 @@ function renderReport(){
   const per=$("#repPeriod")?$("#repPeriod").value:"all",st=computeStats(per);
   $("#reportBody").innerHTML=`<section class="block"><h2><span>تقرير الجودة<span class="ftag">${esc(fLabel())}</span></span> ${periodSel("repPeriod",per)}</h2>
   <div class="btns" style="margin-bottom:14px"><button type="button" class="btn2 pri" id="repPdf">📄 تصدير PDF</button><button type="button" class="btn2" id="repXls">📊 تصدير Excel</button></div>
-  <div class="kpis">${kpi("إجمالي المخالفات",st.tot.total)}${kpi("المقيّمة",st.evaluated,"k-ok")}${kpi("غير المقيّمة",st.notEval,"k-warn")}${kpi("نسبة الإنجاز",pct(st.rate),"k-navy")}${kpi("مكتملة",st.tot.completed,"k-ok")}${kpi("معادة للمفتش",st.tot.returned,"k-bad")}${kpi("نسبة الإعادة",pct(st.retRate),"k-bad")}${kpi("قيد التدقيق",st.tot.progress,"k-warn")}</div></section>
+  ${statusBlock(st)}<div class="kpis" style="margin-top:10px">${kpi("نسبة الإنجاز (المقيّمة)",pct(st.rate),"k-navy",st.evaluated.toLocaleString("en-US")+" مقيّمة")}${kpi("نسبة الإعادة من المقيّمة",pct(st.retRate),"k-bad")}</div></section>
   <section class="block"><h2>حسب المنطقة والمحافظة</h2><div class="chart">${svgBars(chartItems(st),SEC_SERIES,"حسب المنطقة")}</div><div class="sub" style="margin-bottom:6px">اضغط على المنطقة لعرض محافظاتها</div>${secTable(st.bySec)}</section>
   <section class="block"><h2>أداء موظفي الجودة</h2><div class="chart">${svgBars(st.byUser,USR_SERIES,"أداء الموظفين")}</div></section>
   <section class="block"><h2>حسب بند اللائحة</h2><div class="tbl-wrap"><table class="tbl"><thead><tr><th>وصف بند اللائحة</th><th>المدققة</th><th>مكتملة</th><th>معادة</th></tr></thead><tbody>${st.byType.map(t=>`<tr><td>${esc(t.label)}</td><td>${t.total}</td><td>${t.completed}</td><td>${t.returned}</td></tr>`).join("")||`<tr><td colspan="4">لا توجد بيانات</td></tr>`}</tbody></table></div></section>
@@ -1088,7 +1101,7 @@ async function exportReportPdf(st,btn){
     font(40,700);txt("تقرير الجودة",R,y,C.navy);font(22);txt("نظام الجودة والتحقق من متطلبات والاشتراطات اللازمة للمخالفات",R,y+58,"#333");
     font(20);txt(`النطاق: ${fLabel()} — الفترة: ${PERIODS[st.period]}`,R,y+94,"#555");font(18);txt(`تاريخ الإصدار: ${stamp()} — أعدّه: ${me.full_name}`,R,y+122,"#777");
     y+=156;x.fillStyle=C.navy;x.fillRect(M,y,CW,4);y+=28;
-    const K=[["إجمالي المخالفات",st.tot.total,C.navy],["المقيّمة",st.evaluated,C.green],["غير المقيّمة",st.notEval,C.amber],["نسبة الإنجاز",pct(st.rate),C.navy],["مكتملة",st.tot.completed,C.green],["معادة للمفتش",st.tot.returned,C.red],["نسبة الإعادة",pct(st.retRate),C.red],["قيد التدقيق",st.tot.progress,C.amber]];
+    const PT=v=>st.tot.total?(Math.round(v/st.tot.total*1000)/10)+"%":"0%";const K=[["إجمالي المخالفات",st.tot.total,C.navy],["مكتملة — "+PT(st.tot.completed),st.tot.completed,C.green],["معادة للمفتش — "+PT(st.tot.returned),st.tot.returned,C.red],["قيد التدقيق — "+PT(st.tot.progress),st.tot.progress,C.amber],["غير المقيّمة — "+PT(st.tot.pending),st.tot.pending,"#7A8896"],["المقيّمة",st.evaluated,C.green],["نسبة الإنجاز",pct(st.rate),C.navy],["نسبة الإعادة من المقيّمة",pct(st.retRate),C.red]];
     const bw=(CW-3*20)/4;K.forEach((k,i)=>{const col=i%4,row=Math.floor(i/4);const bx=R-(col+1)*bw-col*20,by=y+row*130;x.strokeStyle=C.line;x.strokeRect(bx,by,bw,112);x.fillStyle=k[2];x.fillRect(bx+bw-6,by,6,112);font(40,700);txt(String(k[1]),bx+bw-24,by+14,k[2]);font(20);txt(k[0],bx+bw-24,by+70,"#333")});
     y+=270;
     head("حسب المنطقة");chart(chartItems(st),SEC_SERIES);
@@ -1120,7 +1133,7 @@ async function exportReportXls(st,btn){
       const hr=ws.getRow(r0+3);cols.forEach((c,i)=>{const cell=hr.getCell(i+1);cell.value=c.t;cell.fill=HEAD;cell.font={bold:true,color:{argb:"FFFFFFFF"}};cell.alignment={horizontal:"center",vertical:"middle",wrapText:true};cell.border=B});hr.height=22;
       data.forEach((d,j)=>{const rw=ws.getRow(r0+4+j);d.forEach((v,i)=>{const cell=rw.getCell(i+1);cell.value=v;cell.border=B;cell.alignment={horizontal:i===0?"right":"center",vertical:"middle",wrapText:true}})});
       return {ws,next:r0+5+data.length}};
-    const s1=sheet("الملخص","تقرير الجودة — الملخص",[{t:"المؤشر",w:32},{t:"القيمة",w:16}],[["إجمالي المخالفات",st.tot.total],["المقيّمة",st.evaluated],["غير المقيّمة",st.notEval],["نسبة الإنجاز",pct(st.rate)],["مكتملة",st.tot.completed],["معادة للمفتش",st.tot.returned],["نسبة الإعادة",pct(st.retRate)],["قيد التدقيق",st.tot.progress]]);
+    const s1=sheet("الملخص","تقرير الجودة — الملخص",[{t:"المؤشر",w:32},{t:"العدد",w:14},{t:"النسبة",w:12}],(()=>{const PT=v=>st.tot.total?(Math.round(v/st.tot.total*1000)/10)+"%":"0%";return [["إجمالي المخالفات",st.tot.total,"100%"],["مكتملة",st.tot.completed,PT(st.tot.completed)],["معادة للمفتش",st.tot.returned,PT(st.tot.returned)],["قيد التدقيق",st.tot.progress,PT(st.tot.progress)],["غير المقيّمة",st.tot.pending,PT(st.tot.pending)],["المقيّمة (مكتملة + معادة)",st.evaluated,pct(st.rate)],["نسبة الإعادة من المقيّمة","",pct(st.retRate)]]})());
     const addChart=(ws,row,items,series)=>{if(!items.length)return row;const cv=canvasBars(items,series,900);const id=wb.addImage({base64:cv.toDataURL("image/png"),extension:"png"});ws.addImage(id,{tl:{col:0,row:row},ext:{width:620,height:620*cv.height/cv.width}});return row+Math.ceil(620*cv.height/cv.width/20)+2};
     let rr=addChart(s1.ws,s1.next,chartItems(st),SEC_SERIES);addChart(s1.ws,rr,st.byUser,USR_SERIES);
     sheet("حسب المنطقة","المخالفات حسب المنطقة",[{t:"المنطقة",w:28},{t:"الإجمالي",w:12},{t:"المقيّمة",w:12},{t:"غير المقيّمة",w:14},{t:"مكتملة",w:12},{t:"معادة",w:12},{t:"قيد التدقيق",w:14},{t:"لم تبدأ",w:12}],st.bySec.map(s=>[s.label,s.total,s.evaluated,s.notEval,s.completed,s.returned,s.progress,s.pending]));
@@ -1190,7 +1203,7 @@ function importDialog(out){
   const defSt=vs.includes("بانتظار المراجعة والاعتماد")?["بانتظار المراجعة والاعتماد"]:vs;
   const defReg=me&&me.sector&&regs.includes(me.sector)?[me.sector]:regs;
   const box=(id,list,def)=>`<div class="chks" id="${id}">${list.map(v=>`<label class="chk"><input type="checkbox" value="${esc(v)}"${def.includes(v)?" checked":""}><span>${esc(v)}</span><small></small></label>`).join("")}</div>`;
-  $("#sheet").innerHTML=`<h3>اختر ما يدخل قائمة التدقيق</h3><div class="sub">الملف فيه ${out.length.toLocaleString("ar-SA")} مخالفة</div>
+  $("#sheet").innerHTML=`<h3>اختر ما يدخل قائمة التدقيق</h3><div class="sub">الملف فيه ${out.length.toLocaleString("en-US")} مخالفة</div>
    <h3 class="sec">حالة الزيارة</h3>${box("impSt",vs,defSt)}
    <h3 class="sec">المنطقة <span><button type="button" class="linkbtn" id="impAll">تحديد الكل</button> · <button type="button" class="linkbtn" id="impNone">إلغاء الكل</button></span></h3>${box("impReg",regs,defReg)}
    <div class="btns" style="margin-top:14px"><button type="button" class="btn2 pri" id="impGo">رفع</button><button type="button" class="btn2" id="closeSh">إلغاء</button></div>`;
@@ -1199,9 +1212,9 @@ function importDialog(out){
   const sel=()=>{const st=chk("impSt"),rg=chk("impReg");return out.filter(r=>st.has(K(r))&&rg.has(RG(r)))};
   const upd=()=>{const st=chk("impSt"),rg=chk("impReg"),cr={},cs={};
     out.forEach(r=>{if(st.has(K(r)))cr[RG(r)]=(cr[RG(r)]||0)+1;if(rg.has(RG(r)))cs[K(r)]=(cs[K(r)]||0)+1});
-    document.querySelectorAll("#impReg .chk").forEach(l=>l.querySelector("small").textContent=(cr[l.querySelector("input").value]||0).toLocaleString("ar-SA"));
-    document.querySelectorAll("#impSt .chk").forEach(l=>l.querySelector("small").textContent=(cs[l.querySelector("input").value]||0).toLocaleString("ar-SA"));
-    const n=sel().length;const b=$("#impGo");b.textContent=`رفع ${n.toLocaleString("ar-SA")} مخالفة`;b.disabled=!n};
+    document.querySelectorAll("#impReg .chk").forEach(l=>l.querySelector("small").textContent=(cr[l.querySelector("input").value]||0).toLocaleString("en-US"));
+    document.querySelectorAll("#impSt .chk").forEach(l=>l.querySelector("small").textContent=(cs[l.querySelector("input").value]||0).toLocaleString("en-US"));
+    const n=sel().length;const b=$("#impGo");b.textContent=`رفع ${n.toLocaleString("en-US")} مخالفة`;b.disabled=!n};
   document.querySelectorAll("#impSt input,#impReg input").forEach(i=>i.onchange=upd);
   $("#impAll").onclick=()=>{document.querySelectorAll("#impReg input").forEach(i=>i.checked=true);upd()};
   $("#impNone").onclick=()=>{document.querySelectorAll("#impReg input").forEach(i=>i.checked=false);upd()};
