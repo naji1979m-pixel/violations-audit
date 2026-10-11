@@ -459,7 +459,7 @@ function renderQueue(){
   const list=rows.filter(r=>{const s=statusOf(r.vno);
     if(qFilter==="new"&&!(s==="new"||s==="prog"))return false;
     if(qFilter==="ret"&&s!=="ret")return false; if(qFilter==="ok"&&s!=="ok")return false;
-    if(qSearch){const h=norm([r.vno,r.visit,r.vid,r.officer,r.item,r.region,r.sector,r.name].join(" "));return h.includes(norm(qSearch))||r.vno.toLowerCase().includes(qSearch.toLowerCase())}
+    if(qSearch){const h=r._h||norm([r.vno,r.vid,r.officer,r.item,r.region,r.sector,r.name].join(" "));return h.includes(norm(qSearch))||r.vno.toLowerCase().includes(qSearch.toLowerCase())}
     return true});
   body.innerHTML=`<div class="queue-tools"><input class="in" id="qSearch" placeholder="بحث برقم الزيارة أو المفتش أو المحافظة" value="${esc(qSearch)}"></div>
    <div class="pill-row" style="margin-bottom:10px">${fl.map(([k,t])=>`<button type="button" class="pill" data-qf="${k}" aria-pressed="${qFilter===k}">${t} (${counts[k]})</button>`).join("")}</div>
@@ -502,7 +502,15 @@ function A(){
   audits[current].stage="مدقق الشركة";
   return audits[current];
 }
-function openAudit(id){current=id;activeKey=null;A();save();renderAll()}
+function openAudit(id){current=id;activeKey=null;A();save();renderAll();loadDetails(id)}
+async function loadDetails(id){
+  const r=rows.find(x=>x.vno===id);if(!r||r._full||!sb)return;
+  const {data}=await sb.from("quality_queue").select("violator_nid,location,explanation").eq("visit_no",id).maybeSingle();
+  if(!data)return;r.nid=data.violator_nid||"";r.loc=data.location||"";r.explain=data.explanation||"";r._full=true;
+  const a=audits[id];if(!a)return;const f=a.f;let ch=false;
+  [["nid",r.nid],["loc",r.loc],["explain",r.explain]].forEach(([k,v])=>{if(!f[k]&&v){f[k]=v;ch=true}});
+  if(ch&&current===id){renderAll();if(a._id)save()}
+}
 
 /* ===================== النموذج ===================== */
 function buildTypeSel(){
@@ -815,10 +823,16 @@ let LOGO=null,LOGO_IMG=null;
 function uuid(){if(window.crypto&&crypto.randomUUID)return crypto.randomUUID();return "10000000-1000-4000-8000-100000000000".replace(/[018]/g,c=>(c^crypto.getRandomValues(new Uint8Array(1))[0]&15>>c/4).toString(16))}
 
 /* ----- التحميل ----- */
-async function fetchAll(table){let out=[],from=0;for(;;){const {data,error}=await sb.from(table).select("*").range(from,from+999);if(error)throw error;out=out.concat(data||[]);if(!data||data.length<1000)break;from+=1000}return out}
-async function loadQueue(){const q=await fetchAll("quality_queue");const MT={};rows=q.map(x=>({vno:x.visit_no,visit:x.visit_no,vid:x.violation_id||"",name:x.violator_name||"",nid:x.violator_nid||"",loc:x.location||"",sector:x.sector||"",region:x.region||"",sev:(x.extra||{}).sev||"",vstat:(x.extra||{}).vstatus||"",date:x.visit_date||"",officer:x.officer||"",explain:x.explanation||"",item:x.item||"",prop:x.property_type||"",type:(x.item||"") in MT?MT[x.item||""]:(MT[x.item||""]=matchType(x.item||""))}))}
+async function fetchAll(table,cols,label){
+  const {count,error:ce}=await sb.from(table).select("visit_no",{count:"exact",head:true});if(ce)throw ce;
+  const n=count||0,pages=Math.ceil(n/1000),out=new Array(pages);let done=0,next=0;
+  const worker=async()=>{while(next<pages){const i=next++;const {data,error}=await sb.from(table).select(cols||"*").order("visit_no").range(i*1000,i*1000+999);if(error)throw error;out[i]=data||[];done++;if(label&&pages>3)toast(`${label}… ${Math.round(done/pages*100)}%`)}};
+  await Promise.all(Array.from({length:Math.min(6,pages)},worker));return out.flat();
+}
+const QCOLS="visit_no,violation_id,violator_name,sector,region,visit_date,officer,item,property_type,extra";
+async function loadQueue(){const q=await fetchAll("quality_queue",QCOLS,"جارٍ تحميل المخالفات");const MT={};rows=q.map(x=>{const r={vno:x.visit_no,visit:x.visit_no,vid:x.violation_id||"",name:x.violator_name||"",nid:"",loc:"",sector:x.sector||"",region:x.region||"",sev:(x.extra||{}).sev||"",vstat:(x.extra||{}).vstatus||"",date:x.visit_date||"",officer:x.officer||"",explain:"",item:x.item||"",prop:x.property_type||"",type:(x.item||"") in MT?MT[x.item||""]:(MT[x.item||""]=matchType(x.item||""))};r._h=norm([r.vno,r.vid,r.officer,r.item,r.region,r.sector,r.name].join(" "));return r})}
 async function loadAudits(){
-  const q=await fetchAll("quality_audits");const keep=audits.manual;audits={};
+  const q=await fetchAll("quality_audits","*");const keep=audits.manual;audits={};
   q.forEach(x=>{audits[x.visit_no]={_id:x.id,_owner:x.auditor_id,_ro:me.role==="staff"&&x.auditor_id!==me.id,
     type:x.violation_type==null?-1:x.violation_type,cas:x.case_name,ans:x.answers||{},f:x.fields||{},sector:x.sector||"",region:x.region||"",vid:x.violation_id||"",
     status:x.status==="completed"?"ok":x.status==="returned"?"ret":null,doneAt:x.completed_at?Date.parse(x.completed_at):null,
@@ -911,7 +925,7 @@ function go(p){if(!PAGES.find(x=>x[0]===p&&x[2].includes(me.role)))p="audit";pag
   if(p==="dash")renderDash();if(p==="report")renderReport();if(p==="team")renderTeam();if(p==="users")renderUsers();window.scrollTo(0,0)}
 $("#logoutBtn").onclick=logout;
 $("#pwBtn").onclick=()=>{$("#pwCancel").hidden=false;$("#pwTitle").textContent="تغيير كلمة المرور";$("#pwMsg").textContent="";show("pwView")};
-$("#refreshBtn").onclick=async()=>{const b=$("#refreshBtn");b.disabled=true;await flush();await loadData();if(me.role!=="staff")await loadUsers();renderAll();go(page);b.disabled=false;toast("تم تحديث البيانات")};
+$("#refreshBtn").onclick=async()=>{const b=$("#refreshBtn");if(b.disabled)return;b.disabled=true;b.textContent="جارٍ التحديث…";await flush();await loadData();if(me.role!=="staff")await loadUsers();renderAll();go(page);b.disabled=false;b.textContent="↻ تحديث";toast("تم تحديث البيانات")};
 
 /* ===================== الإحصائيات ===================== */
 function periodStart(p){const d=new Date();if(p==="7")return Date.now()-7*864e5;if(p==="30")return Date.now()-30*864e5;if(p==="month")return new Date(d.getFullYear(),d.getMonth(),1).getTime();return 0}
