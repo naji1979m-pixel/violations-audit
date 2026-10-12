@@ -505,7 +505,7 @@ $("#fileIn").onchange=async e=>{
 /* ===================== قائمة المخالفات ===================== */
 let qFilter="all",qSearch="";
 function statusOf(id){const a=audits[id];if(!a)return "new";return a.status||"prog"}
-const ST={new:["لم يُدقق","b-new"],prog:["قيد التدقيق","b-prog"],pend:["بانتظار اعتماد مدير الجودة","b-pend"],ok:["مكتملة","b-ok"],ret:["معادة للمفتش","b-ret"]};
+const ST={new:["لم يُدقق","b-new"],prog:["قيد التدقيق","b-prog"],pend:["بانتظار اعتماد رئيس الجودة بالوحدة","b-pend"],ok:["مكتملة","b-ok"],ret:["معادة للمفتش","b-ret"]};
 function renderQueue(){
   renderDone();
   const rows=vrows();
@@ -776,10 +776,10 @@ async function requestApproval(){const m=missingFields();if(m.length){toast("أ�
   const a=A();if(current==="manual"){save();await flush();if(current==="manual"){toast("أدخل رقم الزيارة");return}}
   a.status="pend";a.auditor=a.auditor||me.full_name;a.f._ap={state:"pending",reqBy:me.full_name,reqAt:Date.now()};save();await flush();renderAll();renderQueue();
   const msg=`طلب اعتماد مستند داعم\nرقم الزيارة: ${a.f.vno}\nالمخالفة: ${GUIDE[a.type].name}\nالمنطقة: ${a.f.region||"-"} — المحافظة: ${a.f.gov||"-"}\nالمدقق: ${me.full_name}\nالرابط: ${location.origin+location.pathname}`;
-  $("#sheet").innerHTML=`<h3>أُرسلت للاعتماد</h3><div class="sub">المعاملة الآن «بانتظار اعتماد مدير الجودة». تقدر تطبع المستند الداعم بعد الاعتماد.</div><pre>${esc(msg)}</pre><div class="btns">${(()=>{const ap=approverList(a),em=ap.map(u=>u.email).filter(Boolean);const subj=`طلب اعتماد مستند داعم — زيارة ${a.f.vno}`;
-  return em.length?`<a class="btn2 pri" style="text-decoration:none" href="mailto:${em.join(",")}?subject=${encodeURIComponent(subj)}&body=${encodeURIComponent(msg)}">✉️ إشعار مدير الجودة بالبريد (${esc(ap.filter(u=>u.email).map(u=>u.full_name).join("، "))})</a>`:`<div class="alert" style="width:100%">لم يُسجّل بريد إلكتروني لمدير الجودة المسؤول عن هذه المحافظة. يضيفه مدير النظام من صفحة «المستخدمون».</div>`})()}<button type="button" class="btn2" id="cpAp">نسخ</button><button type="button" class="btn2" id="closeSh">إغلاق</button></div>`;
+  $("#sheet").innerHTML=`<h3>أُرسلت للاعتماد</h3><div class="sub">المعاملة الآن «بانتظار اعتماد رئيس الجودة بالوحدة». تقدر تطبع المستند الداعم بعد الاعتماد.</div><pre>${esc(msg)}</pre><div class="btns">${(()=>{const ap=approverList(a),em=ap.map(u=>u.email).filter(Boolean);const subj=`طلب اعتماد مستند داعم — زيارة ${a.f.vno}`;
+  return em.length?`<a class="btn2 pri" style="text-decoration:none" href="mailto:${em.join(",")}?subject=${encodeURIComponent(subj)}&body=${encodeURIComponent(msg)}">✉️ إشعار رئيس الجودة بالوحدة بالبريد (${esc(ap.filter(u=>u.email).map(u=>u.full_name).join("، "))})</a>`:`<div class="alert" style="width:100%">لم يُسجّل بريد إلكتروني لرئيس الجودة بالوحدة المسؤول عن هذه المحافظة. يضيفه مدير النظام من صفحة «المستخدمون».</div>`})()}<button type="button" class="btn2" id="cpAp">نسخ</button><button type="button" class="btn2" id="closeSh">إغلاق</button></div>`;
   openSheet();$("#closeSh").onclick=closeSheet;$("#cpAp").onclick=()=>copy(msg)}
-async function approveDoc(){const a=A();if(!canApprove(a)){toast("الاعتماد لمدير الجودة المسؤول عن المحافظة");return}
+async function approveDoc(){const a=A();if(!canApprove(a)){toast("الاعتماد لرئيس الجودة بالوحدة المسؤول عن المحافظة");return}
   if(!confirm(`اعتماد المستند الداعم للزيارة ${a.f.vno}؟`))return;
   a.status="ok";a.doneAt=a.doneAt||Date.now();a.f._ap={...(a.f._ap||{}),state:"approved",by:me.full_name,at:Date.now()};a.f._rv=reviews(a).concat([{state:"approved",by:me.full_name,at:Date.now()}]);
   save();await flush();renderAll();renderQueue();toast("تم الاعتماد، ويمكن الآن طباعة المستند الداعم")}
@@ -792,9 +792,9 @@ function updateBar(){
   if(a.type<0){$("#barState").textContent="اختر المخالفة لبدء التدقيق";btn.classList.add("wait");btn.textContent="أكمل التدقيق";btn.disabled=true;btn.onclick=null;return}
   if(bad){$("#barState").textContent=`${bad} متطلب غير مكتمل`;btn.classList.add("ret");btn.textContent="إعادة للمفتش";btn.onclick=openReturn;return}
   if(ok===n&&!needCase){
-    if(a.status==="ok"){$("#barState").textContent="معتمدة من مدير الجودة";btn.classList.add("print");btn.textContent="طباعة المستند الداعم";btn.onclick=openPrint;return}
-    if(a.status==="pend"){if(canApprove(a)){$("#barState").textContent="بانتظار اعتمادك";btn.classList.add("print");btn.textContent="اعتماد المستند الداعم";btn.onclick=approveDoc}else{$("#barState").textContent="بانتظار اعتماد مدير الجودة";btn.classList.add("wait");btn.textContent="بانتظار الاعتماد";btn.disabled=true;btn.onclick=null}return}
-    $("#barState").textContent="جميع المتطلبات مكتملة";btn.classList.add("print");btn.textContent="إرسال لاعتماد مدير الجودة";btn.onclick=requestApproval;return}
+    if(a.status==="ok"){$("#barState").textContent="معتمدة من رئيس الجودة بالوحدة";btn.classList.add("print");btn.textContent="طباعة المستند الداعم";btn.onclick=openPrint;return}
+    if(a.status==="pend"){if(canApprove(a)){$("#barState").textContent="بانتظار اعتمادك";btn.classList.add("print");btn.textContent="اعتماد المستند الداعم";btn.onclick=approveDoc}else{$("#barState").textContent="بانتظار اعتماد رئيس الجودة بالوحدة";btn.classList.add("wait");btn.textContent="بانتظار الاعتماد";btn.disabled=true;btn.onclick=null}return}
+    $("#barState").textContent="جميع المتطلبات مكتملة";btn.classList.add("print");btn.textContent="إرسال لاعتماد رئيس الجودة بالوحدة";btn.onclick=requestApproval;return}
   $("#barState").textContent=`متبقٍ ${n-ok} فقرة للتحقق`;btn.classList.add("wait");btn.textContent="أكمل التدقيق";btn.disabled=true;btn.onclick=null;
 }
 
@@ -844,14 +844,14 @@ function docHTML(){
   @page{size:A4;margin:14mm}
   </style>
   <div class="hd"><div><h1>المستند الداعم لتدقيق مخالفة</h1><p>وفق دليل دراسة المخالفات وآلية ضبطها</p></div><div style="display:flex;gap:12px;align-items:flex-end">${LOGO?`<img src="${LOGO}" alt="" style="height:70px">`:""}<div class="stamp">مكتملة المتطلبات<br>${today}</div></div></div>
-  <table class="kv">${row("وصف بند اللائحة",g.name+(a.cas?" — "+a.cas:""))}${row("التصنيف",g.cat)}${row("رقم الزيارة",f.vno)}${row("معرف المخالفة",f.vid)}${row("اسم المخالف",f.name)}${row("هوية المخالف",f.nid)}${row("رقم جوال المخالف",f.phone)}${row("رقم العداد",f.meter)}${row("المنطقة",f.region)}${row("المحافظة",f.gov)}${row("موقع المخالفة",f.loc)}${row("تاريخ بدء الزيارة",f.date)}${row("اسم المفتش",f.officer)}${row("نوع المخالفة",f.sev)}${row("يتم ضبطها من قبل",g.by)}${row("اسم المدقق",$("#auditor").value)}${row("مرحلة التدقيق",a.stage)}${row("اعتماد مدير الجودة",a.f._ap&&a.f._ap.state==="approved"?`${a.f._ap.by} — ${fmtD(a.f._ap.at)}`:"")}</table>
+  <table class="kv">${row("وصف بند اللائحة",g.name+(a.cas?" — "+a.cas:""))}${row("التصنيف",g.cat)}${row("رقم الزيارة",f.vno)}${row("معرف المخالفة",f.vid)}${row("اسم المخالف",f.name)}${row("هوية المخالف",f.nid)}${row("رقم جوال المخالف",f.phone)}${row("رقم العداد",f.meter)}${row("المنطقة",f.region)}${row("المحافظة",f.gov)}${row("موقع المخالفة",f.loc)}${row("تاريخ بدء الزيارة",f.date)}${row("اسم المفتش",f.officer)}${row("نوع المخالفة",f.sev)}${row("يتم ضبطها من قبل",g.by)}${row("اسم المدقق",$("#auditor").value)}${row("مرحلة التدقيق",a.stage)}${row("اعتماد رئيس الجودة بالوحدة",a.f._ap&&a.f._ap.state==="approved"?`${a.f._ap.by} — ${fmtD(a.f._ap.at)}`:"")}</table>
   <h2>ملاحظات المفتش</h2><div class="box">${esc(f.explain||"")}</div>
   <h2>نتيجة التحقق من المتطلبات</h2><table>${secs}</table>
   ${(f.gnotes||"").trim()?`<h2>ملاحظات عامة</h2><div class="box">${esc(f.gnotes)}</div>`:""}
   <div class="sig"><div>توقيع المدقق</div><div>الاعتماد</div></div>${attDoc()}</div>`;
 }
 async function openPrint(){
-  if(A().status!=="ok"){toast("الطباعة بعد اعتماد مدير الجودة");return}
+  if(A().status!=="ok"){toast("الطباعة بعد اعتماد رئيس الجودة بالوحدة");return}
   const m=missingFields();
   if(m.length){toast("أكمل الحقول الإلزامية: "+m.join("، "));return}
   if(current==="manual"){save();await flush();if(current==="manual"){toast("أدخل رقم الزيارة");return}}
@@ -887,7 +887,7 @@ async function buildPdfPages(){
   x.strokeStyle=GREEN;x.lineWidth=4;let LX=0;if(LOGO_IMG){const lh=92,lw=Math.min(LOGO_IMG.width*lh/LOGO_IMG.height,260);x.drawImage(LOGO_IMG,M,y,lw,lh);LX=lw+20}x.strokeRect(M+LX,y,260,92);x.lineWidth=2;font(24,700);txt("مكتملة المتطلبات",M+LX+130,y+14,GREEN,"center");font(22);txt(today,M+LX+130,y+52,GREEN,"center");
   y+=112;x.fillStyle=NAVY;x.fillRect(M,y,CW,4);y+=26;
   const LBW=330,PAD=12,LH=34;
-  const kv=[["وصف بند اللائحة",g.name+(a.cas?" — "+a.cas:"")],["التصنيف",g.cat],["رقم الزيارة",f.vno],["معرف المخالفة",f.vid],["اسم المخالف",f.name],["هوية المخالف",f.nid],["رقم جوال المخالف",f.phone],["رقم العداد",f.meter],["المنطقة",f.region],["المحافظة",f.gov],["موقع المخالفة",f.loc],["تاريخ بدء الزيارة",f.date],["اسم المفتش",f.officer],["نوع المخالفة",f.sev],["يتم ضبطها من قبل",g.by],["اسم المدقق",$("#auditor").value],["مرحلة التدقيق",a.stage],["اعتماد مدير الجودة",a.f._ap&&a.f._ap.state==="approved"?`${a.f._ap.by} — ${fmtD(a.f._ap.at)}`:""]];
+  const kv=[["وصف بند اللائحة",g.name+(a.cas?" — "+a.cas:"")],["التصنيف",g.cat],["رقم الزيارة",f.vno],["معرف المخالفة",f.vid],["اسم المخالف",f.name],["هوية المخالف",f.nid],["رقم جوال المخالف",f.phone],["رقم العداد",f.meter],["المنطقة",f.region],["المحافظة",f.gov],["موقع المخالفة",f.loc],["تاريخ بدء الزيارة",f.date],["اسم المفتش",f.officer],["نوع المخالفة",f.sev],["يتم ضبطها من قبل",g.by],["اسم المدقق",$("#auditor").value],["مرحلة التدقيق",a.stage],["اعتماد رئيس الجودة بالوحدة",a.f._ap&&a.f._ap.state==="approved"?`${a.f._ap.by} — ${fmtD(a.f._ap.at)}`:""]];
   kv.forEach(([k,v])=>{font(23);const lines=wrap((v||"").trim()||"—",CW-LBW-2*PAD);const h=lines.length*LH+2*PAD-4;ensure(h);
     x.fillStyle=LIGHT;x.fillRect(R-LBW,y,LBW,h);x.strokeStyle=LINE;x.strokeRect(M,y,CW,h);x.beginPath();x.moveTo(R-LBW,y);x.lineTo(R-LBW,y+h);x.stroke();
     font(23,600);txt(k,R-PAD,y+PAD);font(23);lines.forEach((l,i)=>txt(l,R-LBW-PAD,y+PAD+i*LH));y+=h});
@@ -953,28 +953,28 @@ let tt;function toast(m){const t=$("#toast");t.textContent=m;t.classList.add("sh
 
 function reviews(a){return (a&&a.f&&a.f._rv)||[]}
 function renderReview(){const a=A(),box=$("#revBox");if(!box)return;const rv=reviews(a),last=rv[rv.length-1],isMgr=isMgrR();let h="";
-  if(last)h+=`<div class="revnote ${last.state}">${last.state==="approved"?"✓ اعتمدها مدير الجودة":"✕ أعادها مدير الجودة للتصحيح"} — ${esc(last.by)} (${fmtD(last.at)})${last.note?`<br>الملاحظة: ${esc(last.note)}`:""}${last.items&&last.items.length?`<br>الفقرات المرفوضة: ${last.items.map(k=>esc(k.slice(2))).join("، ")}`:""}</div>`;
-  if(a.status==="pend"){const ap=a.f._ap||{},who=approvers(a).map(u=>u.full_name);h+=`<div class="revnote pend">⏳ بانتظار اعتماد مدير الجودة${ap.reqBy?` — طلبه ${esc(ap.reqBy)} (${fmtD(ap.reqAt)})`:""}${who.length?`<br>المعتمد: ${esc(who.join("، "))}`:""}</div>`;
-    if(canApprove(a))h+=`<div class="revbtns"><b>اعتماد المستند الداعم:</b><button type="button" class="btn2" id="apOk" style="color:var(--ok);border-color:var(--ok)">✓ اعتماد</button><button type="button" class="btn2" id="rvNo" style="color:var(--bad);border-color:var(--bad)">✕ رفض وإرجاع للمدقق</button></div>`}
+  if(last)h+=`<div class="revnote ${last.state}">${last.state==="approved"?"✓ اعتمدها رئيس الجودة بالوحدة":"✕ أعادها رئيس الجودة بالوحدة للتصحيح"} — ${esc(last.by)} (${fmtD(last.at)})${last.note?`<br>الملاحظة: ${esc(last.note)}`:""}${last.items&&last.items.length?`<br>الفقرات المرفوضة: ${last.items.map(k=>esc(k.slice(2))).join("، ")}`:""}</div>`;
+  if(a.status==="pend"){const ap=a.f._ap||{},who=approvers(a).map(u=>u.full_name);h+=`<div class="revnote pend">⏳ بانتظار اعتماد رئيس الجودة بالوحدة${ap.reqBy?` — طلبه ${esc(ap.reqBy)} (${fmtD(ap.reqAt)})`:""}${who.length?`<br>المعتمد: ${esc(who.join("، "))}`:""}</div>`;
+    if(canApprove(a))h+=`<div class="revbtns"><b>اعتماد المستند الداعم:</b><button type="button" class="btn2" id="apOk" style="color:var(--ok);border-color:var(--ok)">✓ اعتماد</button><button type="button" class="btn2" id="rvNo" style="color:var(--bad);border-color:var(--bad)">✕ رفض وإرجاع لموظف الجودة</button></div>`}
   else if(a.status==="ok"&&a.f._ap&&a.f._ap.state==="approved"){}
-  else if(isMgr&&a._id&&a.status==="ok"&&(!last||last.state==="rejected"))h+=`<div class="revbtns"><b>مراجعة مدير الجودة:</b><button type="button" class="btn2" id="rvOk" style="color:var(--ok);border-color:var(--ok)">✓ اعتماد المراجعة</button><button type="button" class="btn2" id="rvNo" style="color:var(--bad);border-color:var(--bad)">✕ رفض وإرجاع للمدقق</button></div>`;
+  else if(isMgr&&a._id&&a.status==="ok"&&(!last||last.state==="rejected"))h+=`<div class="revbtns"><b>مراجعة رئيس الجودة بالوحدة:</b><button type="button" class="btn2" id="rvOk" style="color:var(--ok);border-color:var(--ok)">✓ اعتماد المراجعة</button><button type="button" class="btn2" id="rvNo" style="color:var(--bad);border-color:var(--bad)">✕ رفض وإرجاع لموظف الجودة</button></div>`;
   box.innerHTML=h;
   if($("#apOk"))$("#apOk").onclick=approveDoc;
   if($("#rvOk"))$("#rvOk").onclick=async()=>{const a=A();a.f._rv=reviews(a).concat([{state:"approved",by:me.full_name,at:Date.now()}]);save();await flush();renderReview();renderQueueSoft();toast("تم اعتماد المراجعة")};
   if($("#rvNo"))$("#rvNo").onclick=rejectDialog;
 }
 function rejectDialog(){const a=A(),its=allItems();
-  $("#sheet").innerHTML=`<h3>رفض وإرجاع للمدقق</h3><div class="sub">حدد الفقرات التي فيها خطأ، واكتب الملاحظة. ستعود المعاملة للمدقق «قيد التدقيق».</div>
+  $("#sheet").innerHTML=`<h3>رفض وإرجاع لموظف الجودة</h3><div class="sub">حدد الفقرات التي فيها خطأ، واكتب الملاحظة. ستعود المعاملة لموظف الجودة «قيد التدقيق».</div>
    <div class="chks" style="max-height:260px;margin-top:10px">${its.map(i=>`<label class="chk"><input type="checkbox" value="${esc(i.key)}"><span>${esc(i.t)}${attsOf(i.key).length?` <small style="margin:0">(${attsOf(i.key).length} مرفق)</small>`:""}</span></label>`).join("")}</div>
-   <textarea class="in" id="rvNote" style="margin-top:10px" placeholder="الملاحظة للمدقق، مثال: الصورة المرفقة لا تُظهر العقار من كافة الجوانب"></textarea>
+   <textarea class="in" id="rvNote" style="margin-top:10px" placeholder="الملاحظة لموظف الجودة، مثال: الصورة المرفقة لا تُظهر العقار من كافة الجوانب"></textarea>
    <div class="btns" style="margin-top:12px"><button type="button" class="btn2" id="rvGo" style="color:#fff;background:var(--bad);border-color:var(--bad)">رفض وإرجاع</button><button type="button" class="btn2" id="closeSh">إلغاء</button></div>`;
   openSheet();$("#closeSh").onclick=closeSheet;
   $("#rvGo").onclick=async()=>{const ks=[...document.querySelectorAll("#sheet .chks input:checked")].map(i=>i.value),note=$("#rvNote").value.trim();
-    if(!ks.length){toast("حدد فقرة واحدة على الأقل");return}if(!note){toast("اكتب الملاحظة للمدقق");return}
-    ks.forEach(k=>{a.ans[k]={s:"bad",n:"مدير الجودة: "+note}});a.status=null;a.f._rv=reviews(a).concat([{state:"rejected",by:me.full_name,at:Date.now(),items:ks,note}]);
-    closeSheet();save();await flush();renderAll();renderQueue();toast("أُعيدت المعاملة للمدقق");
-    const au=users.find(u=>u.id===a._owner);const msg=`أُعيدت إليك معاملة للتصحيح\nرقم الزيارة: ${a.f.vno}\nالمخالفة: ${a.type>=0?GUIDE[a.type].name:""}\nالفقرات: ${ks.map(k=>k.slice(2)).join("، ")}\nملاحظة مدير الجودة: ${note}\nالرابط: ${location.origin+location.pathname}`;
-    $("#sheet").innerHTML=`<h3>أُعيدت للمدقق</h3><div class="sub">المدقق: ${esc(au?au.full_name:(a.auditor||"-"))}</div><pre>${esc(msg)}</pre><div class="btns">${au&&au.email?`<a class="btn2 pri" style="text-decoration:none" href="mailto:${au.email}?subject=${encodeURIComponent("إعادة معاملة للتصحيح — زيارة "+a.f.vno)}&body=${encodeURIComponent(msg)}">✉️ إشعار المدقق بالبريد</a>`:`<div class="alert" style="width:100%">لا يوجد بريد مسجل لهذا المدقق. يضيفه مدير النظام من «المستخدمون» ← تعديل.</div>`}<button type="button" class="btn2" id="closeSh">إغلاق</button></div>`;openSheet();$("#closeSh").onclick=closeSheet};
+    if(!ks.length){toast("حدد فقرة واحدة على الأقل");return}if(!note){toast("اكتب الملاحظة لموظف الجودة");return}
+    ks.forEach(k=>{a.ans[k]={s:"bad",n:"رئيس الجودة بالوحدة: "+note}});a.status=null;a.f._rv=reviews(a).concat([{state:"rejected",by:me.full_name,at:Date.now(),items:ks,note}]);
+    closeSheet();save();await flush();renderAll();renderQueue();toast("أُعيدت المعاملة لموظف الجودة");
+    const au=users.find(u=>u.id===a._owner);const msg=`أُعيدت إليك معاملة للتصحيح\nرقم الزيارة: ${a.f.vno}\nالمخالفة: ${a.type>=0?GUIDE[a.type].name:""}\nالفقرات: ${ks.map(k=>k.slice(2)).join("، ")}\nملاحظة رئيس الجودة بالوحدة: ${note}\nالرابط: ${location.origin+location.pathname}`;
+    $("#sheet").innerHTML=`<h3>أُعيدت لموظف الجودة</h3><div class="sub">المدقق: ${esc(au?au.full_name:(a.auditor||"-"))}</div><pre>${esc(msg)}</pre><div class="btns">${au&&au.email?`<a class="btn2 pri" style="text-decoration:none" href="mailto:${au.email}?subject=${encodeURIComponent("إعادة معاملة للتصحيح — زيارة "+a.f.vno)}&body=${encodeURIComponent(msg)}">✉️ إشعار موظف الجودة بالبريد</a>`:`<div class="alert" style="width:100%">لا يوجد بريد مسجل لهذا المدقق. يضيفه مدير النظام من «المستخدمون» ← تعديل.</div>`}<button type="button" class="btn2" id="closeSh">إغلاق</button></div>`;openSheet();$("#closeSh").onclick=closeSheet};
 }
 function renderAll(){
   if(!me)return;
@@ -989,7 +989,7 @@ let dl=null;
 const SB_URL="https://ahsvlqmensttzxbgkcwo.supabase.co",SB_KEY="sb_publishable_ETq2Ug9ids2iqpvCsPjsGg_eiRpd_AE";
 const sb=window.supabase?window.supabase.createClient(SB_URL,SB_KEY,{auth:{persistSession:true,autoRefreshToken:true,storageKey:"jawda-auth"}}):null;
 const BUCKET="quality-files";
-const ROLE={admin:"مدير النظام",exec:"مدير تنفيذي",manager:"رئيس وحدة",staff:"مدقق مخالفات",clerk:"إداري",viewer:"مطّلع"};
+const ROLE={admin:"مدير النظام",exec:"مدير الجودة",manager:"رئيس الجودة بالوحدة",staff:"موظف الجودة",clerk:"إداري",viewer:"مطّلع"};
 const isMgrR=()=>!!me&&["admin","exec","manager"].includes(me.role);
 const seesAll=()=>!!me&&["admin","exec","viewer"].includes(me.role);
 const canEditAudit=()=>!!me&&["admin","exec","manager","staff"].includes(me.role);
