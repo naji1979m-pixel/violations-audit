@@ -203,6 +203,10 @@ button.attbtn{background:none;font:inherit}
 .attreq{font-size:12.5px;color:var(--muted);margin-top:6px}.attreq.miss{color:var(--warn);font-weight:600}.attreq b{color:var(--ok);font-weight:600}
 .th.th-bad{outline:3px solid var(--bad)}.th.th-ok{outline:2px solid var(--ok)}.th span.warn{background:rgba(180,35,24,.9)}
 .chklist{display:flex;flex-direction:column;gap:4px;margin-top:8px;font-size:13px}.chklist .cbad{color:var(--bad);font-weight:600}.chklist .cok{color:var(--ok)}.chklist .cnone{color:var(--muted)}
+.th.th-warn{outline:3px solid #C98A1B}.th span.wman{background:rgba(201,138,27,.92)}
+.rsn{color:var(--muted);font-weight:500}.refl{display:flex;gap:14px;margin-top:6px;font-size:12.5px}
+.revnote{border-radius:10px;padding:10px 12px;font-size:13px;margin-bottom:10px;font-weight:600}.revnote.approved{background:var(--ok-bg);color:var(--ok)}.revnote.rejected{background:var(--bad-bg);color:var(--bad)}
+.revbtns{display:flex;flex-wrap:wrap;gap:8px;align-items:center;border:1px dashed var(--navy);border-radius:12px;padding:10px;margin-bottom:12px;font-size:13px}.revbtns .btn2{padding:6px 12px;font-size:13px}
 #printDoc{display:none}
 @media (prefers-reduced-motion: reduce){*{transition:none!important}}
 @media print{
@@ -261,7 +265,7 @@ button.attbtn{background:none;font:inherit}
   </section>
 
   <section class="block" id="doneBlock">
-    <h2><span>المعاملات المنجزة <span class="sub" id="dCount"></span></span><button type="button" class="iconbtn" id="dToggle" aria-label="بحث برقم الزيارة" aria-expanded="false"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg></button></h2>
+    <h2><span>المعاملات المنجزة <span class="sub" id="dCount"></span></span><button type="button" class="btn2" id="dSample" hidden style="padding:6px 10px;font-size:13px;margin-inline-start:auto;margin-inline-end:8px">🎲 عينة للمراجعة</button><button type="button" class="iconbtn" id="dToggle" aria-label="بحث برقم الزيارة" aria-expanded="false"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg></button></h2>
     <input class="in" id="dSearch" type="search" dir="rtl" placeholder="ابحث برقم الزيارة (مثال: 488028)" style="margin-bottom:10px" hidden>
     <div id="doneBody"></div>
   </section>
@@ -269,6 +273,7 @@ button.attbtn{background:none;font:inherit}
   <section class="block">
     <h2>نموذج تدقيق المخالفات <button type="button" class="linkbtn" id="newManual">＋ تدقيق يدوي جديد</button></h2>
     <div class="ronote" id="roNote" hidden></div>
+    <div id="revBox"></div>
     <div class="grid">
       <label class="f full">وصف بند اللائحة <span class="req">*</span>
         <select class="in" id="typeSel"></select>
@@ -527,7 +532,10 @@ function renderQueue(){
 let dSearch="";
 function doneList(){return Object.entries(audits).filter(([id,a])=>a&&a.doneAt&&a.f&&inFA(id,a)).map(([id,a])=>({id,a})).sort((x,y)=>(y.a.doneAt||0)-(x.a.doneAt||0))}
 function fmtD(t){if(!t)return "";const d=new Date(t);return `${d.getDate()}/${d.getMonth()+1}/${d.getFullYear()}`}
+function pickSample(){const c=Object.entries(audits).filter(([k,a])=>k!=="manual"&&a._id&&a.status==="ok"&&inFA(k,a)&&!reviews(a).some(r=>r.state==="approved"));
+  if(!c.length){toast("لا توجد معاملات مكتملة تنتظر المراجعة");return}const [k]=c[Math.floor(Math.random()*c.length)];openAudit(k);window.scrollTo({top:$("#typeSel").closest("section").offsetTop-8,behavior:"smooth"});toast(`عينة عشوائية من ${c.length} معاملة لم تُراجع`)}
 function renderDone(){
+  if($("#dSample")){$("#dSample").hidden=!(me&&me.role!=="staff");$("#dSample").onclick=pickSample}
   const body=$("#doneBody");if(!body)return;
   const all=doneList();$("#dCount").textContent=all.length?`${all.length} معاملة`:"";
   const q=dSearch.trim().toLowerCase().replace(/\s+/g,"");
@@ -616,15 +624,18 @@ function renderCheck(){
   $$("[data-case]").forEach(b=>b.onclick=()=>{a.cas=b.dataset.case;a.ans=Object.fromEntries(Object.entries(a.ans).filter(([k])=>!k.startsWith("r:")));save();renderCheck();updateBar()});
   $$(".seg button").forEach(b=>b.onclick=()=>{const k=b.dataset.k;const cur=a.ans[k]||{};
     if(b.dataset.v==="ok"&&cur.s!=="ok"&&needAtt(k)){const l=attsOf(k);if(!l.length){toast("لا يمكن تعليمها مكتملة بدون مرفق، أرفق الصورة أو المستند أولاً");return}
-      const warn=l.filter(r=>attFlag(r)==="bad").length;
+      const warn=l.filter(r=>attFlag(r)==="bad").length,nm=l.filter(attNoMeta).length;
       if(!confirm(`هل تحققت أن المرفقات (${l.length}) تطابق المتطلب؟\n«${k.slice(2)}»`+(warn?`\n\n⚠️ يوجد ${warn} مرفق عليه تنبيه (تاريخ أو موقع أو تكرار).`:"")))return;
-      a.ans[k]={...cur,s:"ok",conf:{by:me.full_name,at:Date.now(),n:l.length}}}
+      let reason="";if(nm){reason=(prompt(`${nm} من المرفقات بدون بيانات تصوير، فلا يمكن التحقق منها آلياً.\nاكتب سبب قبولها (مثال: صورة منسوخة من ممتثل وتُظهر المتطلب بوضوح):`)||"").trim();if(!reason){toast("لم تُعلَّم مكتملة: سبب القبول مطلوب");return}}
+      a.ans[k]={...cur,s:"ok",conf:{by:me.full_name,at:Date.now(),n:l.length,reason}}}
     else a.ans[k]={...cur,s:cur.s===b.dataset.v?undefined:b.dataset.v,conf:b.dataset.v==="ok"?cur.conf:null};if(a.status==="ok"&&b.dataset.v==="bad")a.status=null;save();renderCheck();updateBar();renderQueueSoft()});
   $$("[data-note]").forEach(t=>t.oninput=()=>{a.ans[t.dataset.note].n=t.value;save()});
   $$("[data-att]").forEach(inp=>inp.onchange=e=>{const fs=[...e.target.files];e.target.value="";addFiles(inp.dataset.att,fs)});
   $$("[data-view]").forEach(b=>b.onclick=()=>viewAtt(b.dataset.view));
   $$("li.item").forEach(li=>li.addEventListener("pointerdown",()=>setActive(li.dataset.key)));
   $$("[data-paste]").forEach(b=>b.onclick=()=>pasteInto(b.dataset.paste));
+  $$("[data-ref]").forEach(b=>b.onclick=()=>showRef(b.dataset.ref));
+  $$("[data-setref]").forEach(i=>i.onchange=e=>{const f=e.target.files[0];e.target.value="";if(f)setRef(i.dataset.setref,f)});
   $("#allOk").onclick=()=>{if(!confirm("تأكيد أن جميع الفقرات مكتملة، وأن المرفقات تطابق المتطلبات بعد مراجعتها؟"))return;let skip=0;allItems().forEach(it=>{if(needAtt(it.key)){const l=attsOf(it.key);if(!l.length){skip++;return}a.ans[it.key]={s:"ok",conf:{by:me.full_name,at:Date.now(),n:l.length}}}else a.ans[it.key]={s:"ok"}});save();renderCheck();updateBar();renderQueueSoft();if(skip)toast(`لم تُعلَّم ${skip} فقرة لأنها بدون مرفقات`)};
   $("#resetAns").onclick=()=>{a.ans={};a.status=null;save();renderCheck();updateBar();renderQueueSoft()};
 }
@@ -656,7 +667,19 @@ function attChecks(r){const f=A().f,m=r.meta||{},e=m.exif||{},out=[];
   else if(!r.pdf)out.push({k:"loc",ok:null,t:"موقع التصوير غير متوفر في الصورة"});
   if(m.dup&&m.dup.length)out.push({k:"dup",ok:false,t:"مكرر: نفس الملف مرفق في "+m.dup.map(d=>d.visit===A().f.vno?"فقرة أخرى بنفس المعاملة":"الزيارة "+d.visit).join("، ")});
   return out}
-function attFlag(r){const c=attChecks(r);return c.some(x=>x.ok===false)?"bad":c.some(x=>x.ok===true)?"ok":""}
+let REFS=new Set();
+function refName(k){let h=5381;for(const c of k)h=((h<<5)+h+c.codePointAt(0))>>>0;return "r"+h.toString(36)+"-"+k.length+".jpg"}
+async function loadRefs(){try{const {data}=await sb.storage.from(BUCKET).list("refs",{limit:1000});REFS=new Set((data||[]).map(x=>x.name))}catch(e){}}
+async function showRef(k){const {data}=await sb.storage.from(BUCKET).createSignedUrl("refs/"+refName(k),3600);if(!data){toast("تعذر فتح الصورة المرجعية");return}
+  const isMgr=me&&me.role!=="staff";
+  $("#sheet").innerHTML=`<h3>مثال مقبول</h3><div class="sub">${esc(k.slice(2))}</div><div class="viewer" style="margin:12px 0"><img src="${data.signedUrl}" alt="صورة مرجعية"></div><div class="btns">${isMgr?`<button type="button" class="btn2" id="refDel" style="color:var(--bad)">حذف الصورة المرجعية</button>`:""}<button type="button" class="btn2" id="closeSh">إغلاق</button></div>`;
+  openSheet();$("#closeSh").onclick=closeSheet;if($("#refDel"))$("#refDel").onclick=async()=>{if(!confirm("حذف الصورة المرجعية لهذا المتطلب؟"))return;await sb.storage.from(BUCKET).remove(["refs/"+refName(k)]);REFS.delete(refName(k));closeSheet();renderCheck()}}
+async function setRef(k,file){try{const im=await loadImg(file);const d=toJpeg(im,im.naturalWidth,im.naturalHeight,1400);const blob=await (await fetch(d)).blob();const p="refs/"+refName(k);
+  await sb.storage.from(BUCKET).remove([p]).catch(()=>{});const up=await sb.storage.from(BUCKET).upload(p,blob,{contentType:"image/jpeg"});if(up.error)throw up.error;REFS.add(refName(k));renderCheck();toast("تم تعيين الصورة المرجعية")}catch(e){toast("تعذر رفع الصورة المرجعية")}}
+function refLinks(k){if(!needAtt(k))return "";const has=REFS.has(refName(k)),isMgr=me&&me.role!=="staff";
+  return `${has?`<button type="button" class="linkbtn" data-ref="${esc(k)}">📷 مثال مقبول</button>`:""}${isMgr?`<label class="linkbtn" style="position:relative">${has?"تغيير المثال":"＋ تعيين صورة مرجعية"}<input type="file" accept="image/*" data-setref="${esc(k)}" style="position:absolute;inset:0;opacity:0;width:100%"></label>`:""}`}
+function attNoMeta(r){const e=(r.meta||{}).exif||{};return !r.pdf&&!e.date&&e.lat==null}
+function attFlag(r){if(attChecks(r).some(x=>x.ok===false))return "bad";if(attNoMeta(r))return "warn";const c=attChecks(r);return c.some(x=>x.ok===false)?"bad":c.some(x=>x.ok===true)?"ok":""}
 function checksTxt(r){return attChecks(r).map(c=>(c.ok===false?"⚠️ ":c.ok?"✓ ":"• ")+c.t).join(" — ")}
 function invalidate(k){const a=A();if(a.ans[k]&&a.ans[k].s==="ok"){a.ans[k]={...a.ans[k],s:undefined,conf:null};save();toast("تغيّرت مرفقات الفقرة، أعد تأكيد المطابقة")}}
 
@@ -673,8 +696,8 @@ async function loadAtt(){const id=current,a=audits[id];
 function attsOf(k){return attCache.filter(r=>r.key===k)}
 const CLIP='<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m21.4 11.1-9.2 9.2a6 6 0 0 1-8.5-8.5l9.2-9.2a4 4 0 0 1 5.7 5.7l-9.2 9.2a2 2 0 0 1-2.8-2.8l8.5-8.5"/></svg>';
 function attBlock(k){const l=attsOf(k),need=needAtt(k),pdfOnly=needPdf(k),full=l.length>=ATT_MAX,cf=(A().ans[k]||{}).conf;
-  return `<div class="att">${full?`<span class="sub">وصلت الحد الأعلى (${ATT_MAX} مرفقات)</span>`:`<label class="attbtn">${CLIP}${l.length?"إضافة مرفق":(pdfOnly?"إرفاق مستند PDF":"إرفاق صورة أو مستند")}<input type="file" accept="${pdfOnly?"application/pdf":"image/*,application/pdf"}" multiple data-att="${esc(k)}"></label><button type="button" class="attbtn" data-paste="${esc(k)}"${pdfOnly?" hidden":""}><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="8" y="2" width="8" height="4" rx="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/></svg>لصق</button>`}${l.map(r=>{const fl=attFlag(r);return `<button type="button" class="th ${fl==="bad"?"th-bad":fl==="ok"?"th-ok":""}" data-view="${r.id}" aria-label="عرض ${esc(r.name)}"><img src="${r.pages[0]||""}" alt="">${r.pdf?`<span>PDF ${r.total} ص</span>`:fl==="bad"?`<span class="warn">⚠️ تنبيه</span>`:""}</button>`}).join("")}</div>
-  ${need?`<div class="attreq ${l.length?"":"miss"}">${l.length?`المرفقات: ${l.length} من ${ATT_MAX}`:"مطلوب: مرفق واحد على الأقل"}${pdfOnly?" — PDF فقط":""}${cf?` — <b>✓ تم تأكيد المطابقة</b>`:""}</div>`:""}`}
+  return `<div class="att">${full?`<span class="sub">وصلت الحد الأعلى (${ATT_MAX} مرفقات)</span>`:`<label class="attbtn">${CLIP}${l.length?"إضافة مرفق":(pdfOnly?"إرفاق مستند PDF":"إرفاق صورة أو مستند")}<input type="file" accept="${pdfOnly?"application/pdf":"image/*,application/pdf"}" multiple data-att="${esc(k)}"></label><button type="button" class="attbtn" data-paste="${esc(k)}"${pdfOnly?" hidden":""}><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="8" y="2" width="8" height="4" rx="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/></svg>لصق</button>`}${l.map(r=>{const fl=attFlag(r);return `<button type="button" class="th ${fl==="bad"?"th-bad":fl==="warn"?"th-warn":fl==="ok"?"th-ok":""}" data-view="${r.id}" aria-label="عرض ${esc(r.name)}"><img src="${r.pages[0]||""}" alt="">${r.pdf?`<span>PDF ${r.total} ص</span>`:fl==="bad"?`<span class="warn">⚠️ تنبيه</span>`:fl==="warn"?`<span class="wman">تحقق يدوي</span>`:""}</button>`}).join("")}</div>
+  ${need?`<div class="refl">${refLinks(k)}</div><div class="attreq ${l.length?"":"miss"}">${l.length?`المرفقات: ${l.length} من ${ATT_MAX}`:"مطلوب: مرفق واحد على الأقل"}${pdfOnly?" — PDF فقط":""}${cf?` — <b>✓ تم تأكيد المطابقة</b>${cf.reason?` <span class="rsn">(سبب القبول: ${esc(cf.reason)})</span>`:""}`:""}</div>`:""}`}
 function loadImg(file){return new Promise((res,rej)=>{const u=URL.createObjectURL(file),im=new Image();im.onload=()=>{res(im);setTimeout(()=>URL.revokeObjectURL(u),2000)};im.onerror=()=>{URL.revokeObjectURL(u);rej(new Error("img"))};im.src=u})}
 function toJpeg(src,w,h,max=1600){const sc=Math.min(1,max/Math.max(w,h)),c=document.createElement("canvas");c.width=Math.round(w*sc);c.height=Math.round(h*sc);const x=c.getContext("2d");x.fillStyle="#fff";x.fillRect(0,0,c.width,c.height);x.drawImage(src,0,0,c.width,c.height);return c.toDataURL("image/jpeg",.82)}
 function loadScript(u){return new Promise((res,rej)=>{const s=document.createElement("script");s.src=u;s.onload=res;s.onerror=rej;document.head.appendChild(s)})}
@@ -803,7 +826,7 @@ async function openPrint(){
   if(m.length){toast("أكمل الحقول الإلزامية: "+m.join("، "));return}
   if(current==="manual"){save();await flush();if(current==="manual"){toast("أدخل رقم الزيارة");return}}
   {const _a=A();_a.status="ok";if(!_a.doneAt)_a.doneAt=Date.now();_a.lastDone=Date.now();_a.auditor=_a.auditor||me.full_name}
-  save();await flush();renderQueue();
+  save();await flush();renderQueue();renderReview();
   $("#sheet").innerHTML=`<h3>المستند الداعم جاهز</h3><div class="sub">اختر طريقة الإخراج: ملف PDF يشمل التدقيق وجميع المرفقات، أو طباعة مباشرة.</div>
   <div class="btns" style="margin-top:14px"><button type="button" class="btn2 pri" id="doPdf">📄 مستند PDF</button><button type="button" class="btn2" id="doPrint">🖨️ طباعة</button><button type="button" class="btn2" id="closeSh">إغلاق</button></div>
   <div style="margin-top:14px;border:1px solid var(--line);border-radius:12px;background:#fff;overflow:auto;max-height:50vh">${docHTML()}</div>`;
@@ -898,12 +921,31 @@ document.addEventListener("keydown",e=>{if(e.key==="Escape")closeSheet()});
 async function copy(t){try{await navigator.clipboard.writeText(t);toast("تم النسخ")}catch(e){const ta=document.createElement("textarea");ta.value=t;document.body.appendChild(ta);ta.select();try{document.execCommand("copy");toast("تم النسخ")}catch(_){toast("تعذر النسخ")}ta.remove()}}
 let tt;function toast(m){const t=$("#toast");t.textContent=m;t.classList.add("show");clearTimeout(tt);tt=setTimeout(()=>t.classList.remove("show"),2600)}
 
+function reviews(a){return (a&&a.f&&a.f._rv)||[]}
+function renderReview(){const a=A(),box=$("#revBox");if(!box)return;const rv=reviews(a),last=rv[rv.length-1],isMgr=me&&me.role!=="staff";let h="";
+  if(last)h+=`<div class="revnote ${last.state}">${last.state==="approved"?"✓ اعتمدها مدير الجودة بعد المراجعة":"✕ أعادها مدير الجودة للتصحيح"} — ${esc(last.by)} (${fmtD(last.at)})${last.note?`<br>الملاحظة: ${esc(last.note)}`:""}${last.items&&last.items.length?`<br>الفقرات المرفوضة: ${last.items.map(k=>esc(k.slice(2))).join("، ")}`:""}</div>`;
+  if(isMgr&&a._id&&a.status==="ok"&&(!last||last.state==="rejected"))h+=`<div class="revbtns"><b>مراجعة مدير الجودة:</b><button type="button" class="btn2" id="rvOk" style="color:var(--ok);border-color:var(--ok)">✓ اعتماد المراجعة</button><button type="button" class="btn2" id="rvNo" style="color:var(--bad);border-color:var(--bad)">✕ رفض وإرجاع للمدقق</button></div>`;
+  box.innerHTML=h;
+  if($("#rvOk"))$("#rvOk").onclick=async()=>{const a=A();a.f._rv=reviews(a).concat([{state:"approved",by:me.full_name,at:Date.now()}]);save();await flush();renderReview();renderQueueSoft();toast("تم اعتماد المراجعة")};
+  if($("#rvNo"))$("#rvNo").onclick=rejectDialog;
+}
+function rejectDialog(){const a=A(),its=allItems();
+  $("#sheet").innerHTML=`<h3>رفض وإرجاع للمدقق</h3><div class="sub">حدد الفقرات التي فيها خطأ، واكتب الملاحظة. ستعود المعاملة للمدقق «قيد التدقيق».</div>
+   <div class="chks" style="max-height:260px;margin-top:10px">${its.map(i=>`<label class="chk"><input type="checkbox" value="${esc(i.key)}"><span>${esc(i.t)}${attsOf(i.key).length?` <small style="margin:0">(${attsOf(i.key).length} مرفق)</small>`:""}</span></label>`).join("")}</div>
+   <textarea class="in" id="rvNote" style="margin-top:10px" placeholder="الملاحظة للمدقق، مثال: الصورة المرفقة لا تُظهر العقار من كافة الجوانب"></textarea>
+   <div class="btns" style="margin-top:12px"><button type="button" class="btn2" id="rvGo" style="color:#fff;background:var(--bad);border-color:var(--bad)">رفض وإرجاع</button><button type="button" class="btn2" id="closeSh">إلغاء</button></div>`;
+  openSheet();$("#closeSh").onclick=closeSheet;
+  $("#rvGo").onclick=async()=>{const ks=[...document.querySelectorAll("#sheet .chks input:checked")].map(i=>i.value),note=$("#rvNote").value.trim();
+    if(!ks.length){toast("حدد فقرة واحدة على الأقل");return}if(!note){toast("اكتب الملاحظة للمدقق");return}
+    ks.forEach(k=>{a.ans[k]={s:"bad",n:"مدير الجودة: "+note}});a.status=null;a.f._rv=reviews(a).concat([{state:"rejected",by:me.full_name,at:Date.now(),items:ks,note}]);
+    closeSheet();save();await flush();renderAll();renderQueue();toast("أُعيدت المعاملة للمدقق")};
+}
 function renderAll(){
   if(!me)return;
   const a=A();const pgA=$(".pg[data-pg=audit]");pgA.classList.toggle("ro",!!a._ro);$("#roNote").hidden=!a._ro;if(a._ro)$("#roNote").textContent="هذه المعاملة يدققها "+(a.auditor||"موظف آخر")+" — للاطلاع فقط";$("#auditor").value=a.auditor||me.full_name;warnedRO=false;$("#typeSel").value=String(a.type);
   $$("[data-f]").forEach(el=>el.value=a.f[el.dataset.f]||"");
   if(attFor!==current)attCache=[];
-  renderStage();explainHint();renderCheck();updateBar();renderQueue();
+  renderStage();explainHint();renderCheck();updateBar();renderQueue();renderReview();
   loadAtt().then(()=>{if(attFor===current)renderCheck()});
 }
 let dl=null;
@@ -936,7 +978,7 @@ async function loadAudits(){
   if(keep)audits.manual=keep;
 }
 async function loadUsers(){const {data}=await sb.from("quality_users").select("*").order("created_at");users=data||[]}
-async function loadData(){try{await Promise.all([loadQueue(),loadAudits()])}catch(e){toast("تعذر تحميل البيانات: "+(e.message||""))}try{buildFilters()}catch(e){}}
+async function loadData(){try{await Promise.all([loadQueue(),loadAudits(),loadRefs()])}catch(e){toast("تعذر تحميل البيانات: "+(e.message||""))}try{buildFilters()}catch(e){}}
 
 /* ----- الحفظ ----- */
 let saveT=null;const dirty=new Set();
@@ -1094,15 +1136,15 @@ function computeStats(period){
     const S=bySec[region]||(bySec[region]={label:region,total:0,completed:0,returned:0,progress:0,pending:0,govs:{},plat:{},dec:{}});S.total++;S[s]++;
     const G=S.govs[gov]||(S.govs[gov]={label:gov,region,total:0,completed:0,returned:0,progress:0,pending:0,plat:{},dec:{}});G.total++;G[s]++;
     {const rr=rowMap()[key],ps=pLab(rr?rr.vstat:""),dc=dLab(rr?rr.dec:undefined);[tot,S,G].forEach(o=>{o.plat[ps]=(o.plat[ps]||0)+1;o.dec[dc]=(o.dec[dc]||0)+1})}
-    if(a){const uid=a._owner||"?";const U=byUser[uid]||(byUser[uid]={id:uid,label:userName(uid,a.auditor),total:0,completed:0,returned:0,progress:0,pending:0,last:0,list:[]});
-      U.total++;U[s]++;U.last=Math.max(U.last,a.updated||0);U.list.push({key,a});
+    if(a){const uid=a._owner||"?";const U=byUser[uid]||(byUser[uid]={id:uid,label:userName(uid,a.auditor),total:0,completed:0,returned:0,progress:0,pending:0,last:0,list:[],reviewed:0,rejected:0});
+      U.total++;U[s]++;{const rv=reviews(a);if(rv.length){U.reviewed++;if(rv.some(x=>x.state==="rejected"))U.rejected++}}U.last=Math.max(U.last,a.updated||0);U.list.push({key,a});
       const tn=a.type>=0&&GUIDE[a.type]?GUIDE[a.type].name:"غير محدد";const T=byType[tn]||(byType[tn]={label:tn,total:0,completed:0,returned:0,progress:0});T.total++;T[s]++;
       Object.entries(a.ans||{}).forEach(([k,v])=>{if(v&&v.s==="bad"){const t=k.slice(2);fail[t]=(fail[t]||0)+1}})}
   });
   Object.values(byUser).forEach(U=>{U.evaluated=U.completed+U.returned;U.list.sort((x,y)=>(y.a.updated||0)-(x.a.updated||0))});
   Object.values(bySec).forEach(S=>{S.evaluated=S.completed+S.returned;S.notEval=S.pending;S.govList=Object.values(S.govs).map(G=>(G.evaluated=G.completed+G.returned,G.notEval=G.pending,G)).sort((a,b)=>b.total-a.total)});
   const evaluated=tot.completed+tot.returned;
-  users.filter(u=>u.role==="staff"&&u.active&&!byUser[u.id]).forEach(u=>{byUser[u.id]={id:u.id,label:u.full_name,total:0,completed:0,returned:0,progress:0,pending:0,last:0,list:[],evaluated:0}});
+  users.filter(u=>u.role==="staff"&&u.active&&!byUser[u.id]).forEach(u=>{byUser[u.id]={id:u.id,label:u.full_name,total:0,completed:0,returned:0,progress:0,pending:0,last:0,list:[],evaluated:0,reviewed:0,rejected:0}});
   return {period:period||"all",tot,evaluated,notEval:tot.pending,rate:tot.total?evaluated/tot.total:0,retRate:evaluated?tot.returned/evaluated:0,
     bySec:Object.values(bySec).sort((a,b)=>b.total-a.total),byGov:Object.values(bySec).sort((a,b)=>b.total-a.total).flatMap(S=>S.govList),byUser:Object.values(byUser).sort((a,b)=>b.evaluated-a.evaluated||b.total-a.total),
     byType:Object.values(byType).sort((a,b)=>b.total-a.total),fail:Object.entries(fail).sort((a,b)=>b[1]-a[1]).slice(0,10)};
@@ -1157,8 +1199,8 @@ function renderTeam(){
   const per=$("#teamPeriod")?$("#teamPeriod").value:"all",st=computeStats(per);
   $("#teamBody").innerHTML=`<section class="block"><h2>أداء موظفي الجودة ${periodSel("teamPeriod",per)}</h2>
   <div class="chart">${svgBars(st.byUser,USR_SERIES,"أداء الموظفين")}</div>
-  <div class="tbl-wrap"><table class="tbl"><thead><tr><th>الموظف</th><th>المقيّمة</th><th>مكتملة</th><th>معادة</th><th>قيد التدقيق</th><th>نسبة الإعادة</th><th>آخر نشاط</th></tr></thead><tbody>
-  ${st.byUser.map(u=>`<tr class="clk" data-u="${esc(u.id)}"><td>${esc(u.label)}</td><td>${u.evaluated}</td><td>${u.completed}</td><td>${u.returned}</td><td>${u.progress}</td><td>${u.evaluated?pct(u.returned/u.evaluated):"—"}</td><td>${u.last?fmtD(u.last):"—"}</td></tr>`).join("")||`<tr><td colspan="7">لا توجد بيانات</td></tr>`}
+  <div class="tbl-wrap"><table class="tbl"><thead><tr><th>الموظف</th><th>المقيّمة</th><th>مكتملة</th><th>معادة</th><th>قيد التدقيق</th><th>نسبة الإعادة</th><th>روجعت</th><th>دقة المراجعة</th><th>آخر نشاط</th></tr></thead><tbody>
+  ${st.byUser.map(u=>`<tr class="clk" data-u="${esc(u.id)}"><td>${esc(u.label)}</td><td>${u.evaluated}</td><td>${u.completed}</td><td>${u.returned}</td><td>${u.progress}</td><td>${u.evaluated?pct(u.returned/u.evaluated):"—"}</td><td>${u.reviewed||0}</td><td>${u.reviewed?pct(1-u.rejected/u.reviewed):"—"}</td><td>${u.last?fmtD(u.last):"—"}</td></tr>`).join("")||`<tr><td colspan="9">لا توجد بيانات</td></tr>`}
   </tbody></table></div><div id="teamDetail"></div></section>`;
   $("#teamPeriod").onchange=renderTeam;
   $$("[data-u]").forEach(tr=>tr.onclick=()=>{const u=st.byUser.find(x=>x.id===tr.dataset.u);if(!u)return;
@@ -1218,7 +1260,7 @@ async function exportReportPdf(st,btn){
     table([{t:"المنطقة",w:.28},{t:"الإجمالي",w:.12},{t:"المقيّمة",w:.12},{t:"غير المقيّمة",w:.14},{t:"مكتملة",w:.12},{t:"معادة",w:.11},{t:"نسبة الإنجاز",w:.11}],st.bySec.map(s=>[s.label,s.total,s.evaluated,s.notEval,s.completed,s.returned,s.total?pct(s.evaluated/s.total):"—"]));
     head("حسب المحافظة");table([{t:"المنطقة",w:.17},{t:"المحافظة",w:.23},{t:"الإجمالي",w:.11},{t:"المقيّمة",w:.11},{t:"غير المقيّمة",w:.13},{t:"مكتملة",w:.12},{t:"معادة",w:.13}],st.byGov.map(g=>[g.region,g.label,g.total,g.evaluated,g.notEval,g.completed,g.returned]));
     head("أداء موظفي الجودة");chart(st.byUser,USR_SERIES);
-    table([{t:"الموظف",w:.3},{t:"المقيّمة",w:.13},{t:"مكتملة",w:.13},{t:"معادة",w:.13},{t:"قيد التدقيق",w:.15},{t:"نسبة الإعادة",w:.16}],st.byUser.map(u=>[u.label,u.evaluated,u.completed,u.returned,u.progress,u.evaluated?pct(u.returned/u.evaluated):"—"]));
+    table([{t:"الموظف",w:.3},{t:"المقيّمة",w:.13},{t:"مكتملة",w:.13},{t:"معادة",w:.13},{t:"قيد التدقيق",w:.15},{t:"نسبة الإعادة",w:.12},{t:"دقة المراجعة",w:.14}],st.byUser.map(u=>[u.label,u.evaluated,u.completed,u.returned,u.progress,u.evaluated?pct(u.returned/u.evaluated):"—",u.reviewed?pct(1-u.rejected/u.reviewed)+` (${u.reviewed})`:"—"]));
     head("حسب بند اللائحة");table([{t:"وصف بند اللائحة",w:.55},{t:"المدققة",w:.15},{t:"مكتملة",w:.15},{t:"معادة",w:.15}],st.byType.map(t=>[t.label,t.total,t.completed,t.returned]));
     head("أكثر المتطلبات غير المكتملة");table([{t:"#",w:.08},{t:"المتطلب",w:.72},{t:"عدد المرات",w:.2}],st.fail.length?st.fail.map(([t,n],i)=>[i+1,t,n]):[["—","لا توجد متطلبات غير مكتملة","—"]]);
     pages.forEach((pc,i)=>{const cx=pc.getContext("2d");try{cx.direction="rtl"}catch(e){}cx.textBaseline="top";cx.font=`400 18px ${FF}`;cx.fillStyle="#666";cx.textAlign="center";cx.fillText(`تقرير الجودة — صفحة ${i+1} من ${pages.length}`,W/2,H-M+12)});
@@ -1253,7 +1295,7 @@ async function exportReportXls(st,btn){
       sheet("الحالات حسب "+gl,"حالة المخالفة حسب "+gl,[{t:gl,w:24},{t:"الإجمالي",w:11}].concat(pc.flatMap(k=>[{t:k+" (عدد)",w:16},{t:k+" (%)",w:11}])),gs.map(g=>[g.label,g.total].concat(pc.flatMap(k=>[g.plat[k]||0,pctN(g.plat[k]||0,g.total)+"%"]))))}
     sheet("حسب المنطقة","المخالفات حسب المنطقة",[{t:"المنطقة",w:28},{t:"الإجمالي",w:12},{t:"المقيّمة",w:12},{t:"غير المقيّمة",w:14},{t:"مكتملة",w:12},{t:"معادة",w:12},{t:"قيد التدقيق",w:14},{t:"لم تبدأ",w:12}],st.bySec.map(s=>[s.label,s.total,s.evaluated,s.notEval,s.completed,s.returned,s.progress,s.pending]));
     sheet("حسب المحافظة","المخالفات حسب المحافظة",[{t:"المنطقة",w:20},{t:"المحافظة",w:26},{t:"الإجمالي",w:12},{t:"المقيّمة",w:12},{t:"غير المقيّمة",w:14},{t:"مكتملة",w:12},{t:"معادة",w:12}],st.byGov.map(g=>[g.region,g.label,g.total,g.evaluated,g.notEval,g.completed,g.returned]));
-    sheet("أداء الموظفين","أداء موظفي الجودة",[{t:"الموظف",w:28},{t:"المقيّمة",w:12},{t:"مكتملة",w:12},{t:"معادة",w:12},{t:"قيد التدقيق",w:14},{t:"نسبة الإعادة",w:14}],st.byUser.map(u=>[u.label,u.evaluated,u.completed,u.returned,u.progress,u.evaluated?pct(u.returned/u.evaluated):"—"]));
+    sheet("أداء الموظفين","أداء موظفي الجودة",[{t:"الموظف",w:28},{t:"المقيّمة",w:12},{t:"مكتملة",w:12},{t:"معادة",w:12},{t:"قيد التدقيق",w:14},{t:"نسبة الإعادة",w:14},{t:"روجعت",w:10},{t:"رُفضت بالمراجعة",w:16},{t:"دقة المراجعة",w:14}],st.byUser.map(u=>[u.label,u.evaluated,u.completed,u.returned,u.progress,u.evaluated?pct(u.returned/u.evaluated):"—",u.reviewed||0,u.rejected||0,u.reviewed?pct(1-u.rejected/u.reviewed):"—"]));
     sheet("حسب بند اللائحة","حسب بند اللائحة",[{t:"وصف بند اللائحة",w:60},{t:"المدققة",w:12},{t:"مكتملة",w:12},{t:"معادة",w:12}],st.byType.map(t=>[t.label,t.total,t.completed,t.returned]));
     sheet("المتطلبات غير المكتملة","أكثر المتطلبات غير المكتملة",[{t:"#",w:6},{t:"المتطلب",w:70},{t:"عدد المرات",w:14}],st.fail.map(([t,n],i)=>[i+1,t,n]));
     const since=periodStart(st.period);
