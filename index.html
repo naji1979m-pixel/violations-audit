@@ -758,10 +758,14 @@ function attDoc(){const its=allItems().filter(i=>attsOf(i.key).length);if(!its.l
 
 /* ===================== الشريط السفلي ===================== */
 function missingFields(){const a=A(),m=[];if(a.type<0)m.push("وصف بند اللائحة");if(!(a.f.vno||"").trim())m.push("رقم الزيارة");if(!(a.f.name||"").trim())m.push("اسم المخالف");if(!$("#auditor").value.trim())m.push("اسم المدقق");return m}
-function canApprove(a){if(!me)return false;if(me.role==="admin")return true;if(me.role!=="manager")return false;const z=(me.sector||"").trim();if(!z)return true;return [a.f.gov,a.f.region,a.sector,a.region].includes(z)}
+function areaMatch(z,a){z=(z||"").trim();if(!z)return true;const cl=x=>norm(x).replace(/^(محافظه|مدينه|منطقه)\s+/,"").trim();
+  const parts=z.split(/\s*[-–—،,/]\s*/).map(cl).filter(Boolean);const gov=[a.f.gov,a.sector].map(cl).filter(Boolean),reg=[a.f.region,a.region].map(cl).filter(Boolean);
+  if(parts.length>1){const last=parts[parts.length-1];return gov.includes(last)||(!gov.length&&reg.includes(last))||(reg.includes(last)&&parts.length===1)}
+  return gov.includes(parts[0])||reg.includes(parts[0])}
+function canApprove(a){if(!me)return false;if(me.role==="admin")return true;if(me.role!=="manager")return false;return areaMatch(me.sector,a)}
 let APPR=[];
 async function loadApprovers(){try{const {data}=await sb.rpc("q_approvers");APPR=data||[]}catch(e){APPR=[]}}
-function approverList(a){const z=[a.f.gov,a.f.region,a.sector,a.region];let l=APPR.filter(u=>u.role==="manager"&&(!u.sector||z.includes(u.sector)));if(!l.length)l=APPR.filter(u=>u.role==="admin");return l}
+function approverList(a){const z=[a.f.gov,a.f.region,a.sector,a.region];let l=APPR.filter(u=>u.role==="manager"&&areaMatch(u.sector,a));if(!l.length)l=APPR.filter(u=>u.role==="admin");return l}
 function approvers(a){return approverList(a)}
 function _oldApprovers(a){return users.filter(u=>u.active&&u.role==="manager"&&(!u.sector||[a.f.gov,a.f.region,a.sector,a.region].includes(u.sector)))}
 async function requestApproval(){const m=missingFields();if(m.length){toast("أكمل الحقول الإلزامية: "+m.join("، "));return}
@@ -964,7 +968,9 @@ function rejectDialog(){const a=A(),its=allItems();
   $("#rvGo").onclick=async()=>{const ks=[...document.querySelectorAll("#sheet .chks input:checked")].map(i=>i.value),note=$("#rvNote").value.trim();
     if(!ks.length){toast("حدد فقرة واحدة على الأقل");return}if(!note){toast("اكتب الملاحظة للمدقق");return}
     ks.forEach(k=>{a.ans[k]={s:"bad",n:"مدير الجودة: "+note}});a.status=null;a.f._rv=reviews(a).concat([{state:"rejected",by:me.full_name,at:Date.now(),items:ks,note}]);
-    closeSheet();save();await flush();renderAll();renderQueue();toast("أُعيدت المعاملة للمدقق")};
+    closeSheet();save();await flush();renderAll();renderQueue();toast("أُعيدت المعاملة للمدقق");
+    const au=users.find(u=>u.id===a._owner);const msg=`أُعيدت إليك معاملة للتصحيح\nرقم الزيارة: ${a.f.vno}\nالمخالفة: ${a.type>=0?GUIDE[a.type].name:""}\nالفقرات: ${ks.map(k=>k.slice(2)).join("، ")}\nملاحظة مدير الجودة: ${note}\nالرابط: ${location.origin+location.pathname}`;
+    $("#sheet").innerHTML=`<h3>أُعيدت للمدقق</h3><div class="sub">المدقق: ${esc(au?au.full_name:(a.auditor||"-"))}</div><pre>${esc(msg)}</pre><div class="btns">${au&&au.email?`<a class="btn2 pri" style="text-decoration:none" href="mailto:${au.email}?subject=${encodeURIComponent("إعادة معاملة للتصحيح — زيارة "+a.f.vno)}&body=${encodeURIComponent(msg)}">✉️ إشعار المدقق بالبريد</a>`:`<div class="alert" style="width:100%">لا يوجد بريد مسجل لهذا المدقق. يضيفه مدير النظام من «المستخدمون» ← تعديل.</div>`}<button type="button" class="btn2" id="closeSh">إغلاق</button></div>`;openSheet();$("#closeSh").onclick=closeSheet};
 }
 function renderAll(){
   if(!me)return;
@@ -1353,7 +1359,7 @@ function renderUsers(){
   </div>
   <div class="btns" style="margin-top:12px"><button type="button" class="btn2 pri" id="nuCreate">إنشاء الحساب</button></div><div id="nuResult"></div></section>
   <section class="block"><h2>الحسابات <span class="sub">${users.length}</span></h2><div class="ulist">${users.map(u=>`
-    <div class="urow ${u.active?"":"off"}"><div class="uinfo"><b>${esc(u.full_name)}</b><span dir="ltr">${esc(u.username)}${u.email?" · "+esc(u.email):""}</span><small>${ROLE[u.role]||u.role}${u.sector?" — "+esc(u.sector):""}${u.active?"":" — موقوف"}${u.must_change_password?" — لم يغيّر كلمة المرور المؤقتة":""}</small></div>
+    <div class="urow ${u.active?"":"off"}"><div class="uinfo"><b>${esc(u.full_name)}</b><span dir="ltr">${esc(u.username)}${u.email?" · "+esc(u.email):""}</span>${u.email?"":`<small style="color:var(--warn)">بدون بريد إلكتروني — اضغط «تعديل» لإضافته</small>`}<small>${ROLE[u.role]||u.role}${u.sector?" — "+esc(u.sector):""}${u.active?"":" — موقوف"}${u.must_change_password?" — لم يغيّر كلمة المرور المؤقتة":""}</small></div>
     <div class="uact">${u.id===me.id?`<span class="sub">حسابك</span>`:`<button type="button" class="btn2" data-act="toggle" data-id="${u.id}">${u.active?"إيقاف":"تفعيل"}</button><button type="button" class="btn2" data-act="edit" data-id="${u.id}">تعديل</button><button type="button" class="btn2" data-act="reset" data-id="${u.id}">كلمة مرور جديدة</button>`}</div></div>`).join("")}</div></section>`;
   $("#nuCreate").onclick=async()=>{
     const name=$("#nuName").value.trim(),un=$("#nuUser").value.trim().toLowerCase(),role=$("#nuRole").value,sec=$("#nuSector").value.trim(),pw=$("#nuPass").value.trim();
