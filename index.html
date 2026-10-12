@@ -1004,6 +1004,7 @@ async function saveOrg(){const {error}=await sb.from("quality_settings").upsert(
 const gcl=x=>norm(x||"").replace(/^(محافظه|مدينه|منطقه)\s+/,"").trim();
 let _um=null;function unitOf(gov){if(!_um){_um={};(ORG.units||[]).forEach(u=>(u.govs||[]).forEach(g=>_um[gcl(g)]=u.name))}return _um[gcl(gov)]||""}
 function myUnit(){return me&&me.sector?(ORG.units||[]).find(u=>gcl(u.name)===gcl(me.sector)):null}
+function inMyTeam(u){const us=gcl(u.sector||"");if(F&&F.unit&&F.unit!=="غير مسندة لوحدة")return us===gcl(F.unit);if(!me||seesAll()||!me.sector)return true;return us===gcl(me.sector)}
 function scopeOK(gov,region){if(!me||seesAll()||!me.sector)return true;const u=myUnit();if(u)return unitOf(gov)===u.name;return areaMatch(me.sector,{f:{gov,region}})}
 function userScopeOK(u,gov,region){if(!u.sector)return true;const un=(ORG.units||[]).find(x=>gcl(x.name)===gcl(u.sector));if(un)return unitOf(gov)===un.name;return areaMatch(u.sector,{f:{gov,region}})}
 const C={green:"#1C7A4B",red:"#B42318",amber:"#C98A1B",gray:"#A7B4C2",navy:"#0E3557",line:"#9AA8B5",light:"#EEF3F7"};
@@ -1201,7 +1202,7 @@ function computeStats(period){
   Object.values(byUser).forEach(U=>{U.evaluated=U.completed+U.returned;U.list.sort((x,y)=>(y.a.updated||0)-(x.a.updated||0))});
   Object.values(bySec).forEach(S=>{S.evaluated=S.completed+S.returned;S.notEval=S.pending;S.govList=Object.values(S.govs).map(G=>(G.evaluated=G.completed+G.returned,G.notEval=G.pending,G)).sort((a,b)=>b.total-a.total)});
   const evaluated=tot.completed+tot.returned;
-  users.filter(u=>u.role==="staff"&&u.active&&!byUser[u.id]).forEach(u=>{byUser[u.id]={id:u.id,label:u.full_name,total:0,completed:0,returned:0,progress:0,pending:0,last:0,list:[],evaluated:0,reviewed:0,rejected:0}});
+  users.filter(u=>u.role==="staff"&&u.active&&!byUser[u.id]&&inMyTeam(u)).forEach(u=>{byUser[u.id]={id:u.id,label:u.full_name,total:0,completed:0,returned:0,progress:0,pending:0,last:0,list:[],evaluated:0,reviewed:0,rejected:0}});
   return {period:period||"all",tot,evaluated,notEval:tot.pending,rate:tot.total?evaluated/tot.total:0,retRate:evaluated?tot.returned/evaluated:0,
     bySec:Object.values(bySec).sort((a,b)=>b.total-a.total),byUnit:Object.values(byUnit).map(u=>(u.evaluated=u.completed+u.returned,u.notEval=u.pending,u)).sort((a,b)=>b.total-a.total),byGov:Object.values(bySec).sort((a,b)=>b.total-a.total).flatMap(S=>S.govList),byUser:Object.values(byUser).sort((a,b)=>b.evaluated-a.evaluated||b.total-a.total),
     byType:Object.values(byType).sort((a,b)=>b.total-a.total),fail:Object.entries(fail).sort((a,b)=>b[1]-a[1]).slice(0,10)};
