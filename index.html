@@ -155,6 +155,8 @@ button.attbtn{background:none;font:inherit}
 .auth-card h1{font-size:20px;margin:0 0 4px}.auth-card .sub{display:block;margin-bottom:18px}
 .auth-card form{display:flex;flex-direction:column;gap:12px;text-align:right}
 .auth-card .msg{color:var(--bad);font-size:13px;min-height:18px}
+.auth-card .msg.ok{color:var(--ok)}
+#fgForm{display:flex;flex-direction:column;gap:12px}#fgForm[hidden],#loginForm[hidden]{display:none}
 .btnp{border:0;border-radius:12px;padding:12px;background:var(--navy);color:var(--navy-ink);font-weight:700;font-size:15px;cursor:pointer}
 .btnp:disabled{opacity:.6}
 .userbar{display:flex;align-items:center;gap:10px;flex-wrap:wrap;font-size:13px;color:var(--muted);margin:-6px 2px 10px}
@@ -231,6 +233,15 @@ button.attbtn{background:none;font:inherit}
     <label class="f">كلمة المرور<input class="in" id="lgPass" type="password" dir="ltr" autocomplete="current-password"></label>
     <div class="msg" id="lgMsg" role="alert"></div>
     <button class="btnp" id="lgBtn" type="submit">دخول</button>
+    <button type="button" class="linkbtn" id="lgForgot" style="align-self:center;margin-top:4px">نسيت كلمة المرور؟</button>
+  </form>
+  <form id="fgForm" hidden>
+    <span class="sub" style="text-align:right">اكتب اسم المستخدم، ويصل طلبك لمدير النظام ليرسل لك كلمة مرور مؤقتة.</span>
+    <label class="f">اسم المستخدم<input class="in" id="fgUser" dir="ltr" autocapitalize="off" autocomplete="username"></label>
+    <label class="f">ملاحظة (اختياري)<input class="in" id="fgNote" placeholder="مثال: رقم جوالي 05xxxxxxxx"></label>
+    <div class="msg" id="fgMsg" role="alert"></div>
+    <button class="btnp" type="submit" id="fgBtn">إرسال الطلب</button>
+    <button type="button" class="linkbtn" id="fgBack" style="align-self:center">رجوع لتسجيل الدخول</button>
   </form>
 </div></div>
 <div class="auth" id="pwView" hidden><div class="auth-card">
@@ -1096,7 +1107,7 @@ async function logout(){try{await flush()}catch(e){}await sb.auth.signOut();loca
 $("#blockLogout").onclick=logout;
 async function enterApp(){
   show("appView");$("#whoName").textContent=me.full_name;$("#whoRole").textContent=ROLE[me.role]||"";
-  buildTabs();await loadData();if(["admin","exec","manager","viewer"].includes(me.role))await loadUsers();
+  buildTabs();await loadData();if(["admin","exec","manager","viewer"].includes(me.role))await loadUsers();await loadPwReq();if(PWREQ.length)setTimeout(()=>toast(`يوجد ${PWREQ.length} طلب إعادة كلمة مرور — في صفحة الإدارة والهيكل`),1200);
   try{current=localStorage.getItem("vv:current")||"manual"}catch(e){}
   if(current!=="manual"&&!audits[current]&&!rows.find(r=>r.vno===current))current="manual";
   renderAll();go(page);
@@ -1393,7 +1404,7 @@ function bindOrg(){
 }
 function renderUsers(){
   const secs=sectorOptions();
-  $("#usersBody").innerHTML=`<section class="block"><h2>إنشاء حساب جديد</h2>
+  $("#usersBody").innerHTML=`${pwReqBlock()}<section class="block"><h2>إنشاء حساب جديد</h2>
   <div class="grid">
     <label class="f">الاسم الكامل<input class="in" id="nuName"></label>
     <label class="f">اسم المستخدم (بالإنجليزي)<input class="in" id="nuUser" dir="ltr" autocapitalize="off" autocomplete="off" placeholder="ahmed.ali"></label>
@@ -1406,7 +1417,7 @@ function renderUsers(){
   ${orgEditor()}<section class="block"><h2>الحسابات <span class="sub">${users.length}</span></h2><div class="ulist">${users.map(u=>`
     <div class="urow ${u.active?"":"off"}"><div class="uinfo"><b>${esc(u.full_name)}</b><span dir="ltr">${esc(u.username)}${u.email?" · "+esc(u.email):""}</span>${u.email?"":`<small style="color:var(--warn)">بدون بريد إلكتروني — اضغط «تعديل» لإضافته</small>`}<small>${ROLE[u.role]||u.role}${u.sector?" — "+esc(u.sector):""}${u.active?"":" — موقوف"}${u.must_change_password?" — لم يغيّر كلمة المرور المؤقتة":""}</small></div>
     <div class="uact">${u.id===me.id?`<span class="sub">حسابك</span>`:`<button type="button" class="btn2" data-act="toggle" data-id="${u.id}">${u.active?"إيقاف":"تفعيل"}</button><button type="button" class="btn2" data-act="edit" data-id="${u.id}">تعديل</button><button type="button" class="btn2" data-act="reset" data-id="${u.id}">كلمة مرور جديدة</button>`}</div></div>`).join("")}</div></section>`;
-  bindOrg();
+  bindOrg();bindPwReq();
   $("#nuCreate").onclick=async()=>{
     const name=$("#nuName").value.trim(),un=$("#nuUser").value.trim().toLowerCase(),role=$("#nuRole").value,sec=$("#nuSector").value.trim(),pw=$("#nuPass").value.trim();
     if(!name||!un||!pw){toast("أكمل الاسم واسم المستخدم وكلمة المرور");return}
@@ -1417,12 +1428,12 @@ function renderUsers(){
     await loadUsers();renderUsers();showCred(name,un,pw,"تم إنشاء الحساب");};
   $$("[data-act]").forEach(b=>b.onclick=async()=>{const u=users.find(x=>x.id===b.dataset.id);if(!u)return;
     if(b.dataset.act==="toggle"){const r=await sb.rpc("q_set_active",{p_user:u.id,p_active:!u.active});if(r.error){toast(r.error.message);return}await loadUsers();renderUsers();toast(u.active?"تم إيقاف الحساب":"تم تفعيل الحساب")}
-    if(b.dataset.act==="reset"){if(!confirm("إنشاء كلمة مرور مؤقتة جديدة لـ "+u.full_name+"؟"))return;const pw=tempPass();const r=await sb.rpc("q_reset_password",{p_user:u.id,p_password:pw});if(r.error){toast(r.error.message);return}await loadUsers();renderUsers();showCred(u.full_name,u.username,pw,"تم تعيين كلمة مرور مؤقتة")}
+    if(b.dataset.act==="reset"){if(!confirm("إنشاء كلمة مرور مؤقتة جديدة لـ "+u.full_name+"؟"))return;const pw=tempPass();const r=await sb.rpc("q_reset_password",{p_user:u.id,p_password:pw});if(r.error){toast(r.error.message);return}await loadUsers();renderUsers();showCred(u.full_name,u.username,pw,"تم تعيين كلمة مرور مؤقتة",u.email)}
     if(b.dataset.act==="edit")editUser(u)});
 }
-function showCred(name,un,pw,title){
+function showCred(name,un,pw,title,email){
   const link=location.origin+location.pathname;const msg=`${title}\nنظام الجودة والتحقق من متطلبات والاشتراطات اللازمة للمخالفات\nالرابط: ${link}\nالاسم: ${name}\nاسم المستخدم: ${un}\nكلمة المرور المؤقتة: ${pw}\nسيُطلب منك تغيير كلمة المرور عند أول دخول.`;
-  $("#sheet").innerHTML=`<h3>${esc(title)}</h3><div class="sub">أرسل بيانات الدخول للموظف. كلمة المرور لن تظهر مرة أخرى.</div><pre>${esc(msg)}</pre><div class="btns"><button type="button" class="btn2 pri" id="cpCred">نسخ</button><a class="btn2" style="text-decoration:none;color:inherit" target="_blank" rel="noopener" href="https://wa.me/?text=${encodeURIComponent(msg)}">إرسال عبر واتساب</a><button type="button" class="btn2" id="closeSh">إغلاق</button></div>`;
+  $("#sheet").innerHTML=`<h3>${esc(title)}</h3><div class="sub">أرسل بيانات الدخول للموظف. كلمة المرور لن تظهر مرة أخرى.</div><pre>${esc(msg)}</pre><div class="btns"><button type="button" class="btn2 pri" id="cpCred">نسخ</button><a class="btn2" style="text-decoration:none;color:inherit" target="_blank" rel="noopener" href="https://wa.me/?text=${encodeURIComponent(msg)}">إرسال عبر واتساب</a>${email?`<a class="btn2" style="text-decoration:none;color:inherit" href="mailto:${email}?subject=${encodeURIComponent("بيانات الدخول — نظام الجودة والتحقق")}&body=${encodeURIComponent(msg)}">✉️ إرسال بالبريد</a>`:""}<button type="button" class="btn2" id="closeSh">إغلاق</button></div>`;
   openSheet();$("#cpCred").onclick=()=>copy(msg);$("#closeSh").onclick=closeSheet;
 }
 function editUser(u){
@@ -1475,6 +1486,22 @@ async function doImport(list,replace){
   await loadData();renderQueue();toast(`تم رفع ${up.length} مخالفة. للاختيار مرة ثانية اضغط «ملف المخالفات»`+(dup?` (تجاهل ${dup} مكررة)`:""));
 }
 
+/* ===================== نسيت كلمة المرور ===================== */
+$("#lgForgot").onclick=()=>{$("#loginForm").hidden=true;$("#fgForm").hidden=false;$("#fgUser").value=$("#lgUser").value.trim();$("#fgMsg").textContent="";$("#fgMsg").className="msg";$("#fgUser").focus()};
+$("#fgBack").onclick=()=>{$("#fgForm").hidden=true;$("#loginForm").hidden=false};
+$("#fgForm").onsubmit=async e=>{e.preventDefault();const u=$("#fgUser").value.trim(),m=$("#fgMsg");
+  if(u.length<3){m.textContent="اكتب اسم المستخدم";return}
+  $("#fgBtn").disabled=true;const {error}=await sb.from("quality_pw_requests").insert({username:u.toLowerCase(),note:$("#fgNote").value.trim()||null});$("#fgBtn").disabled=false;
+  if(error){m.textContent="تعذر إرسال الطلب، حاول لاحقاً";return}
+  m.className="msg ok";m.textContent="✓ وصل طلبك لمدير النظام. سيرسل لك كلمة مرور مؤقتة، وعند الدخول بها يطلب منك النظام كلمة مرور جديدة.";$("#fgNote").value=""};
+let PWREQ=[];
+async function loadPwReq(){if(!me||me.role!=="admin"){PWREQ=[];return}try{const {data}=await sb.from("quality_pw_requests").select("*").eq("done",false).order("created_at");PWREQ=data||[]}catch(e){PWREQ=[]}}
+function pwReqBlock(){if(!PWREQ.length)return "";return `<section class="block" style="border-color:var(--warn)"><h2>طلبات إعادة كلمة المرور <span class="sub">${PWREQ.length}</span></h2><div class="ulist">${PWREQ.map(r=>{const u=users.find(x=>x.username===r.username||(x.username||"").toLowerCase()===r.username);return `<div class="urow"><div class="uinfo"><b>${esc(u?u.full_name:"اسم مستخدم غير موجود")}</b><span dir="ltr">${esc(r.username)}</span><small>${fmtD(Date.parse(r.created_at))}${r.note?" — "+esc(r.note):""}</small></div><div class="uact">${u?`<button type="button" class="btn2 pri" data-pwr="${r.id}" data-u="${u.id}">إنشاء كلمة مرور</button>`:""}<button type="button" class="btn2" data-pwx="${r.id}">تجاهل</button></div></div>`}).join("")}</div></section>`}
+function bindPwReq(){
+  $$("[data-pwx]").forEach(b=>b.onclick=async()=>{await sb.from("quality_pw_requests").update({done:true}).eq("id",b.dataset.pwx);await loadPwReq();renderUsers()});
+  $$("[data-pwr]").forEach(b=>b.onclick=async()=>{const u=users.find(x=>x.id===b.dataset.u);if(!u)return;const pw=tempPass();const r=await sb.rpc("q_reset_password",{p_user:u.id,p_password:pw});if(r.error){toast(r.error.message);return}
+    await sb.from("quality_pw_requests").update({done:true}).eq("id",b.dataset.pwr);await loadPwReq();await loadUsers();renderUsers();showCred(u.full_name,u.username,pw,"تم تعيين كلمة مرور مؤقتة",u.email)});
+}
 buildTypeSel();
 boot();
 </script>
