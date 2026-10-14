@@ -214,6 +214,11 @@ button.attbtn{background:none;font:inherit}
 .ogrp{display:flex;flex-direction:column;gap:6px}.osname{font-weight:700;color:var(--navy)}.ounits{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:10px}
 .ounit{border:1px solid var(--line);border-radius:12px;padding:10px 12px;background:var(--field);display:flex;flex-direction:column;gap:3px;font-size:13px}.ounit b{font-size:15px;color:var(--navy)}.ounit small{color:var(--muted)}
 .ogovs{display:flex;flex-wrap:wrap;gap:4px;margin-top:-4px}.ogovs i{font-style:normal;font-size:11.5px;background:var(--tint,#E3EDF6);border-radius:6px;padding:1px 7px;color:var(--muted)}
+.kpi[data-drill]{cursor:pointer;transition:border-color .15s}.kpi[data-drill]:hover,.kpi[data-drill]:focus-visible{border-color:var(--navy)}
+.kpi[data-drill]::after{content:"عرض التفاصيل ‹";display:block;font-size:11px;color:var(--navy);margin-top:4px;font-weight:600}
+.tbl tr[data-drill]{cursor:pointer}.tbl tr[data-drill]:hover td{background:var(--field)}
+.actlog{border:1px solid var(--line);border-radius:12px;padding:8px 12px;margin-bottom:12px;font-size:13px}.actlog summary{cursor:pointer;font-weight:600;color:var(--navy)}
+.actlog div{padding:6px 0;border-top:1px dashed var(--line)}.actlog div:first-of-type{border-top:0}.actlog small{color:var(--muted)}
 #printDoc{display:none}
 @media (prefers-reduced-motion: reduce){*{transition:none!important}}
 @media print{
@@ -514,7 +519,8 @@ $("#fileIn").onchange=async e=>{
 
 /* ===================== قائمة المخالفات ===================== */
 let qFilter="all",qSearch="";
-function statusOf(id){const a=audits[id];if(!a)return "new";return a.status||"prog"}
+function reserved(a){return !!a&&(!!a._id||!!a.status||Object.keys(a.ans||{}).length>0)}
+function statusOf(id){const a=audits[id];if(!reserved(a))return "new";return a.status||"prog"}
 const ST={new:["لم يُدقق","b-new"],prog:["قيد التدقيق","b-prog"],pend:["بانتظار اعتماد رئيس الجودة بالوحدة","b-pend"],ok:["مكتملة","b-ok"],ret:["معادة للمفتش","b-ret"]};
 function renderQueue(){
   renderDone();
@@ -721,7 +727,7 @@ async function pdfPages(file){const lib=await pdfjs();const doc=await lib.getDoc
 async function addFiles(k,files){
   if(!files.length)return;
   let a=audits[current];
-  if(!a||!a._id){save();await flush();a=audits[current]}
+  if(a&&!a._id){a._force=true;save();await flush();a=audits[current]}
   if(!a||!a._id){toast("أدخل رقم الزيارة واختر المخالفة أولاً");return}
   if(a._ro){toast("هذه المعاملة للاطلاع فقط");return}
   let room=ATT_MAX-attsOf(k).length;if(room<=0){toast(`الحد الأعلى ${ATT_MAX} مرفقات لكل فقرة`);return}
@@ -784,14 +790,14 @@ function approvers(a){return approverList(a)}
 function _oldApprovers(a){return users.filter(u=>u.active&&u.role==="manager"&&(!u.sector||[a.f.gov,a.f.region,a.sector,a.region].includes(u.sector)))}
 async function requestApproval(){const m=missingFields();if(m.length){toast("أكمل الحقول الإلزامية: "+m.join("، "));return}
   const a=A();if(current==="manual"){save();await flush();if(current==="manual"){toast("أدخل رقم الزيارة");return}}
-  a.status="pend";a.auditor=a.auditor||me.full_name;a.f._ap={state:"pending",reqBy:me.full_name,reqAt:Date.now()};save();await flush();renderAll();renderQueue();
+  a.status="pend";a.auditor=a.auditor||me.full_name;a.f._ap={state:"pending",reqBy:me.full_name,reqAt:Date.now()};logAct(a,"إرسال لاعتماد رئيس الجودة بالوحدة");save();await flush();renderAll();renderQueue();
   const msg=`طلب اعتماد مستند داعم\nرقم الزيارة: ${a.f.vno}\nالمخالفة: ${GUIDE[a.type].name}\nالمنطقة: ${a.f.region||"-"} — المحافظة: ${a.f.gov||"-"}\nالمدقق: ${me.full_name}\nالرابط: ${location.origin+location.pathname}`;
   $("#sheet").innerHTML=`<h3>أُرسلت للاعتماد</h3><div class="sub">المعاملة الآن «بانتظار اعتماد رئيس الجودة بالوحدة». تقدر تطبع المستند الداعم بعد الاعتماد.</div><pre>${esc(msg)}</pre><div class="btns">${(()=>{const ap=approverList(a),em=ap.map(u=>u.email).filter(Boolean);const subj=`طلب اعتماد مستند داعم — زيارة ${a.f.vno}`;
   return em.length?`<a class="btn2 pri" style="text-decoration:none" href="mailto:${em.join(",")}?subject=${encodeURIComponent(subj)}&body=${encodeURIComponent(msg)}">✉️ إشعار رئيس الجودة بالوحدة بالبريد (${esc(ap.filter(u=>u.email).map(u=>u.full_name).join("، "))})</a>`:`<div class="alert" style="width:100%">لم يُسجّل بريد إلكتروني لرئيس الجودة بالوحدة المسؤول عن هذه المحافظة. يضيفه مدير النظام من صفحة «المستخدمون».</div>`})()}<button type="button" class="btn2" id="cpAp">نسخ</button><button type="button" class="btn2" id="closeSh">إغلاق</button></div>`;
   openSheet();$("#closeSh").onclick=closeSheet;$("#cpAp").onclick=()=>copy(msg)}
 async function approveDoc(){const a=A();if(!canApprove(a)){toast("الاعتماد لرئيس الجودة بالوحدة المسؤول عن المحافظة");return}
   if(!confirm(`اعتماد المستند الداعم للزيارة ${a.f.vno}؟`))return;
-  a.status="ok";a.doneAt=a.doneAt||Date.now();a.f._ap={...(a.f._ap||{}),state:"approved",by:me.full_name,at:Date.now()};a.f._rv=reviews(a).concat([{state:"approved",by:me.full_name,at:Date.now()}]);
+  a.status="ok";a.doneAt=a.doneAt||Date.now();a.f._ap={...(a.f._ap||{}),state:"approved",by:me.full_name,at:Date.now()};a.f._rv=reviews(a).concat([{state:"approved",by:me.full_name,at:Date.now()}]);logAct(a,"اعتماد المستند الداعم");
   save();await flush();renderAll();renderQueue();toast("تم الاعتماد، ويمكن الآن طباعة المستند الداعم")}
 function updateBar(){
   const a=A(),items=allItems(),n=items.length,ok=items.filter(i=>a.ans[i.key]?.s==="ok").length,bad=items.filter(i=>a.ans[i.key]?.s==="bad").length;
@@ -825,7 +831,7 @@ function openReturn(){
   <div class="btns"><a class="btn2 pri" style="text-decoration:none" href="#" id="mailRet">✉️ إشعار المفتش بالبريد</a><button type="button" class="btn2" id="cpRet">نسخ الملاحظات</button><a class="btn2" style="text-decoration:none;color:inherit" target="_blank" rel="noopener" href="https://wa.me/?text=${encodeURIComponent(t)}" id="waRet">إرسال عبر واتساب</a><button type="button" class="btn2" id="markRet">تسجيلها كمعادة</button><button type="button" class="btn2" id="closeSh">إغلاق</button></div>`;
   openSheet();
   $("#cpRet").onclick=()=>copy(t);
-  const mark=()=>{const _a=A();_a.status="ret";_a.retAt=Date.now();save();flush();renderQueue();toast("سُجلت المخالفة كمعادة للمفتش")};
+  const mark=()=>{const _a=A();if(_a.status!=="ret")logAct(_a,"إعادة للمفتش",_a.f.oemail?"البريد: "+_a.f.oemail:"");_a.status="ret";_a.retAt=Date.now();save();flush();renderQueue();toast("سُجلت المخالفة كمعادة للمفتش")};
   $("#mailRet").onclick=e=>{const em=$("#retMail").value.trim();if(!em){e.preventDefault();toast("اكتب بريد المفتش أولاً");$("#retMail").focus();return}A().f.oemail=em;$("#mailRet").href=`mailto:${em}?subject=${encodeURIComponent(subj)}&body=${encodeURIComponent(t)}`;mark()};
   $("#waRet").onclick=mark;$("#markRet").onclick=()=>{mark();closeSheet()};$("#closeSh").onclick=closeSheet;
 }
@@ -868,7 +874,7 @@ async function openPrint(){
   const m=missingFields();
   if(m.length){toast("أكمل الحقول الإلزامية: "+m.join("، "));return}
   if(current==="manual"){save();await flush();if(current==="manual"){toast("أدخل رقم الزيارة");return}}
-  {const _a=A();_a.status="ok";if(!_a.doneAt)_a.doneAt=Date.now();_a.lastDone=Date.now();_a.auditor=_a.auditor||me.full_name}
+  {const _a=A();_a.status="ok";if(!_a.doneAt)_a.doneAt=Date.now();_a.lastDone=Date.now();_a.auditor=_a.auditor||me.full_name;logAct(_a,"إصدار المستند الداعم")}
   save();await flush();renderQueue();renderReview();
   $("#sheet").innerHTML=`<h3>المستند الداعم جاهز</h3><div class="sub">اختر طريقة الإخراج: ملف PDF يشمل التدقيق وجميع المرفقات، أو طباعة مباشرة.</div>
   <div class="btns" style="margin-top:14px"><button type="button" class="btn2 pri" id="doPdf">📄 مستند PDF</button><button type="button" class="btn2" id="doPrint">🖨️ طباعة</button><button type="button" class="btn2" id="closeSh">إغلاق</button></div>
@@ -964,15 +970,38 @@ async function copy(t){try{await navigator.clipboard.writeText(t);toast("تم ا
 let tt;function toast(m){const t=$("#toast");t.textContent=m;t.classList.add("show");clearTimeout(tt);tt=setTimeout(()=>t.classList.remove("show"),2600)}
 
 function reviews(a){return (a&&a.f&&a.f._rv)||[]}
+function logAct(a,act,note){if(!a||!a.f)return;a.f._log=(a.f._log||[]).concat([{act,by:me?me.full_name:"",at:Date.now(),note:note||""}])}
+function fmtDT(t){const d=new Date(t);return fmtD(t)+" "+String(d.getHours()).padStart(2,"0")+":"+String(d.getMinutes()).padStart(2,"0")}
+function canTransfer(a){if(!me||!a||!a._id)return false;if(me.role==="admin"||me.role==="exec")return true;return me.role==="manager"&&scopeOK(a.f.gov||a.sector,a.f.region||a.region)}
+function transferDialog(){const a=A(),g=a.f.gov||a.sector,rg=a.f.region||a.region;
+  const cands=users.filter(u=>u.active&&["staff","manager","exec"].includes(u.role)&&u.id!==a._owner&&(me.role!=="manager"||userScopeOK(u,g,rg)));
+  if(!cands.length){toast("لا يوجد موظفون متاحون للتحويل");return}
+  $("#sheet").innerHTML=`<h3>تحويل المعاملة ${esc(a.f.vno||"")}</h3><div class="sub">المدقق الحالي: ${esc(a.auditor||userName(a._owner))}</div>
+   <label class="f" style="margin-top:12px">تحويل إلى<select class="in" id="trTo">${cands.map(u=>`<option value="${u.id}">${esc(u.full_name)} — ${esc(ROLE[u.role]||u.role)}${u.sector?" — "+esc(u.sector):""}</option>`).join("")}</select></label>
+   <label class="f" style="margin-top:10px">سبب التحويل (اختياري)<textarea class="in" id="trWhy" placeholder="مثال: إجازة الموظف، توزيع العمل"></textarea></label>
+   <div class="btns" style="margin-top:12px"><button type="button" class="btn2 pri" id="trGo">تحويل</button><button type="button" class="btn2" id="closeSh">إلغاء</button></div>`;
+  openSheet();$("#closeSh").onclick=closeSheet;
+  $("#trGo").onclick=async()=>{const u=users.find(x=>x.id===$("#trTo").value);if(!u)return;const why=$("#trWhy").value.trim(),from=a.auditor||userName(a._owner);
+    await flush();logAct(a,"تحويل المعاملة",`من ${from} إلى ${u.full_name}`+(why?` — السبب: ${why}`:""));
+    const r=await sb.from("quality_audits").update({auditor_id:u.id,auditor_name:u.full_name,fields:a.f,updated_at:new Date().toISOString()}).eq("id",a._id).select("id");
+    if(r.error||!r.data||!r.data.length){a.f._log.pop();toast("تعذر التحويل: "+(r.error?r.error.message:"لا توجد صلاحية"));return}
+    a._owner=u.id;a.auditor=u.full_name;a.updated=Date.now();renderAll();renderQueue();
+    const msg=`حُوّلت إليك معاملة في نظام الجودة والتحقق\nرقم الزيارة: ${a.f.vno}\nالمخالفة: ${a.type>=0&&GUIDE[a.type]?GUIDE[a.type].name:""}\nحوّلها: ${me.full_name}${why?"\nالسبب: "+why:""}\nالرابط: ${location.origin+location.pathname}`;
+    $("#sheet").innerHTML=`<h3>تم التحويل إلى ${esc(u.full_name)}</h3><pre>${esc(msg)}</pre><div class="btns">${u.email?`<a class="btn2 pri" style="text-decoration:none" href="mailto:${u.email}?subject=${encodeURIComponent("تحويل معاملة — زيارة "+a.f.vno)}&body=${encodeURIComponent(msg)}">✉️ إشعار الموظف بالبريد</a>`:`<div class="alert" style="width:100%">لا يوجد بريد مسجل لهذا الموظف.</div>`}<button type="button" class="btn2" id="closeSh">إغلاق</button></div>`;
+    $("#closeSh").onclick=closeSheet;toast("تم تحويل المعاملة")};
+}
 function renderReview(){const a=A(),box=$("#revBox");if(!box)return;const rv=reviews(a),last=rv[rv.length-1],isMgr=isMgrR();let h="";
   if(last)h+=`<div class="revnote ${last.state}">${last.state==="approved"?"✓ اعتمدها رئيس الجودة بالوحدة":"✕ أعادها رئيس الجودة بالوحدة للتصحيح"} — ${esc(last.by)} (${fmtD(last.at)})${last.note?`<br>الملاحظة: ${esc(last.note)}`:""}${last.items&&last.items.length?`<br>الفقرات المرفوضة: ${last.items.map(k=>esc(k.slice(2))).join("، ")}`:""}</div>`;
   if(a.status==="pend"){const ap=a.f._ap||{},who=approvers(a).map(u=>u.full_name);h+=`<div class="revnote pend">⏳ بانتظار اعتماد رئيس الجودة بالوحدة${ap.reqBy?` — طلبه ${esc(ap.reqBy)} (${fmtD(ap.reqAt)})`:""}${who.length?`<br>المعتمد: ${esc(who.join("، "))}`:""}</div>`;
     if(canApprove(a))h+=`<div class="revbtns"><b>اعتماد المستند الداعم:</b><button type="button" class="btn2" id="apOk" style="color:var(--ok);border-color:var(--ok)">✓ اعتماد</button><button type="button" class="btn2" id="rvNo" style="color:var(--bad);border-color:var(--bad)">✕ رفض وإرجاع لموظف الجودة</button></div>`}
   else if(a.status==="ok"&&a.f._ap&&a.f._ap.state==="approved"){}
   else if(isMgr&&a._id&&a.status==="ok"&&(!last||last.state==="rejected"))h+=`<div class="revbtns"><b>مراجعة رئيس الجودة بالوحدة:</b><button type="button" class="btn2" id="rvOk" style="color:var(--ok);border-color:var(--ok)">✓ اعتماد المراجعة</button><button type="button" class="btn2" id="rvNo" style="color:var(--bad);border-color:var(--bad)">✕ رفض وإرجاع لموظف الجودة</button></div>`;
+  if(canTransfer(a))h+=`<div class="revbtns"><b>المدقق الحالي: ${esc(a.auditor||userName(a._owner))}</b><button type="button" class="btn2" id="trBtn">⇄ تحويل المعاملة</button></div>`;
+  {const lg=(a.f&&a.f._log)||[];if(lg.length)h+=`<details class="actlog"><summary>سجل النشاط (${lg.length})</summary>${lg.slice().reverse().map(l=>`<div>${esc(l.act)} — ${esc(l.by)} <small>(${fmtDT(l.at)})</small>${l.note?`<br><small>${esc(l.note)}</small>`:""}</div>`).join("")}</details>`}
   box.innerHTML=h;
+  if($("#trBtn"))$("#trBtn").onclick=transferDialog;
   if($("#apOk"))$("#apOk").onclick=approveDoc;
-  if($("#rvOk"))$("#rvOk").onclick=async()=>{const a=A();a.f._rv=reviews(a).concat([{state:"approved",by:me.full_name,at:Date.now()}]);save();await flush();renderReview();renderQueueSoft();toast("تم اعتماد المراجعة")};
+  if($("#rvOk"))$("#rvOk").onclick=async()=>{const a=A();a.f._rv=reviews(a).concat([{state:"approved",by:me.full_name,at:Date.now()}]);logAct(a,"اعتماد المراجعة");save();await flush();renderReview();renderQueueSoft();toast("تم اعتماد المراجعة")};
   if($("#rvNo"))$("#rvNo").onclick=rejectDialog;
 }
 function rejectDialog(){const a=A(),its=allItems();
@@ -983,7 +1012,7 @@ function rejectDialog(){const a=A(),its=allItems();
   openSheet();$("#closeSh").onclick=closeSheet;
   $("#rvGo").onclick=async()=>{const ks=[...document.querySelectorAll("#sheet .chks input:checked")].map(i=>i.value),note=$("#rvNote").value.trim();
     if(!ks.length){toast("حدد فقرة واحدة على الأقل");return}if(!note){toast("اكتب الملاحظة لموظف الجودة");return}
-    ks.forEach(k=>{a.ans[k]={s:"bad",n:"رئيس الجودة بالوحدة: "+note}});a.status=null;a.f._rv=reviews(a).concat([{state:"rejected",by:me.full_name,at:Date.now(),items:ks,note}]);
+    ks.forEach(k=>{a.ans[k]={s:"bad",n:"رئيس الجودة بالوحدة: "+note}});a.status=null;a.f._rv=reviews(a).concat([{state:"rejected",by:me.full_name,at:Date.now(),items:ks,note}]);logAct(a,"رفض وإرجاع لموظف الجودة",note);
     closeSheet();save();await flush();renderAll();renderQueue();toast("أُعيدت المعاملة لموظف الجودة");
     const au=users.find(u=>u.id===a._owner);const msg=`أُعيدت إليك معاملة للتصحيح\nرقم الزيارة: ${a.f.vno}\nالمخالفة: ${a.type>=0?GUIDE[a.type].name:""}\nالفقرات: ${ks.map(k=>k.slice(2)).join("، ")}\nملاحظة رئيس الجودة بالوحدة: ${note}\nالرابط: ${location.origin+location.pathname}`;
     $("#sheet").innerHTML=`<h3>أُعيدت لموظف الجودة</h3><div class="sub">المدقق: ${esc(au?au.full_name:(a.auditor||"-"))}</div><pre>${esc(msg)}</pre><div class="btns">${au&&au.email?`<a class="btn2 pri" style="text-decoration:none" href="mailto:${au.email}?subject=${encodeURIComponent("إعادة معاملة للتصحيح — زيارة "+a.f.vno)}&body=${encodeURIComponent(msg)}">✉️ إشعار موظف الجودة بالبريد</a>`:`<div class="alert" style="width:100%">لا يوجد بريد مسجل لهذا المدقق. يضيفه مدير النظام من «المستخدمون» ← تعديل.</div>`}<button type="button" class="btn2" id="closeSh">إغلاق</button></div>`;openSheet();$("#closeSh").onclick=closeSheet};
@@ -1055,10 +1084,12 @@ function regOf(k,a){const r=rows.find(x=>x.vno===k);return a.f.region||a.region|
 let warnedRO=false;
 async function pushAudit(k){
   if(!sb||!me)return;let a=audits[k];if(!a)return;
+  if(!a._id&&!a._force&&!reserved(a))return;
   if(k==="manual"){const v=String(a.f.vno||"").trim();if(!v)return;
     if(audits[v]&&audits[v]!==a){toast("رقم الزيارة "+v+" موجود مسبقاً، افتحه من القوائم");return}
     audits[v]=a;delete audits.manual;if(current==="manual"){current=v;try{localStorage.setItem("vv:current",v)}catch(e){}}k=v}
   if(a._ro){if(!warnedRO){toast("هذه المعاملة للاطلاع فقط");warnedRO=true}return}
+  if(!a._id&&!(a.f._log||[]).some(l=>l.act==="بدء التدقيق"))logAct(a,"بدء التدقيق");
   const row={visit_no:k,violation_type:a.type,violation_name:a.type>=0&&GUIDE[a.type]?GUIDE[a.type].name:null,
     case_name:a.cas||null,sector:secOf(k,a)||null,region:regOf(k,a)||null,violation_id:a.f.vid||a.vid||null,fields:a.f,answers:a.ans,
     status:a.status==="ok"?"completed":a.status==="ret"?"returned":a.status==="pend"?"pending_approval":"in_progress",
@@ -1167,8 +1198,8 @@ $("#fClr").onclick=()=>{F={reg:"",gov:"",vst:"",unit:""};setF("reg","")};
 
 function statusBlock(st){
   const T=st.tot.total||0,p=v=>T?Math.round(v/T*1000)/10:0;
-  const items=[["مكتملة",st.tot.completed,"k-ok",C.green],["معادة للمفتش",st.tot.returned,"k-bad",C.red],["قيد التدقيق",st.tot.progress,"k-warn",C.amber],["غير المقيّمة",st.tot.pending,"k-gray",C.gray]];
-  return `<div class="kpis">${kpi("إجمالي المخالفات",T.toLocaleString("en-US"),"k-navy","100%")}${items.map(i=>kpi(i[0],i[1].toLocaleString("en-US"),i[2],p(i[1])+"%")).join("")}</div>
+  const items=[["مكتملة",st.tot.completed,"k-ok",C.green,"completed"],["معادة للمفتش",st.tot.returned,"k-bad",C.red,"returned"],["قيد التدقيق",st.tot.progress,"k-warn",C.amber,"progress"],["غير المقيّمة",st.tot.pending,"k-gray",C.gray,"pending"]];
+  return `<div class="kpis">${kpi("إجمالي المخالفات",T.toLocaleString("en-US"),"k-navy","100%","st:all")}${items.map(i=>kpi(i[0],i[1].toLocaleString("en-US"),i[2],p(i[1])+"%","st:"+i[4])).join("")}</div>
   <div class="sbar" role="img" aria-label="توزيع الحالات">${items.map(i=>T&&i[1]?`<i style="width:${i[1]/T*100}%;background:${i[3]}" title="${i[0]}: ${p(i[1])}%"></i>`:"").join("")}</div>
   <div class="slegend">${items.map(i=>`<span><b style="background:${i[3]}"></b>${i[0]} ${p(i[1])}%</span>`).join("")}</div>`;
 }
@@ -1184,12 +1215,12 @@ function platGroups(st){return F.reg&&st.bySec.length===1?st.bySec[0].govList:st
 function cellNP(n,T){return n?`${n.toLocaleString("en-US")}<small class="pp">${pctN(n,T)}%</small>`:`<span class="z">0</span>`}
 function platBlock(st){
   const T=st.tot.total;const pc=platCols(st),dc=decCols(st),gs=platGroups(st),gl=F.reg?"المحافظة":"المنطقة";
-  const decCards=dc.map(k=>kpi(k,st.tot.dec[k].toLocaleString("en-US"),DCLS[k],pctN(st.tot.dec[k],T)+"%")).join("");
+  const decCards=dc.map(k=>kpi(k,st.tot.dec[k].toLocaleString("en-US"),DCLS[k],pctN(st.tot.dec[k],T)+"%","dec:"+k)).join("");
   return `<section class="block"><h2><span>قرار مدير الرقابة<span class="ftag">من التقرير الشامل</span></span></h2>
-  <div class="kpis">${kpi("الإجمالي",T.toLocaleString("en-US"),"k-navy","100%")}${decCards}</div>
+  <div class="kpis">${kpi("الإجمالي",T.toLocaleString("en-US"),"k-navy","100%","st:all")}${decCards}</div>
   <div class="tbl-wrap"><table class="tbl mtx"><thead><tr><th>${gl}</th><th>الإجمالي</th>${dc.map(k=>`<th>${esc(k)}</th>`).join("")}</tr></thead><tbody>${gs.map(g=>`<tr><td>${esc(g.label)}</td><td><b>${g.total.toLocaleString("en-US")}</b></td>${dc.map(k=>`<td>${cellNP(g.dec[k]||0,g.total)}</td>`).join("")}</tr>`).join("")}</tbody></table></div></section>
   <section class="block"><h2><span>حالة المخالفة في المنصة<span class="ftag">من التقرير الشامل</span></span></h2>
-  <div class="tbl-wrap" style="margin-bottom:12px"><table class="tbl"><thead><tr><th>حالة المخالفة</th><th>العدد</th><th>النسبة</th><th style="width:35%"></th></tr></thead><tbody>${pc.map(k=>{const n=st.tot.plat[k];return `<tr><td>${esc(k)}</td><td><b>${n.toLocaleString("en-US")}</b></td><td>${pctN(n,T)}%</td><td><div class="minibar"><i style="width:${T?n/T*100:0}%"></i></div></td></tr>`}).join("")}</tbody></table></div>
+  <div class="tbl-wrap" style="margin-bottom:12px"><table class="tbl"><thead><tr><th>حالة المخالفة</th><th>العدد</th><th>النسبة</th><th style="width:35%"></th></tr></thead><tbody>${pc.map(k=>{const n=st.tot.plat[k];return `<tr data-drill="${esc("plat:"+k)}"><td>${esc(k)}</td><td><b>${n.toLocaleString("en-US")}</b></td><td>${pctN(n,T)}%</td><td><div class="minibar"><i style="width:${T?n/T*100:0}%"></i></div></td></tr>`}).join("")}</tbody></table></div>
   <div class="sub" style="margin-bottom:6px">حسب ${gl} (العدد والنسبة من إجمالي ${gl})</div>
   <div class="tbl-wrap"><table class="tbl mtx"><thead><tr><th>${gl}</th><th>الإجمالي</th>${pc.map(k=>`<th>${esc(k)}</th>`).join("")}</tr></thead><tbody>${gs.map(g=>`<tr><td>${esc(g.label)}</td><td><b>${g.total.toLocaleString("en-US")}</b></td>${pc.map(k=>`<td>${cellNP(g.plat[k]||0,g.total)}</td>`).join("")}</tr>`).join("")}</tbody></table></div></section>`;
 }
@@ -1250,7 +1281,7 @@ function canvasBars(items,series,width){
 }
 
 /* ===================== لوحتي ===================== */
-function kpi(label,val,cls,sub){return `<div class="kpi ${cls||""}"><b>${esc(val)}</b><span>${esc(label)}</span>${sub?`<small>${esc(sub)}</small>`:""}</div>`}
+function kpi(label,val,cls,sub,drill){return `<div class="kpi ${cls||""}"${drill?` data-drill="${esc(drill)}" role="button" tabindex="0"`:""}><b>${esc(val)}</b><span>${esc(label)}</span>${sub?`<small>${esc(sub)}</small>`:""}</div>`}
 function secTable(list){return `<div class="tbl-wrap"><table class="tbl"><thead><tr><th>المنطقة / المحافظة</th><th>الإجمالي</th><th>المقيّمة</th><th>غير المقيّمة</th><th>مكتملة</th><th>معادة</th></tr></thead><tbody>${list.map((s,i)=>`<tr class="clk reg" data-reg="${i}"><td><b><span class="arw">◂</span> ${esc(s.label)}</b></td><td>${s.total}</td><td>${s.evaluated}</td><td>${s.notEval}</td><td>${s.completed}</td><td>${s.returned}</td></tr>${(s.govList||[]).map(g=>`<tr class="govr" data-of="${i}" hidden><td style="padding-inline-start:26px">${esc(g.label)}</td><td>${g.total}</td><td>${g.evaluated}</td><td>${g.notEval}</td><td>${g.completed}</td><td>${g.returned}</td></tr>`).join("")}`).join("")||`<tr><td colspan="6">لا توجد بيانات</td></tr>`}</tbody></table></div>`}
 function bindReg(root){root.querySelectorAll("tr.reg").forEach(tr=>tr.onclick=()=>{const open=!tr.classList.contains("open");tr.classList.toggle("open",open);tr.querySelector(".arw").textContent=open?"▾":"◂";root.querySelectorAll(`tr[data-of="${tr.dataset.reg}"]`).forEach(x=>x.hidden=!open)})}
 function renderDash(){
@@ -1263,8 +1294,40 @@ function renderDash(){
   ${mySec?`<section class="block"><h2>منطقتي: ${esc(mySec.label)}</h2><div class="kpis">${kpi("الإجمالي",mySec.total)}${kpi("المقيّمة",mySec.evaluated,"k-ok")}${kpi("غير المقيّمة",mySec.notEval,"k-warn")}</div></section>`:""}
   <section class="block"><h2>حالات التدقيق في نظام الجودة</h2>${statusBlock(st)}</section>${platBlock(st)}<section class="block"><h2>المخالفات حسب المنطقة</h2>
   <div class="chart">${svgBars(chartItems(st),SEC_SERIES,"المخالفات حسب المنطقة")}</div><div class="sub" style="margin-bottom:6px">اضغط على المنطقة لعرض محافظاتها</div>${secTable(st.bySec)}</section>`;
-  bindReg($("#dashBody"));
+  bindReg($("#dashBody"));drillPer="all";bindDrill($("#dashBody"));
   $$("#dashBody [data-open]").forEach(b=>b.onclick=()=>{go("audit");openAudit(b.dataset.open)});
+}
+
+/* ===================== تفاصيل المربعات ===================== */
+let drillPer="all";
+function bindDrill(root){root.querySelectorAll("[data-drill]").forEach(el=>{el.onclick=()=>openDrill(el.dataset.drill);el.onkeydown=e=>{if(e.key==="Enter"||e.key===" "){e.preventDefault();openDrill(el.dataset.drill)}}})}
+function drillRecs(){const since=periodStart(drillPer);const inP=a=>!since||((a.doneAt||a.retAt||a.updated||0)>=since);
+  const rs=vrows(),qset=new Set(rs.map(r=>r.vno)),out=[];
+  rs.forEach(r=>{const a=audits[r.vno];const aa=a&&a._id?a:null;if(aa&&!inP(aa))return;out.push({key:r.vno,r,a:aa})});
+  const allQ=rowMap();Object.entries(audits).forEach(([k,a])=>{if(k!=="manual"&&a._id&&!qset.has(k)&&!allQ[k]&&inFA(k,a)&&inP(a))out.push({key:k,r:null,a})});
+  return out}
+const DRILL_ST={all:"إجمالي المخالفات",completed:"مكتملة",returned:"معادة للمفتش",progress:"قيد التدقيق",pending:"غير المقيّمة"};
+const ST_LAB={completed:["مكتملة","b-ok"],returned:["معادة","b-ret"],progress:["قيد التدقيق","b-prog"],pending:["غير مقيّمة","b-new"]};
+function drillRow(x){const a=x.a,r=x.r||{},f=(a&&a.f)||{};const t=a&&a.type>=0&&GUIDE[a.type]?GUIDE[a.type].name:(r.type>=0&&GUIDE[r.type]?GUIDE[r.type].name:(r.item||""));
+  return {visit:x.key,vid:r.vid||f.vid||"",type:t,region:r.region||(a&&a.region)||f.region||"",gov:r.sector||(a&&a.sector)||f.gov||"",officer:r.officer||f.officer||"",name:r.name||f.name||"",st:stOf(a),auditor:a?userName(a._owner,a.auditor):"",dec:dLab(x.r?x.r.dec:undefined),plat:pLab(x.r?x.r.vstat:"")}}
+function openDrill(spec){
+  const i=spec.indexOf(":"),kind=spec.slice(0,i),val=spec.slice(i+1);let list=drillRecs(),title="";
+  if(kind==="st"){title=DRILL_ST[val]||val;if(val!=="all")list=list.filter(x=>stOf(x.a)===val)}
+  else if(kind==="dec"){title="قرار مدير الرقابة: "+val;list=list.filter(x=>dLab(x.r?x.r.dec:undefined)===val)}
+  else if(kind==="plat"){title="حالة المخالفة: "+val;list=list.filter(x=>pLab(x.r?x.r.vstat:"")===val)}
+  const data=list.map(drillRow),shown=data.slice(0,100);
+  $("#sheet").innerHTML=`<h3>${esc(title)}</h3><div class="sub">${data.length.toLocaleString("en-US")} مخالفة — ${esc(fLabel())}${drillPer!=="all"?" — "+esc(PERIODS[drillPer]):""}</div>
+   <div class="btns" style="margin:12px 0"><button type="button" class="btn2 pri" id="drXls"${data.length?"":" disabled"}>📊 تصدير Excel</button><button type="button" class="btn2" id="closeSh">إغلاق</button></div>
+   ${data.length?`<div class="queue" style="max-height:52vh">${shown.map(d=>`<button type="button" class="qrow" data-dopen="${esc(d.visit)}"><span class="id">${esc(d.visit)}</span><span class="badge ${ST_LAB[d.st][1]}">${ST_LAB[d.st][0]}</span><span class="t">${esc(d.type||"بند غير محدد")}</span><span class="m">${esc([d.officer,d.region,d.gov].filter(Boolean).join(" — "))}${d.auditor?" — المدقق: "+esc(d.auditor):""}</span></button>`).join("")}</div>${data.length>100?`<div class="sub" style="margin-top:6px">يظهر أول 100 من ${data.length.toLocaleString("en-US")}، والقائمة كاملة في ملف Excel.</div>`:""}`:`<div class="empty">لا توجد مخالفات</div>`}`;
+  openSheet();$("#closeSh").onclick=closeSheet;
+  $$("[data-dopen]").forEach(b=>b.onclick=()=>{closeSheet();go("audit");openAudit(b.dataset.dopen);setTimeout(()=>window.scrollTo({top:$("#typeSel").closest("section").offsetTop-8,behavior:"smooth"}),100)});
+  $("#drXls").onclick=async()=>{try{
+    const rowsX=data.map(d=>({"رقم الزيارة":d.visit,"معرف المخالفة":d.vid,"وصف بند اللائحة":d.type,"المنطقة":d.region,"المحافظة":d.gov,"اسم المفتش":d.officer,"اسم المخالف":d.name,"حالة التدقيق":ST_LAB[d.st][0],"المدقق":d.auditor,"قرار مدير الرقابة":d.dec,"حالة المخالفة في المنصة":d.plat}));
+    const ws=XLSX.utils.json_to_sheet(rowsX);ws["!cols"]=Object.keys(rowsX[0]).map(k=>({wch:k==="وصف بند اللائحة"?50:18}));
+    const wb=XLSX.utils.book_new();wb.Workbook={Views:[{RTL:true}]};XLSX.utils.book_append_sheet(wb,ws,"التفاصيل");
+    const buf=XLSX.write(wb,{bookType:"xlsx",type:"array"});
+    await deliver(new Blob([buf],{type:"application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"}),`${title.replace(/[^\w\u0600-\u06FF ]/g,"").trim().replace(/\s+/g,"-")}-${stamp().replace(/\//g,"-")}.xlsx`,"application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
+  }catch(e){toast("تعذر إنشاء ملف Excel")}};
 }
 
 /* ===================== أداء الموظفين ===================== */
@@ -1293,7 +1356,7 @@ function renderReport(){
   <section class="block"><h2>أداء موظفي الجودة</h2><div class="chart">${svgBars(st.byUser,USR_SERIES,"أداء الموظفين")}</div></section>
   <section class="block"><h2>حسب بند اللائحة</h2><div class="tbl-wrap"><table class="tbl"><thead><tr><th>وصف بند اللائحة</th><th>المدققة</th><th>مكتملة</th><th>معادة</th></tr></thead><tbody>${st.byType.map(t=>`<tr><td>${esc(t.label)}</td><td>${t.total}</td><td>${t.completed}</td><td>${t.returned}</td></tr>`).join("")||`<tr><td colspan="4">لا توجد بيانات</td></tr>`}</tbody></table></div></section>
   <section class="block"><h2>أكثر المتطلبات غير المكتملة</h2><div class="tbl-wrap"><table class="tbl"><thead><tr><th>#</th><th>المتطلب</th><th>عدد المرات</th></tr></thead><tbody>${st.fail.map(([t,n],i)=>`<tr><td>${i+1}</td><td>${esc(t)}</td><td>${n}</td></tr>`).join("")||`<tr><td colspan="3">لا توجد متطلبات غير مكتملة</td></tr>`}</tbody></table></div></section>`;
-  $("#repPeriod").onchange=renderReport;bindReg($("#reportBody"));
+  $("#repPeriod").onchange=renderReport;bindReg($("#reportBody"));drillPer=per;bindDrill($("#reportBody"));
   $("#repPdf").onclick=e=>exportReportPdf(st,e.currentTarget);
   $("#repXls").onclick=e=>exportReportXls(st,e.currentTarget);
 }
