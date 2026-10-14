@@ -520,8 +520,8 @@ $("#fileIn").onchange=async e=>{
 /* ===================== قائمة المخالفات ===================== */
 let qFilter="all",qSearch="";
 function reserved(a){return !!a&&(!!a._id||!!a.status||Object.keys(a.ans||{}).length>0)}
-function statusOf(id){const a=audits[id];if(!reserved(a))return "new";return a.status||"prog"}
-const ST={new:["لم يُدقق","b-new"],prog:["قيد التدقيق","b-prog"],pend:["بانتظار اعتماد رئيس الجودة بالوحدة","b-pend"],ok:["مكتملة","b-ok"],ret:["معادة للمفتش","b-ret"]};
+function statusOf(id){const a=audits[id];if(!reserved(a))return "new";const s=a.status||"prog";if((s==="ok"||s==="pend")&&missingAtt(a))return "inc";return s}
+const ST={new:["لم يُدقق","b-new"],prog:["قيد التدقيق","b-prog"],pend:["بانتظار اعتماد رئيس الجودة بالوحدة","b-pend"],ok:["مكتملة","b-ok"],ret:["معادة للمفتش","b-ret"],inc:["غير مكتملة المرفقات","b-ret"]};
 function renderQueue(){
   renderDone();
   const rows=vrows();
@@ -531,12 +531,12 @@ function renderQueue(){
     body.innerHTML=`<div class="empty">ارفع ملف المخالفات من أيقونة «ملف المخالفات» بالأعلى، ثم اختر مخالفة لتعبئة النموذج تلقائياً.<br>أو اختر نوع المخالفة من النموذج وعبّئ البيانات يدوياً.</div>`;
     return;
   }
-    const counts={all:rows.length,new:0,prog:0,pend:0,ret:0,ok:0};rows.forEach(r=>{counts[statusOf(r.vno)]++});const pc=k=>rows.length?Math.round(counts[k]/rows.length*1000)/10+"%":"0%";
+    const counts={all:rows.length,new:0,prog:0,pend:0,ret:0,ok:0,inc:0};rows.forEach(r=>{counts[statusOf(r.vno)]++});const pc=k=>rows.length?Math.round(counts[k]/rows.length*1000)/10+"%":"0%";
   $("#qCount").textContent=`${rows.length} مخالفة`;
-  const fl=[["all","الكل"],["ok","مكتملة"],["pend","بانتظار الاعتماد"],["ret","معادة"],["prog","قيد التدقيق"],["new","غير مقيّمة"]];
+  const fl=[["all","الكل"],["ok","مكتملة"],["inc","غير مكتملة المرفقات"],["pend","بانتظار الاعتماد"],["ret","معادة"],["prog","قيد التدقيق"],["new","غير مقيّمة"]];
   const list=rows.filter(r=>{const s=statusOf(r.vno);
     if(qFilter==="new"&&s!=="new")return false;if(qFilter==="pend"&&s!=="pend")return false;if(qFilter==="prog"&&s!=="prog")return false;
-    if(qFilter==="ret"&&s!=="ret")return false; if(qFilter==="ok"&&s!=="ok")return false;
+    if(qFilter==="ret"&&s!=="ret")return false;if(qFilter==="inc"&&s!=="inc")return false; if(qFilter==="ok"&&s!=="ok")return false;
     if(qSearch){const h=r._h||norm([r.vno,r.vid,r.officer,r.item,r.region,r.sector,r.name].join(" "));return h.includes(norm(qSearch))||r.vno.toLowerCase().includes(qSearch.toLowerCase())}
     return true});
   body.innerHTML=`<div class="queue-tools"><input class="in" id="qSearch" placeholder="بحث برقم الزيارة أو المفتش أو المحافظة" value="${esc(qSearch)}"></div>
@@ -747,7 +747,7 @@ async function addFiles(k,files){
     for(let i=0;i<pages.length;i++){const blob=await (await fetch(pages[i])).blob();const p=`${a._id}/${attId}/${i+1}.jpg`;const up=await sb.storage.from(BUCKET).upload(p,blob,{contentType:"image/jpeg",upsert:false});if(up.error)throw up.error;paths.push(p)}
     const ins=await sb.from("quality_attachments").insert({id:attId,audit_id:a._id,item_key:k,file_name:f.name,is_pdf:isPdf,page_count:total,pages:paths,file_hash:hash,meta:{exif:exif||{},dup,size:f.size}});if(ins.error)throw ins.error;okN++;
   }catch(e){toast("تعذر رفع الملف: "+f.name)}}
-  if(aud!==current)return;if(okN)invalidate(k);await loadAtt();renderCheck();updateBar();if(okN)toast(okN===1?"تم إرفاق الملف":`تم إرفاق ${okN} ملفات`);
+  if(aud!==current)return;if(okN)invalidate(k);await loadAtt();if(a._id)ATT_IDX[a._id]=new Set(attCache.map(r=>r.key));renderCheck();updateBar();if(okN)toast(okN===1?"تم إرفاق الملف":`تم إرفاق ${okN} ملفات`);
 }
 function viewAtt(id){const r=attCache.find(x=>x.id===id);if(!r)return;const it=allItems().find(i=>i.key===r.key);
   $("#sheet").innerHTML=`<h3>${esc(r.name)}</h3><div class="sub">${esc(it?it.t:"")}${r.pdf?` — ${r.total} صفحة${r.total>r.pages.length?` (يظهر أول ${r.pages.length})`:""}`:""}</div><div class="chklist">${attChecks(r).map(c=>`<div class="${c.ok===false?"cbad":c.ok?"cok":"cnone"}">${c.ok===false?"⚠️":c.ok?"✓":"•"} ${esc(c.t)}</div>`).join("")}</div><div class="viewer" style="margin:12px 0">${r.pages.map(p=>`<img src="${p}" alt="">`).join("")}</div><div class="btns"><button type="button" class="btn2" id="delAtt" style="color:var(--bad)">حذف المرفق</button><button type="button" class="btn2" id="closeSh">إغلاق</button></div>`;
@@ -1025,7 +1025,7 @@ function renderAll(){
   $$("[data-f]").forEach(el=>el.value=a.f[el.dataset.f]||"");
   if(attFor!==current)attCache=[];
   renderStage();explainHint();renderCheck();updateBar();renderQueue();renderReview();
-  loadAtt().then(()=>{if(attFor===current)renderCheck()});
+  loadAtt().then(()=>{if(attFor===current){const _a=audits[current];if(_a&&_a._id)ATT_IDX[_a._id]=new Set(attCache.map(r=>r.key));renderCheck();updateBar();renderQueueSoft()}});
 }
 let dl=null;
 /* ===================== الاتصال بقاعدة البيانات ===================== */
@@ -1074,7 +1074,7 @@ async function loadAudits(){
   if(keep)audits.manual=keep;
 }
 async function loadUsers(){const {data}=await sb.from("quality_users").select("*").order("created_at");users=data||[]}
-async function loadData(){try{await loadOrg();await Promise.all([loadQueue(),loadAudits(),loadRefs(),loadApprovers()])}catch(e){toast("تعذر تحميل البيانات: "+(e.message||""))}try{buildFilters()}catch(e){}}
+async function loadData(){try{await loadOrg();await Promise.all([loadQueue(),loadAudits(),loadRefs(),loadApprovers(),loadAttIdx()])}catch(e){toast("تعذر تحميل البيانات: "+(e.message||""))}try{buildFilters()}catch(e){}}
 
 /* ----- الحفظ ----- */
 let saveT=null;const dirty=new Set();
@@ -1166,7 +1166,11 @@ $("#refreshBtn").onclick=async()=>{const b=$("#refreshBtn");if(b.disabled)return
 function periodStart(p){const d=new Date();if(p==="7")return Date.now()-7*864e5;if(p==="30")return Date.now()-30*864e5;if(p==="month")return new Date(d.getFullYear(),d.getMonth(),1).getTime();return 0}
 const PERIODS={all:"كل الفترات","7":"آخر 7 أيام","30":"آخر 30 يوماً",month:"هذا الشهر"};
 function userName(id,fallback){const u=users.find(x=>x.id===id);return u?u.full_name:(id===me.id?me.full_name:(fallback||"غير معروف"))}
-function stOf(a){return !a?"pending":a.status==="ok"?"completed":a.status==="ret"?"returned":"progress"}
+let ATT_IDX={};
+async function loadAttIdx(){const out={};let from=0;for(;;){const {data,error}=await sb.from("quality_attachments").select("audit_id,item_key").order("id").range(from,from+999);if(error)break;(data||[]).forEach(r=>{(out[r.audit_id]=out[r.audit_id]||new Set()).add(r.item_key)});if(!data||data.length<1000)break;from+=1000}ATT_IDX=out}
+function reqKeys(a){if(!a||a.type<0||!GUIDE[a.type])return [];const g=GUIDE[a.type];let req=g.req;if(g.cases)req=a.cas&&g.cases[a.cas]?g.cases[a.cas]:[];return (req||[]).map(t=>"r:"+t).filter(needAtt)}
+function missingAtt(a){if(!a||!a._id)return false;const have=ATT_IDX[a._id]||new Set();return reqKeys(a).some(k=>!have.has(k))}
+function stOf(a){return !a?"pending":a.status==="ok"?(missingAtt(a)?"incomplete":"completed"):a.status==="ret"?"returned":(a.status==="pend"&&missingAtt(a))?"incomplete":"progress"}
 /* ===================== التصفية العامة ===================== */
 let F=(()=>{try{return JSON.parse(localStorage.getItem("vv:filter")||"{}")}catch(e){return {}}})();
 F={reg:F.reg||"",gov:F.gov||"",vst:F.vst||"",unit:F.unit||""};
@@ -1199,7 +1203,7 @@ $("#fClr").onclick=()=>{F={reg:"",gov:"",vst:"",unit:""};setF("reg","")};
 
 function statusBlock(st){
   const T=st.tot.total||0,p=v=>T?Math.round(v/T*1000)/10:0;
-  const items=[["مكتملة",st.tot.completed,"k-ok",C.green,"completed"],["معادة للمفتش",st.tot.returned,"k-bad",C.red,"returned"],["قيد التدقيق",st.tot.progress,"k-warn",C.amber,"progress"],["غير المقيّمة",st.tot.pending,"k-gray",C.gray,"pending"]];
+  const items=[["مكتملة",st.tot.completed,"k-ok",C.green,"completed"],["معادة للمفتش",st.tot.returned,"k-bad",C.red,"returned"],["غير مكتملة المرفقات",st.tot.incomplete,"k-bad","#8E44AD","incomplete"],["قيد التدقيق",st.tot.progress,"k-warn",C.amber,"progress"],["غير المقيّمة",st.tot.pending,"k-gray",C.gray,"pending"]];
   return `<div class="kpis">${kpi("إجمالي المخالفات",T.toLocaleString("en-US"),"k-navy","100%","st:all")}${items.map(i=>kpi(i[0],i[1].toLocaleString("en-US"),i[2],p(i[1])+"%","st:"+i[4])).join("")}</div>
   <div class="sbar" role="img" aria-label="توزيع الحالات">${items.map(i=>T&&i[1]?`<i style="width:${i[1]/T*100}%;background:${i[3]}" title="${i[0]}: ${p(i[1])}%"></i>`:"").join("")}</div>
   <div class="slegend">${items.map(i=>`<span><b style="background:${i[3]}"></b>${i[0]} ${p(i[1])}%</span>`).join("")}</div>`;
@@ -1231,29 +1235,29 @@ function computeStats(period){
   const rows=vrows(),qset=new Set(rows.map(r=>r.vno)),recs=[];
   rows.forEach(r=>{const a=audits[r.vno];recs.push({key:r.vno,region:r.region||"غير محدد",gov:r.sector||"غير محدد",a:a&&a._id?a:null})});
   const allQ=rowMap();Object.entries(audits).forEach(([k,a])=>{if(k!=="manual"&&a._id&&!qset.has(k)&&!allQ[k]&&inFA(k,a))recs.push({key:k,region:a.region||a.f.region||"غير محدد",gov:a.sector||a.f.gov||"غير محدد",a})});
-  const byUnit={},tot={total:0,completed:0,returned:0,progress:0,pending:0,plat:{},dec:{}},bySec={},byUser={},byType={},fail={};
+  const byUnit={},tot={total:0,completed:0,returned:0,progress:0,incomplete:0,pending:0,plat:{},dec:{}},bySec={},byUser={},byType={},fail={};
   recs.forEach(({key,region,gov,a})=>{
     if(a&&!inP(a))return;const s=stOf(a);tot.total++;tot[s]++;
-    {const un=unitLab(gov);const Uu=byUnit[un]||(byUnit[un]={label:un,total:0,completed:0,returned:0,progress:0,pending:0});Uu.total++;Uu[s]++}
-    const S=bySec[region]||(bySec[region]={label:region,total:0,completed:0,returned:0,progress:0,pending:0,govs:{},plat:{},dec:{}});S.total++;S[s]++;
-    const G=S.govs[gov]||(S.govs[gov]={label:gov,region,total:0,completed:0,returned:0,progress:0,pending:0,plat:{},dec:{}});G.total++;G[s]++;
+    {const un=unitLab(gov);const Uu=byUnit[un]||(byUnit[un]={label:un,total:0,completed:0,returned:0,progress:0,incomplete:0,pending:0});Uu.total++;Uu[s]++}
+    const S=bySec[region]||(bySec[region]={label:region,total:0,completed:0,returned:0,progress:0,incomplete:0,pending:0,govs:{},plat:{},dec:{}});S.total++;S[s]++;
+    const G=S.govs[gov]||(S.govs[gov]={label:gov,region,total:0,completed:0,returned:0,progress:0,incomplete:0,pending:0,plat:{},dec:{}});G.total++;G[s]++;
     {const rr=rowMap()[key],ps=pLab(rr?rr.vstat:""),dc=dLab(rr?rr.dec:undefined);[tot,S,G].forEach(o=>{o.plat[ps]=(o.plat[ps]||0)+1;o.dec[dc]=(o.dec[dc]||0)+1})}
-    if(a){const uid=a._owner||"?";const U=byUser[uid]||(byUser[uid]={id:uid,label:userName(uid,a.auditor),total:0,completed:0,returned:0,progress:0,pending:0,last:0,list:[],reviewed:0,rejected:0});
+    if(a){const uid=a._owner||"?";const U=byUser[uid]||(byUser[uid]={id:uid,label:userName(uid,a.auditor),total:0,completed:0,returned:0,progress:0,incomplete:0,pending:0,last:0,list:[],reviewed:0,rejected:0});
       U.total++;U[s]++;{const rv=reviews(a);if(rv.length){U.reviewed++;if(rv.some(x=>x.state==="rejected"))U.rejected++}}U.last=Math.max(U.last,a.updated||0);U.list.push({key,a});
-      const tn=a.type>=0&&GUIDE[a.type]?GUIDE[a.type].name:"غير محدد";const T=byType[tn]||(byType[tn]={label:tn,total:0,completed:0,returned:0,progress:0});T.total++;T[s]++;
+      const tn=a.type>=0&&GUIDE[a.type]?GUIDE[a.type].name:"غير محدد";const T=byType[tn]||(byType[tn]={label:tn,total:0,completed:0,returned:0,progress:0,incomplete:0});T.total++;T[s]++;
       Object.entries(a.ans||{}).forEach(([k,v])=>{if(v&&v.s==="bad"){const t=k.slice(2);fail[t]=(fail[t]||0)+1}})}
   });
   Object.values(byUser).forEach(U=>{U.evaluated=U.completed+U.returned;U.list.sort((x,y)=>(y.a.updated||0)-(x.a.updated||0))});
   Object.values(bySec).forEach(S=>{S.evaluated=S.completed+S.returned;S.notEval=S.pending;S.govList=Object.values(S.govs).map(G=>(G.evaluated=G.completed+G.returned,G.notEval=G.pending,G)).sort((a,b)=>b.total-a.total)});
   const evaluated=tot.completed+tot.returned;
-  users.filter(u=>u.role==="staff"&&u.active&&!byUser[u.id]&&inMyTeam(u)).forEach(u=>{byUser[u.id]={id:u.id,label:u.full_name,total:0,completed:0,returned:0,progress:0,pending:0,last:0,list:[],evaluated:0,reviewed:0,rejected:0}});
+  users.filter(u=>u.role==="staff"&&u.active&&!byUser[u.id]&&inMyTeam(u)).forEach(u=>{byUser[u.id]={id:u.id,label:u.full_name,total:0,completed:0,returned:0,progress:0,incomplete:0,pending:0,last:0,list:[],evaluated:0,reviewed:0,rejected:0}});
   return {period:period||"all",tot,evaluated,notEval:tot.pending,rate:tot.total?evaluated/tot.total:0,retRate:evaluated?tot.returned/evaluated:0,
     bySec:Object.values(bySec).sort((a,b)=>b.total-a.total),byUnit:Object.values(byUnit).map(u=>(u.evaluated=u.completed+u.returned,u.notEval=u.pending,u)).sort((a,b)=>b.total-a.total),byGov:Object.values(bySec).sort((a,b)=>b.total-a.total).flatMap(S=>S.govList),byUser:Object.values(byUser).sort((a,b)=>b.evaluated-a.evaluated||b.total-a.total),
     byType:Object.values(byType).sort((a,b)=>b.total-a.total),fail:Object.entries(fail).sort((a,b)=>b[1]-a[1]).slice(0,10)};
 }
 const pct=v=>Math.round(v*100)+"%";
-const SEC_SERIES=[{k:"completed",label:"مكتملة",color:C.green},{k:"returned",label:"معادة",color:C.red},{k:"progress",label:"قيد التدقيق",color:C.amber},{k:"pending",label:"غير مقيّمة",color:C.gray}];
-const USR_SERIES=[{k:"completed",label:"مكتملة",color:C.green},{k:"returned",label:"معادة",color:C.red},{k:"progress",label:"قيد التدقيق",color:C.amber}];
+const SEC_SERIES=[{k:"completed",label:"مكتملة",color:C.green},{k:"incomplete",label:"غير مكتملة",color:"#8E44AD"},{k:"returned",label:"معادة",color:C.red},{k:"progress",label:"قيد التدقيق",color:C.amber},{k:"pending",label:"غير مقيّمة",color:C.gray}];
+const USR_SERIES=[{k:"completed",label:"مكتملة",color:C.green},{k:"incomplete",label:"غير مكتملة",color:"#8E44AD"},{k:"returned",label:"معادة",color:C.red},{k:"progress",label:"قيد التدقيق",color:C.amber}];
 
 /* ----- رسم بياني (SVG للشاشة) ----- */
 function svgBars(items,series,title){
@@ -1286,7 +1290,7 @@ function kpi(label,val,cls,sub,drill){return `<div class="kpi ${cls||""}"${drill
 function secTable(list){return `<div class="tbl-wrap"><table class="tbl"><thead><tr><th>المنطقة / المحافظة</th><th>الإجمالي</th><th>المقيّمة</th><th>غير المقيّمة</th><th>مكتملة</th><th>معادة</th></tr></thead><tbody>${list.map((s,i)=>`<tr class="clk reg" data-reg="${i}"><td><b><span class="arw">◂</span> ${esc(s.label)}</b></td><td>${s.total}</td><td>${s.evaluated}</td><td>${s.notEval}</td><td>${s.completed}</td><td>${s.returned}</td></tr>${(s.govList||[]).map(g=>`<tr class="govr" data-of="${i}" hidden><td style="padding-inline-start:26px">${esc(g.label)}</td><td>${g.total}</td><td>${g.evaluated}</td><td>${g.notEval}</td><td>${g.completed}</td><td>${g.returned}</td></tr>`).join("")}`).join("")||`<tr><td colspan="6">لا توجد بيانات</td></tr>`}</tbody></table></div>`}
 function bindReg(root){root.querySelectorAll("tr.reg").forEach(tr=>tr.onclick=()=>{const open=!tr.classList.contains("open");tr.classList.toggle("open",open);tr.querySelector(".arw").textContent=open?"▾":"◂";root.querySelectorAll(`tr[data-of="${tr.dataset.reg}"]`).forEach(x=>x.hidden=!open)})}
 function renderDash(){
-  const st=computeStats("all"),mine=st.byUser.find(u=>u.id===me.id)||{evaluated:0,completed:0,returned:0,progress:0};
+  const st=computeStats("all"),mine=st.byUser.find(u=>u.id===me.id)||{evaluated:0,completed:0,returned:0,progress:0,incomplete:0};
   const mySec=me.sector?st.bySec.find(s=>s.label===me.sector):null;const myGov=mySec?mySec.govList:[];
   const pendMine=isMgrR()?Object.entries(audits).filter(([k,x])=>x.status==="pend"&&canApprove(x)):[];
   $("#dashBody").innerHTML=`
@@ -1307,8 +1311,8 @@ function drillRecs(){const since=periodStart(drillPer);const inP=a=>!since||((a.
   rs.forEach(r=>{const a=audits[r.vno];const aa=a&&a._id?a:null;if(aa&&!inP(aa))return;out.push({key:r.vno,r,a:aa})});
   const allQ=rowMap();Object.entries(audits).forEach(([k,a])=>{if(k!=="manual"&&a._id&&!qset.has(k)&&!allQ[k]&&inFA(k,a)&&inP(a))out.push({key:k,r:null,a})});
   return out}
-const DRILL_ST={all:"إجمالي المخالفات",completed:"مكتملة",returned:"معادة للمفتش",progress:"قيد التدقيق",pending:"غير المقيّمة"};
-const ST_LAB={completed:["مكتملة","b-ok"],returned:["معادة للمفتش","b-ret"],progress:["قيد التدقيق","b-prog"],pending:["لم تُدقق","b-new"]};
+const DRILL_ST={all:"إجمالي المخالفات",completed:"مكتملة",returned:"معادة للمفتش",progress:"قيد التدقيق",pending:"غير المقيّمة",incomplete:"غير مكتملة المرفقات"};
+const ST_LAB={completed:["مكتملة","b-ok"],returned:["معادة للمفتش","b-ret"],progress:["قيد التدقيق","b-prog"],pending:["لم تُدقق","b-new"],incomplete:["غير مكتملة المرفقات","b-ret"]};
 const DEC_CLS={"معتمدة":"b-ok","معادة (غير معتمدة)":"b-ret","غير مقيّمة (بدون قرار)":"b-prog","غير محدد":"b-new"};
 function drillRow(x){const a=x.a,r=x.r||{},f=(a&&a.f)||{};const t=a&&a.type>=0&&GUIDE[a.type]?GUIDE[a.type].name:(r.type>=0&&GUIDE[r.type]?GUIDE[r.type].name:(r.item||""));
   return {visit:x.key,vid:r.vid||f.vid||"",type:t,region:r.region||(a&&a.region)||f.region||"",gov:r.sector||(a&&a.sector)||f.gov||"",officer:r.officer||f.officer||"",name:r.name||f.name||"",st:stOf(a),auditor:a?userName(a._owner,a.auditor):"",dec:dLab(x.r?x.r.dec:undefined),plat:pLab(x.r?x.r.vstat:"")}}
@@ -1342,7 +1346,7 @@ function renderTeam(){
   </tbody></table></div><div id="teamDetail"></div></section>`;
   $("#teamPeriod").onchange=renderTeam;
   $$("[data-u]").forEach(tr=>tr.onclick=()=>{const u=st.byUser.find(x=>x.id===tr.dataset.u);if(!u)return;
-    $("#teamDetail").innerHTML=`<h3 class="sec" style="margin-top:16px">معاملات ${esc(u.label)} <span>${u.list.length}</span></h3><div class="queue">${u.list.slice(0,40).map(({key,a})=>{const s=stOf(a);const b=s==="completed"?["مكتملة","b-ok"]:s==="returned"?["معادة","b-ret"]:["قيد التدقيق","b-prog"];return `<button type="button" class="qrow" data-open="${esc(key)}"><span class="id">${esc(key)}</span><span class="badge ${b[1]}">${b[0]}</span><span class="t">${esc(a.type>=0&&GUIDE[a.type]?GUIDE[a.type].name:"")}</span><span class="m">${esc(a.sector||"")} — ${fmtD(a.updated)}</span></button>`}).join("")||`<div class="empty">لا توجد معاملات</div>`}</div>`;
+    $("#teamDetail").innerHTML=`<h3 class="sec" style="margin-top:16px">معاملات ${esc(u.label)} <span>${u.list.length}</span></h3><div class="queue">${u.list.slice(0,40).map(({key,a})=>{const s=stOf(a);const b=s==="completed"?["مكتملة","b-ok"]:s==="returned"?["معادة","b-ret"]:s==="incomplete"?["غير مكتملة المرفقات","b-ret"]:["قيد التدقيق","b-prog"];return `<button type="button" class="qrow" data-open="${esc(key)}"><span class="id">${esc(key)}</span><span class="badge ${b[1]}">${b[0]}</span><span class="t">${esc(a.type>=0&&GUIDE[a.type]?GUIDE[a.type].name:"")}</span><span class="m">${esc(a.sector||"")} — ${fmtD(a.updated)}</span></button>`}).join("")||`<div class="empty">لا توجد معاملات</div>`}</div>`;
     $$("[data-open]").forEach(b=>b.onclick=()=>{go("audit");openAudit(b.dataset.open)});
     $("#teamDetail").scrollIntoView({behavior:"smooth",block:"start"})});
 }
@@ -1440,7 +1444,7 @@ async function exportReportXls(st,btn){
     sheet("المتطلبات غير المكتملة","أكثر المتطلبات غير المكتملة",[{t:"#",w:6},{t:"المتطلب",w:70},{t:"عدد المرات",w:14}],st.fail.map(([t,n],i)=>[i+1,t,n]));
     const since=periodStart(st.period);
     const det=Object.entries(audits).filter(([k,a])=>k!=="manual"&&a._id&&inFA(k,a)&&(!since||(a.doneAt||a.retAt||a.updated||0)>=since)).sort((p,q)=>(q[1].updated||0)-(p[1].updated||0))
-      .map(([k,a])=>{const s=stOf(a);return [k,a.type>=0&&GUIDE[a.type]?GUIDE[a.type].name:"",a.region||a.f.region||"",a.sector||"",s==="completed"?"مكتملة":s==="returned"?"معادة":"قيد التدقيق",userName(a._owner,a.auditor),a.doneAt?fmtD(a.doneAt):"",a.f.name||"",a.f.officer||""]});
+      .map(([k,a])=>{const s=stOf(a);return [k,a.type>=0&&GUIDE[a.type]?GUIDE[a.type].name:"",a.region||a.f.region||"",a.sector||"",s==="completed"?"مكتملة":s==="returned"?"معادة":s==="incomplete"?"غير مكتملة المرفقات":"قيد التدقيق",userName(a._owner,a.auditor),a.doneAt?fmtD(a.doneAt):"",a.f.name||"",a.f.officer||""]});
     sheet("المعاملات","تفاصيل المعاملات",[{t:"رقم الزيارة",w:16},{t:"وصف بند اللائحة",w:44},{t:"المنطقة",w:16},{t:"المحافظة",w:18},{t:"الحالة",w:12},{t:"المدقق",w:20},{t:"تاريخ الإنجاز",w:14},{t:"اسم المخالف",w:22},{t:"اسم المفتش",w:20}],det);
     const buf=await wb.xlsx.writeBuffer();
     await deliver(new Blob([buf],{type:"application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"}),`تقرير-الجودة-${stamp().replace(/\//g,"-")}.xlsx`,"application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
