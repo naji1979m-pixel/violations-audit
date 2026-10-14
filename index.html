@@ -621,6 +621,7 @@ function sections(){
   out.push({k:"g",t:(out.length?"ثالثاً: ":"")+"متطلبات إلزامية لجميع المخالفات",items:GENERAL});
   return out;
 }
+function okItem(a,k){const v=a.ans[k];if(!v||v.s!=="ok")return false;if(needAtt(k)&&attFor===current&&!attsOf(k).length)return false;return true}
 function allItems(){return sections().flatMap(s=>s.items.map(t=>({key:s.k+":"+t,t,sec:s.t})))}
 function renderCheck(){
   const a=A(),body=$("#checkBody");
@@ -632,11 +633,11 @@ function renderCheck(){
     if(!a.cas)h+=`<div class="alert">اختر الحالة أعلاه لإظهار المتطلبات الخاصة بها.</div>`}
   if(!g.req?.length&&!g.cases)h+=`<div class="alert">لم يحدد الدليل متطلبات أو إجراءات خاصة لهذه المخالفة حتى الآن، فتُطبق المتطلبات الإلزامية العامة فقط.</div>`;
   sections().forEach(s=>{
-    const done=s.items.filter(t=>a.ans[s.k+":"+t]?.s==="ok").length;
+    const done=s.items.filter(t=>okItem(a,s.k+":"+t)).length;
     h+=`<h3 class="sec">${esc(s.t)}<span>${done} / ${s.items.length}</span></h3><ol class="items">`;
-    s.items.forEach((t,i)=>{const k=s.k+":"+t,v=a.ans[k]||{};
-      h+=`<li class="item ${v.s==="ok"?"s-ok":v.s==="bad"?"s-bad":""}${activeKey===k?" act":""}" data-key="${esc(k)}"><div class="txt"><b>${i+1}.</b>${esc(t)}</div>
-      <div class="seg" role="group"><button type="button" data-k="${esc(k)}" data-v="ok" class="${v.s==="ok"?"on-ok":""}" aria-pressed="${v.s==="ok"}">✓ مكتمل</button><button type="button" data-k="${esc(k)}" data-v="bad" class="${v.s==="bad"?"on-bad":""}" aria-pressed="${v.s==="bad"}">✕ غير مكتمل</button></div>
+    s.items.forEach((t,i)=>{const k=s.k+":"+t,v=a.ans[k]||{},isOk=okItem(a,k),badOk=v.s==="ok"&&!isOk;
+      h+=`<li class="item ${isOk?"s-ok":v.s==="bad"||badOk?"s-bad":""}${activeKey===k?" act":""}" data-key="${esc(k)}"><div class="txt"><b>${i+1}.</b>${esc(t)}</div>${badOk?`<div class="attreq miss" style="margin:0 0 8px">⚠️ كانت معلّمة «مكتمل» بدون مرفق، فلا تُحتسب. أرفق المستند المطلوب ثم أعد التأكيد.</div>`:""}
+      <div class="seg" role="group"><button type="button" data-k="${esc(k)}" data-v="ok" class="${isOk?"on-ok":""}" aria-pressed="${isOk}">✓ مكتمل</button><button type="button" data-k="${esc(k)}" data-v="bad" class="${v.s==="bad"?"on-bad":""}" aria-pressed="${v.s==="bad"}">✕ غير مكتمل</button></div>
       ${v.s==="bad"?`<textarea class="in" data-note="${esc(k)}" placeholder="وضّح الخلل والمستند المطلوب استكماله">${esc(v.n||"")}</textarea>`:""}${attBlock(k)}</li>`});
     h+=`</ol>`;
   });
@@ -644,7 +645,7 @@ function renderCheck(){
   body.innerHTML=h;
   $$("[data-case]").forEach(b=>b.onclick=()=>{a.cas=b.dataset.case;a.ans=Object.fromEntries(Object.entries(a.ans).filter(([k])=>!k.startsWith("r:")));save();renderCheck();updateBar()});
   $$(".seg button").forEach(b=>b.onclick=()=>{const k=b.dataset.k;const cur=a.ans[k]||{};
-    if(b.dataset.v==="ok"&&cur.s!=="ok"&&needAtt(k)){const l=attsOf(k);if(!l.length){toast("لا يمكن تعليمها مكتملة بدون مرفق، أرفق الصورة أو المستند أولاً");return}
+    if(b.dataset.v==="ok"&&!okItem(a,k)&&needAtt(k)){const l=attsOf(k);if(!l.length){toast("لا يمكن تعليمها مكتملة بدون مرفق، أرفق الصورة أو المستند أولاً");return}
       const warn=l.filter(r=>attFlag(r)==="bad").length,nm=l.filter(attNoMeta).length;
       if(!confirm(`هل تحققت أن المرفقات (${l.length}) تطابق المتطلب؟\n«${k.slice(2)}»`+(warn?`\n\n⚠️ يوجد ${warn} مرفق عليه تنبيه (تاريخ أو موقع أو تكرار).`:"")))return;
       let reason="";if(nm){reason=(prompt(`${nm} من المرفقات بدون بيانات تصوير، فلا يمكن التحقق منها آلياً.\nاكتب سبب قبولها (مثال: صورة منسوخة من ممتثل وتُظهر المتطلب بوضوح):`)||"").trim();if(!reason){toast("لم تُعلَّم مكتملة: سبب القبول مطلوب");return}}
@@ -800,7 +801,7 @@ async function approveDoc(){const a=A();if(!canApprove(a)){toast("الاعتما
   a.status="ok";a.doneAt=a.doneAt||Date.now();a.f._ap={...(a.f._ap||{}),state:"approved",by:me.full_name,at:Date.now()};a.f._rv=reviews(a).concat([{state:"approved",by:me.full_name,at:Date.now()}]);logAct(a,"اعتماد المستند الداعم");
   save();await flush();renderAll();renderQueue();toast("تم الاعتماد، ويمكن الآن طباعة المستند الداعم")}
 function updateBar(){
-  const a=A(),items=allItems(),n=items.length,ok=items.filter(i=>a.ans[i.key]?.s==="ok").length,bad=items.filter(i=>a.ans[i.key]?.s==="bad").length;
+  const a=A(),items=allItems(),n=items.length,ok=items.filter(i=>okItem(a,i.key)).length,bad=items.filter(i=>a.ans[i.key]?.s==="bad").length;
   $("#trG").style.width=n?ok/n*100+"%":"0";$("#trR").style.width=n?bad/n*100+"%":"0";
   $("#barNum").textContent=n?`${ok} / ${n}`:"";
   const btn=$("#actBtn");btn.className="act";btn.disabled=false;
