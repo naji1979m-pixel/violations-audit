@@ -370,8 +370,7 @@ const SAMPLEP=[P1,P2,"صورة واضحة للإلقاء لإثبات ضبط ا�
 const SEWER=["صورة واضحة للخطوط التي تم التعدي عليها","تصوير الأدوات المستخدمة في الاعتداء"];
 const NWC="شركة المياه الوطنية", BOTH="شركة المياه الوطنية / الهيئة السعودية للمياه";
 const GENERAL=[
-  "شرح المخالفة بشكل مفصل من المفتش، شاملاً الآثار والأضرار المترتبة عليها",
-  "إرفاق المستند الداعم بصيغة PDF متضمناً جميع مرفقات المخالفة"
+  "شرح المخالفة بشكل مفصل من المفتش، شاملاً الآثار والأضرار المترتبة عليها"
 ];
 const V=(cat,name,req,proc,by=NWC)=>({cat,name,req,proc,by});
 const C1="مخالفات العبث بالعداد",C2="مخالفات تدفق المياه",C3="مخالفات الاعتداء على الخطوط الفرعية والرئيسية",C4="مخالفات البنية الأساسية",C5="مخالفات مياه الشرب",C6="مخالفات المرخص لهم",C7="مخالفات التوصيل بطريقة غير نظامية",C8="مخالفات التوصيل بالصرف الصحي بطريقة غير نظامية",C9="مخالفات إلحاق الضرر بشبكات الصرف الصحي";
@@ -820,11 +819,14 @@ function returnText(){
 }
 function openReturn(){
   const t=returnText();
+  const a0=A(),subj=`إعادة مخالفة للاستكمال — زيارة ${a0.f.vno||""}`;
   $("#sheet").innerHTML=`<h3>إعادة المخالفة للمفتش</h3><div class="sub">أرسل هذه الملاحظات للمفتش ليستكمل المتطلبات ويتحقق منها.</div><pre id="retTxt">${esc(t)}</pre>
-  <div class="btns"><button type="button" class="btn2 pri" id="cpRet">نسخ الملاحظات</button><a class="btn2" style="text-decoration:none;color:inherit" target="_blank" rel="noopener" href="https://wa.me/?text=${encodeURIComponent(t)}" id="waRet">إرسال عبر واتساب</a><button type="button" class="btn2" id="markRet">تسجيلها كمعادة</button><button type="button" class="btn2" id="closeSh">إغلاق</button></div>`;
+  <label class="f" style="margin-bottom:10px">بريد المفتش الإلكتروني<input class="in" id="retMail" type="email" dir="ltr" placeholder="name@nwc.com.sa" value="${esc(a0.f.oemail||"")}"></label>
+  <div class="btns"><a class="btn2 pri" style="text-decoration:none" href="#" id="mailRet">✉️ إشعار المفتش بالبريد</a><button type="button" class="btn2" id="cpRet">نسخ الملاحظات</button><a class="btn2" style="text-decoration:none;color:inherit" target="_blank" rel="noopener" href="https://wa.me/?text=${encodeURIComponent(t)}" id="waRet">إرسال عبر واتساب</a><button type="button" class="btn2" id="markRet">تسجيلها كمعادة</button><button type="button" class="btn2" id="closeSh">إغلاق</button></div>`;
   openSheet();
   $("#cpRet").onclick=()=>copy(t);
   const mark=()=>{const _a=A();_a.status="ret";_a.retAt=Date.now();save();flush();renderQueue();toast("سُجلت المخالفة كمعادة للمفتش")};
+  $("#mailRet").onclick=e=>{const em=$("#retMail").value.trim();if(!em){e.preventDefault();toast("اكتب بريد المفتش أولاً");$("#retMail").focus();return}A().f.oemail=em;$("#mailRet").href=`mailto:${em}?subject=${encodeURIComponent(subj)}&body=${encodeURIComponent(t)}`;mark()};
   $("#waRet").onclick=mark;$("#markRet").onclick=()=>{mark();closeSheet()};$("#closeSh").onclick=closeSheet;
 }
 
@@ -859,7 +861,7 @@ function docHTML(){
   <h2>ملاحظات المفتش</h2><div class="box">${esc(f.explain||"")}</div>
   <h2>نتيجة التحقق من المتطلبات</h2><table>${secs}</table>
   ${(f.gnotes||"").trim()?`<h2>ملاحظات عامة</h2><div class="box">${esc(f.gnotes)}</div>`:""}
-  <div class="sig"><div>توقيع المدقق</div><div>الاعتماد</div></div>${attDoc()}</div>`;
+  <div class="box" style="margin-top:14px;text-align:center;font-size:11px;color:#444">مستند إلكتروني صادر من نظام الجودة والتحقق، ولا يتطلب توقيعاً ورقياً.</div>${attDoc()}</div>`;
 }
 async function openPrint(){
   if(A().status!=="ok"){toast("الطباعة بعد اعتماد رئيس الجودة بالوحدة");return}
@@ -915,9 +917,8 @@ async function buildPdfPages(){
       font(22,700);txt("مكتمل ✓",M+SW/2,y+PAD,GREEN,"center");y+=h});
     y+=18});
   if((f.gnotes||"").trim()){y+=10;heading("ملاحظات عامة");box(f.gnotes)}
-  ensure(140);y+=70;x.strokeStyle="#000";const sw=(CW-80)/2;
-  [[R-sw,R,"توقيع المدقق"],[M,M+sw,"الاعتماد"]].forEach(([x1,x2,l])=>{x.beginPath();x.moveTo(x1,y);x.lineTo(x2,y);x.stroke();font(22);txt(l,(x1+x2)/2,y+12,"#000","center")});
-  y+=60;
+  ensure(70);y+=20;font(19);txt("مستند إلكتروني صادر من نظام الجودة والتحقق، ولا يتطلب توقيعاً ورقياً.",W/2,y,"#444","center");
+  y+=50;
   const its=allItems().filter(i=>attsOf(i.key).length);
   if(its.length){newPage();heading("المرفقات");
     for(const it of its){font(23,700);const tl=wrap(it.t,CW-2*PAD);const th=tl.length*32+2*PAD;ensure(th+220);font(23,700);x.fillStyle=LIGHT;x.fillRect(M,y,CW,th);x.strokeStyle=LINE;x.strokeRect(M,y,CW,th);tl.forEach((l,j)=>txt(l,R-PAD,y+PAD+j*32));y+=th+10;
@@ -990,6 +991,7 @@ function rejectDialog(){const a=A(),its=allItems();
 function renderAll(){
   if(!me)return;
   const a=A();if(!canEditAudit())a._ro=true;const pgA=$(".pg[data-pg=audit]");pgA.classList.toggle("ro",!!a._ro);$("#roNote").hidden=!a._ro;if(a._ro)$("#roNote").textContent=canEditAudit()?"هذه المعاملة يدققها "+(a.auditor||"موظف آخر")+" — للاطلاع فقط":"صلاحيتك للاطلاع فقط";$("#auditor").value=a.auditor||me.full_name;warnedRO=false;$("#typeSel").value=String(a.type);
+  {const lockT=a.type>=0&&current!=="manual"&&!["admin","exec"].includes(me.role);$("#typeSel").disabled=lockT;$("#typeSel").title=lockT?"بند المخالفة مقفل أثناء التدقيق":""}
   $$("[data-f]").forEach(el=>el.value=a.f[el.dataset.f]||"");
   if(attFor!==current)attCache=[];
   renderStage();explainHint();renderCheck();updateBar();renderQueue();renderReview();
@@ -1019,7 +1021,7 @@ function inMyTeam(u){const us=gcl(u.sector||"");if(F&&F.unit&&F.unit!=="غير �
 function scopeOK(gov,region){if(!me||seesAll()||!me.sector)return true;const u=myUnit();if(u)return unitOf(gov)===u.name;return areaMatch(me.sector,{f:{gov,region}})}
 function userScopeOK(u,gov,region){if(!u.sector)return true;const un=(ORG.units||[]).find(x=>gcl(x.name)===gcl(u.sector));if(un)return unitOf(gov)===un.name;return areaMatch(u.sector,{f:{gov,region}})}
 const C={green:"#1C7A4B",red:"#B42318",amber:"#C98A1B",gray:"#A7B4C2",navy:"#0E3557",line:"#9AA8B5",light:"#EEF3F7"};
-let me=null,users=[],page="audit";
+let me=null,users=[],page="dash";
 let LOGO=null,LOGO_IMG=null;
 (async()=>{try{const r=await fetch("logo.png",{cache:"no-cache"});if(r.ok&&(r.headers.get("content-type")||"").includes("image")){const b=await r.blob();LOGO=await new Promise(res=>{const fr=new FileReader();fr.onload=()=>res(fr.result);fr.readAsDataURL(b)});LOGO_IMG=await loadI(LOGO)}}catch(e){}})();
 function uuid(){if(window.crypto&&crypto.randomUUID)return crypto.randomUUID();return "10000000-1000-4000-8000-100000000000".replace(/[018]/g,c=>(c^crypto.getRandomValues(new Uint8Array(1))[0]&15>>c/4).toString(16))}
@@ -1108,8 +1110,7 @@ $("#blockLogout").onclick=logout;
 async function enterApp(){
   show("appView");$("#whoName").textContent=me.full_name;$("#whoRole").textContent=ROLE[me.role]||"";
   buildTabs();await loadData();if(["admin","exec","manager","viewer"].includes(me.role))await loadUsers();await loadPwReq();if(PWREQ.length)setTimeout(()=>toast(`يوجد ${PWREQ.length} طلب إعادة كلمة مرور — في صفحة الإدارة والهيكل`),1200);
-  try{current=localStorage.getItem("vv:current")||"manual"}catch(e){}
-  if(current!=="manual"&&!audits[current]&&!rows.find(r=>r.vno===current))current="manual";
+  current="manual";try{page=localStorage.getItem("vv:page")||"dash"}catch(e){page="dash"}
   renderAll();go(page);
 }
 async function boot(){
@@ -1119,9 +1120,9 @@ async function boot(){
 }
 
 /* ----- التنقل ----- */
-const PAGES=[["audit","المخالفات والتدقيق",["admin","exec","manager","staff","clerk","viewer"]],["dash","الرئيسية",["admin","exec","manager","staff","clerk","viewer"]],["report","التقارير",["admin","exec","manager","viewer","clerk"]],["team","أداء الموظفين",["admin","exec","manager","viewer"]],["users","الإدارة والهيكل",["admin"]]];
+const PAGES=[["dash","الرئيسية",["admin","exec","manager","staff","clerk","viewer"]],["audit","المخالفات والتدقيق",["admin","exec","manager","staff","clerk","viewer"]],["report","تقارير التدقيق",["admin","exec","manager","viewer","clerk"]],["team","أداء الموظفين",["admin","exec","manager","viewer"]],["users","الإدارة والهيكل",["admin"]]];
 function buildTabs(){$("#tabs").innerHTML=PAGES.filter(p=>p[2].includes(me.role)).map(p=>`<button type="button" class="tab" data-go="${p[0]}">${p[1]}</button>`).join("");$$("[data-go]").forEach(b=>b.onclick=()=>go(b.dataset.go))}
-function go(p){if(!PAGES.find(x=>x[0]===p&&x[2].includes(me.role)))p="audit";page=p;
+function go(p){if(!PAGES.find(x=>x[0]===p&&x[2].includes(me.role)))p="dash";page=p;try{localStorage.setItem("vv:page",p)}catch(e){}
   $$(".pg").forEach(x=>x.hidden=x.dataset.pg!==p);$$("[data-go]").forEach(b=>b.setAttribute("aria-current",String(b.dataset.go===p)));
   $("#auditBar").hidden=p!=="audit";$("#upBtn").hidden=p!=="audit"||!canUpload();
   if(p==="dash")renderDash();if(p==="report")renderReport();if(p==="team")renderTeam();if(p==="users")renderUsers();window.scrollTo(0,0)}
@@ -1231,7 +1232,7 @@ function svgBars(items,series,title){
   let lx=W-4;series.forEach(se=>{const tw=se.label.length*8+24;s+=`<rect x="${lx-14}" y="10" width="12" height="12" rx="3" fill="${se.color}"/><text x="${lx-20}" y="21" text-anchor="end" font-size="12" fill="currentColor">${esc(se.label)}</text>`;lx-=tw});
   items.forEach((it,i)=>{const y=top+i*rowH;const lab=it.label.length>15?it.label.slice(0,14)+"…":it.label;
     s+=`<text x="${W-6}" y="${y+20}" text-anchor="end" font-size="13" fill="currentColor"><title>${esc(it.label)}</title>${esc(lab)}</text>`;
-    let x=W-labW;let total=0;series.forEach(se=>{const v=it[se.k]||0;total+=v;if(!v)return;const w=v/max*barMax;x-=w;s+=`<rect x="${x}" y="${y+6}" width="${Math.max(w,1)}" height="20" fill="${se.color}"><title>${esc(se.label)}: ${v}</title></rect>`});
+    let x=W-labW;let total=0;series.forEach(se=>{const v=it[se.k]||0;total+=v;if(!v)return;const w=v/max*barMax;x-=w;s+=`<rect x="${x}" y="${y+6}" width="${Math.max(w,1)}" height="20" fill="${se.color}"><title>${esc(se.label)}: ${v}</title></rect>`;if(w>=String(v).length*7+6)s+=`<text x="${x+w/2}" y="${y+20}" text-anchor="middle" font-size="11" font-weight="700" fill="${se.color===C.gray?"#13283D":"#fff"}">${v}</text>`});
     s+=`<text x="${x-6}" y="${y+21}" text-anchor="end" font-size="12" fill="currentColor">${total}</text>`});
   return s+"</svg>";
 }
@@ -1243,7 +1244,7 @@ function canvasBars(items,series,width){
   const max=Math.max(1,...items.map(it=>series.reduce((s,se)=>s+(it[se.k]||0),0)));
   let lx=W-10;x.font=`400 20px ${FF}`;series.forEach(se=>{x.fillStyle=se.color;x.fillRect(lx-18,16,16,16);x.fillStyle="#222";x.textAlign="right";x.fillText(se.label,lx-26,25);lx-=x.measureText(se.label).width+56});
   items.forEach((it,i)=>{const y=top+i*rowH;x.font=`400 20px ${FF}`;x.fillStyle="#222";x.textAlign="right";let lab=it.label;while(x.measureText(lab).width>labW-16&&lab.length>4)lab=lab.slice(0,-2);if(lab!==it.label)lab+="…";x.fillText(lab,W-6,y+rowH/2);
-    let bx=W-labW,total=0;series.forEach(se=>{const v=it[se.k]||0;total+=v;if(!v)return;const w=v/max*barMax;bx-=w;x.fillStyle=se.color;x.fillRect(bx,y+9,Math.max(w,1),rowH-18)});
+    let bx=W-labW,total=0;series.forEach(se=>{const v=it[se.k]||0;total+=v;if(!v)return;const w=v/max*barMax;bx-=w;x.fillStyle=se.color;x.fillRect(bx,y+9,Math.max(w,1),rowH-18);x.font=`700 17px ${FF}`;if(w>=x.measureText(String(v)).width+10){x.fillStyle=se.color===C.gray?"#13283D":"#fff";x.textAlign="center";x.fillText(String(v),bx+w/2,y+rowH/2)}});
     x.fillStyle="#222";x.textAlign="right";x.font=`600 19px ${FF}`;x.fillText(String(total),bx-8,y+rowH/2)});
   return c;
 }
