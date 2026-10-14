@@ -156,7 +156,7 @@ button.attbtn{background:none;font:inherit}
 .auth-card form{display:flex;flex-direction:column;gap:12px;text-align:right}
 .auth-card .msg{color:var(--bad);font-size:13px;min-height:18px}
 .auth-card .msg.ok{color:var(--ok)}
-#fgForm{display:flex;flex-direction:column;gap:12px}#fgForm[hidden],#loginForm[hidden]{display:none}
+#fgForm{display:flex;flex-direction:column;gap:12px}#fgForm[hidden],#loginForm[hidden],#rgForm[hidden]{display:none!important}
 .btnp{border:0;border-radius:12px;padding:12px;background:var(--navy);color:var(--navy-ink);font-weight:700;font-size:15px;cursor:pointer}
 .btnp:disabled{opacity:.6}
 .userbar{display:flex;align-items:center;gap:10px;flex-wrap:wrap;font-size:13px;color:var(--muted);margin:-6px 2px 10px}
@@ -240,6 +240,7 @@ button.attbtn{background:none;font:inherit}
     <div class="msg" id="lgMsg" role="alert"></div>
     <button class="btnp" id="lgBtn" type="submit">دخول</button>
     <button type="button" class="linkbtn" id="lgForgot" style="align-self:center;margin-top:4px">نسيت كلمة المرور؟</button>
+    <button type="button" class="btn2" id="lgReg" style="margin-top:4px">طلب تسجيل حساب جديد</button>
   </form>
   <form id="fgForm" hidden>
     <span class="sub" style="text-align:right">اكتب اسم المستخدم، ويصل طلبك لمدير النظام ليرسل لك كلمة مرور مؤقتة.</span>
@@ -248,6 +249,18 @@ button.attbtn{background:none;font:inherit}
     <div class="msg" id="fgMsg" role="alert"></div>
     <button class="btnp" type="submit" id="fgBtn">إرسال الطلب</button>
     <button type="button" class="linkbtn" id="fgBack" style="align-self:center">رجوع لتسجيل الدخول</button>
+  </form>
+  <form id="rgForm" hidden style="display:flex;flex-direction:column;gap:12px;text-align:right">
+    <span class="sub" style="text-align:right">عبّئ بياناتك، ويصل طلبك لمدير النظام. بعد الموافقة تصلك بيانات الدخول على بريدك.</span>
+    <label class="f">الاسم الكامل<input class="in" id="rgName" autocomplete="name"></label>
+    <label class="f">البريد الإلكتروني للشركة<input class="in" id="rgMail" type="email" dir="ltr" placeholder="name@nwc.com.sa" autocomplete="email"></label>
+    <label class="f">رقم الجوال<input class="in" id="rgPhone" inputmode="tel" dir="ltr" placeholder="05xxxxxxxx"></label>
+    <label class="f">الدور المطلوب<select class="in" id="rgRole"><option value="hq_staff">أخصائي جودة (المركز الرئيسي)</option><option value="staff">موظف الجودة (الوحدات)</option><option value="manager">رئيس الجودة بالوحدة</option><option value="exec">مدير الجودة</option><option value="clerk">إداري</option><option value="viewer">مطّلع</option></select></label>
+    <label class="f">الجهة<select class="in" id="rgUnit"></select></label>
+    <label class="f">ملاحظة (اختياري)<input class="in" id="rgNote"></label>
+    <div class="msg" id="rgMsg" role="alert"></div>
+    <button class="btnp" type="submit" id="rgBtn">إرسال الطلب</button>
+    <button type="button" class="linkbtn" id="rgBack" style="align-self:center">رجوع لتسجيل الدخول</button>
   </form>
 </div></div>
 <div class="auth" id="pwView" hidden><div class="auth-card">
@@ -1035,15 +1048,20 @@ const sb=window.supabase?window.supabase.createClient(SB_URL,SB_KEY,{auth:{persi
 const BUCKET="quality-files";
 const ROLE={admin:"مدير النظام",exec:"مدير الجودة",manager:"رئيس الجودة بالوحدة",staff:"موظف الجودة",clerk:"إداري",viewer:"مطّلع"};
 const isMgrR=()=>!!me&&["admin","exec","manager"].includes(me.role);
-const seesAll=()=>!!me&&["admin","exec","viewer"].includes(me.role);
+const isHQ=u=>!!u&&!!u.sector&&gcl(u.sector)===gcl(ORG.hq||"");
+const seesAll=()=>!!me&&(["admin","exec","viewer"].includes(me.role)||isHQ(me));
+function roleLabel(u){return u.role==="staff"&&isHQ(u)?"أخصائي جودة":(ROLE[u.role]||u.role)}
 const canEditAudit=()=>!!me&&["admin","exec","manager","staff"].includes(me.role);
 const canUpload=()=>!!me&&["admin","exec","manager","clerk"].includes(me.role);
 /* ----- الهيكل التنظيمي ----- */
 const ORG_DEFAULT={hq:"المركز الرئيسي - الرياض",units:[
   {name:"الوحدة الشمالية",sector:"القطاع الشرقي",govs:["محافظة حفر الباطن","محافظة الخفجي","محافظة النعيرية","محافظة قرية العليا"]},
-  {name:"الوحدة الجنوبية",sector:"القطاع الشرقي",govs:["محافظة الإحساء","محافظة بقيق"]}]};
+  {name:"الوحدة الجنوبية",sector:"القطاع الشرقي",govs:["محافظة الإحساء","محافظة بقيق"]}],
+  pending:[{name:"عايض القحطاني",role:"exec",unit:"المركز الرئيسي - الرياض"},{name:"تركي الدوسري",role:"exec",unit:"المركز الرئيسي - الرياض"},
+    {name:"رناد العتيبي",role:"staff",unit:"المركز الرئيسي - الرياض"},{name:"بندر العمار",role:"staff",unit:"المركز الرئيسي - الرياض"},
+    {name:"محمد اللحيدان",role:"staff",unit:"المركز الرئيسي - الرياض"},{name:"منيرة الرويس",role:"staff",unit:"المركز الرئيسي - الرياض"}]};
 let ORG=JSON.parse(JSON.stringify(ORG_DEFAULT));
-async function loadOrg(){try{const {data}=await sb.from("quality_settings").select("value").eq("key","org").maybeSingle();if(data&&data.value&&data.value.units)ORG=data.value}catch(e){}_um=null}
+async function loadOrg(){try{const {data}=await sb.from("quality_settings").select("value").eq("key","org").maybeSingle();if(data&&data.value&&data.value.units)ORG=data.value}catch(e){}if(!ORG.pending)ORG.pending=JSON.parse(JSON.stringify(ORG_DEFAULT.pending));_um=null}
 async function saveOrg(){const {error}=await sb.from("quality_settings").upsert({key:"org",value:ORG,updated_at:new Date().toISOString()});_um=null;if(error)throw error}
 const gcl=x=>norm(x||"").replace(/^(محافظه|مدينه|منطقه)\s+/,"").trim();
 let _um=null;function unitOf(gov){if(!_um){_um={};(ORG.units||[]).forEach(u=>(u.govs||[]).forEach(g=>_um[gcl(g)]=u.name))}return _um[gcl(gov)]||""}
@@ -1141,8 +1159,8 @@ $("#pwCancel").onclick=()=>{show("appView");go(page)};
 async function logout(){try{await flush()}catch(e){}await sb.auth.signOut();location.reload()}
 $("#blockLogout").onclick=logout;
 async function enterApp(){
-  show("appView");$("#whoName").textContent=me.full_name;$("#whoRole").textContent=ROLE[me.role]||"";
-  buildTabs();await loadData();if(["admin","exec","manager","viewer"].includes(me.role))await loadUsers();await loadPwReq();if(PWREQ.length)setTimeout(()=>toast(`يوجد ${PWREQ.length} طلب إعادة كلمة مرور — في صفحة الإدارة والهيكل`),1200);
+  show("appView");$("#whoName").textContent=me.full_name;$("#whoRole").textContent=roleLabel(me);
+  buildTabs();await loadData();if(["admin","exec","manager","viewer"].includes(me.role))await loadUsers();await loadPwReq();await loadSignups();{const msgs=[];if(PWREQ.length)msgs.push(`${PWREQ.length} طلب إعادة كلمة مرور`);if(SIGNUPS.length)msgs.push(`${SIGNUPS.length} طلب تسجيل`);if(msgs.length)setTimeout(()=>toast(`يوجد ${msgs.join(" و")} — في صفحة الإدارة والهيكل`),1200)}
   current="manual";try{page=localStorage.getItem("vv:page")||"dash"}catch(e){page="dash"}
   renderAll();go(page);
 }
@@ -1458,16 +1476,26 @@ function tempPass(){const a="ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz234
 function sectorOptions(){return (ORG.units||[]).map(u=>u.name).concat([ORG.hq||""]).filter(Boolean).concat([...new Set(rows.map(r=>r.region).filter(Boolean))].sort()).concat([...new Set(rows.map(r=>r.sector).filter(Boolean))].sort())}
 function orgEditor(){const govs=[...new Set(rows.map(r=>r.sector).filter(Boolean).concat((ORG.units||[]).flatMap(u=>u.govs||[])))].sort((a,b)=>(unitOf(a)||"ي").localeCompare(unitOf(b)||"ي","ar")||a.localeCompare(b,"ar"));
   const byU={};users.forEach(u=>{const k=(ORG.units||[]).find(x=>gcl(x.name)===gcl(u.sector||""));const n=k?k.name:(u.sector||ORG.hq||"المركز الرئيسي");(byU[n]=byU[n]||[]).push(u)});
-  const card=(n,list)=>`<div class="ounit"><b>${esc(n)}</b>${(list||[]).map(u=>`<span>${esc(u.full_name)} <small>${ROLE[u.role]||u.role}</small></span>`).join("")||"<small>لا يوجد موظفون بعد</small>"}</div>`;
+  const pendOf=n=>(ORG.pending||[]).filter(p=>gcl(p.unit||ORG.hq)===gcl(n));
+  const card=(n,list)=>{const pl=pendOf(n);return `<div class="ounit"><b>${esc(n)}</b>${(list||[]).map(u=>`<span>${esc(u.full_name)} <small>${esc(roleLabel(u))}</small></span>`).join("")}${pl.map(p=>`<span style="opacity:.6">${esc(p.name)} <small>${esc(pendLabel(p))} — بانتظار التفعيل</small></span>`).join("")}${!(list||[]).length&&!pl.length?"<small>لا يوجد موظفون بعد</small>":""}</div>`};
   return `<section class="block"><h2>الهيكل التنظيمي</h2>
   <div class="otree">${card(ORG.hq||"المركز الرئيسي",byU[ORG.hq||"المركز الرئيسي"])}<div class="osec">${[...new Set((ORG.units||[]).map(u=>u.sector))].map(sc=>`<div class="ogrp"><div class="osname">${esc(sc)}</div><div class="ounits">${(ORG.units||[]).filter(u=>u.sector===sc).map(u=>card(u.name,byU[u.name])+`<div class="ogovs">${(u.govs||[]).map(g=>`<i>${esc(g)}</i>`).join("")}</div>`).join("")}</div></div>`).join("")}</div></div>
+  <h3 class="sec" style="margin-top:18px">أعضاء بانتظار التفعيل <span>${(ORG.pending||[]).length}</span></h3>
+  <div class="sub" style="margin-bottom:8px">يظهرون في الهيكل دون حسابات، ويُفعَّلون عند قبول طلب تسجيلهم أو إنشاء حسابهم.</div>
+  <div class="ulist">${(ORG.pending||[]).map((p,i)=>`<div class="urow off"><div class="uinfo"><b>${esc(p.name)}</b><small>${esc(pendLabel(p))} — ${esc(p.unit||ORG.hq)}</small></div><div class="uact"><button type="button" class="btn2" data-pdel="${i}">حذف</button></div></div>`).join("")||`<div class="empty">لا يوجد</div>`}</div>
+  <div class="grid" style="margin-top:10px"><label class="f">الاسم<input class="in" id="pnName"></label><label class="f">الدور<select class="in" id="pnRole"><option value="hq_staff">أخصائي جودة (المركز الرئيسي)</option><option value="exec">مدير الجودة</option><option value="manager">رئيس الجودة بالوحدة</option><option value="staff">موظف الجودة</option><option value="clerk">إداري</option><option value="viewer">مطّلع</option></select></label>
+  <label class="f full">الجهة<select class="in" id="pnUnit">${[ORG.hq].concat((ORG.units||[]).map(u=>u.name)).map(x=>`<option>${esc(x)}</option>`).join("")}</select></label></div>
+  <div class="btns" style="margin-top:8px"><button type="button" class="btn2" id="pnAdd">＋ إضافة للهيكل</button></div>
   <h3 class="sec" style="margin-top:18px">الوحدات</h3><div class="ulist">${(ORG.units||[]).map((u,i)=>`<div class="urow"><div class="uinfo"><b>${esc(u.name)}</b><small>${esc(u.sector||"")} — ${(u.govs||[]).length} محافظات</small></div><div class="uact"><button type="button" class="btn2" data-udel="${i}">حذف</button></div></div>`).join("")}</div>
   <div class="grid" style="margin-top:10px"><label class="f">اسم وحدة جديدة<input class="in" id="ouName" placeholder="مثال: الوحدة الوسطى"></label><label class="f">القطاع<input class="in" id="ouSec" list="osecs" placeholder="مثال: القطاع الشرقي"><datalist id="osecs">${[...new Set((ORG.units||[]).map(u=>u.sector))].map(x=>`<option value="${esc(x)}">`).join("")}</datalist></label></div>
   <div class="btns" style="margin-top:8px"><button type="button" class="btn2" id="ouAdd">＋ إضافة وحدة</button></div>
   <h3 class="sec" style="margin-top:18px">توزيع المحافظات على الوحدات</h3>
   <div class="tbl-wrap" style="max-height:360px;overflow:auto"><table class="tbl"><thead><tr><th>المحافظة</th><th>الوحدة</th></tr></thead><tbody>${govs.map(g=>`<tr><td>${esc(g)}</td><td><select class="in" data-gov="${esc(g)}" style="min-height:34px;padding:2px 6px"><option value="">— غير مسندة —</option>${(ORG.units||[]).map(u=>`<option${unitOf(g)===u.name?" selected":""}>${esc(u.name)}</option>`).join("")}</select></td></tr>`).join("")}</tbody></table></div>
   <div class="btns" style="margin-top:10px"><button type="button" class="btn2 pri" id="orgSave">حفظ الهيكل</button></div></section>`}
+function pendLabel(p){return p.role==="staff"&&gcl(p.unit||ORG.hq)===gcl(ORG.hq)?"أخصائي جودة":(ROLE[p.role]||p.role)}
 function bindOrg(){
+  $$("[data-pdel]").forEach(b=>b.onclick=()=>{ORG.pending.splice(+b.dataset.pdel,1);renderUsers();toast("اضغط «حفظ الهيكل» لاعتماد التغيير")});
+  $("#pnAdd").onclick=()=>{const n=$("#pnName").value.trim();if(!n){toast("اكتب الاسم");return}let r=$("#pnRole").value,u=$("#pnUnit").value;if(r==="hq_staff"){r="staff";u=ORG.hq}ORG.pending=(ORG.pending||[]).concat([{name:n,role:r,unit:u}]);renderUsers();toast("أُضيف. اضغط «حفظ الهيكل» لاعتماده")};
   $$("[data-udel]").forEach(b=>b.onclick=()=>{const u=ORG.units[+b.dataset.udel];if(!confirm("حذف "+u.name+"؟ محافظاتها تصبح غير مسندة."))return;ORG.units.splice(+b.dataset.udel,1);_um=null;renderUsers()});
   $("#ouAdd").onclick=()=>{const n=$("#ouName").value.trim(),sc=$("#ouSec").value.trim();if(!n||!sc){toast("اكتب اسم الوحدة والقطاع");return}ORG.units.push({name:n,sector:sc,govs:[]});_um=null;renderUsers()};
   $$("[data-gov]").forEach(sel=>sel.onchange=()=>{const g=sel.dataset.gov;ORG.units.forEach(u=>u.govs=(u.govs||[]).filter(x=>gcl(x)!==gcl(g)));if(sel.value){const u=ORG.units.find(x=>x.name===sel.value);u.govs.push(g)}_um=null});
@@ -1475,7 +1503,7 @@ function bindOrg(){
 }
 function renderUsers(){
   const secs=sectorOptions();
-  $("#usersBody").innerHTML=`${pwReqBlock()}<section class="block"><h2>إنشاء حساب جديد</h2>
+  $("#usersBody").innerHTML=`${signupBlock()}${pwReqBlock()}<section class="block"><h2>إنشاء حساب جديد</h2>
   <div class="grid">
     <label class="f">الاسم الكامل<input class="in" id="nuName"></label>
     <label class="f">اسم المستخدم (بالإنجليزي)<input class="in" id="nuUser" dir="ltr" autocapitalize="off" autocomplete="off" placeholder="ahmed.ali"></label>
@@ -1486,9 +1514,9 @@ function renderUsers(){
   </div>
   <div class="btns" style="margin-top:12px"><button type="button" class="btn2 pri" id="nuCreate">إنشاء الحساب</button></div><div id="nuResult"></div></section>
   ${orgEditor()}<section class="block"><h2>الحسابات <span class="sub">${users.length}</span></h2><div class="ulist">${users.map(u=>`
-    <div class="urow ${u.active?"":"off"}"><div class="uinfo"><b>${esc(u.full_name)}</b><span dir="ltr">${esc(u.username)}${u.email?" · "+esc(u.email):""}</span>${u.email?"":`<small style="color:var(--warn)">بدون بريد إلكتروني — اضغط «تعديل» لإضافته</small>`}<small>${ROLE[u.role]||u.role}${u.sector?" — "+esc(u.sector):""}${u.active?"":" — موقوف"}${u.must_change_password?" — لم يغيّر كلمة المرور المؤقتة":""}</small></div>
+    <div class="urow ${u.active?"":"off"}"><div class="uinfo"><b>${esc(u.full_name)}</b><span dir="ltr">${esc(u.username)}${u.email?" · "+esc(u.email):""}</span>${u.email?"":`<small style="color:var(--warn)">بدون بريد إلكتروني — اضغط «تعديل» لإضافته</small>`}<small>${esc(roleLabel(u))}${u.sector?" — "+esc(u.sector):""}${u.active?"":" — موقوف"}${u.must_change_password?" — لم يغيّر كلمة المرور المؤقتة":""}</small></div>
     <div class="uact">${u.id===me.id?`<span class="sub">حسابك</span>`:`<button type="button" class="btn2" data-act="toggle" data-id="${u.id}">${u.active?"إيقاف":"تفعيل"}</button><button type="button" class="btn2" data-act="edit" data-id="${u.id}">تعديل</button><button type="button" class="btn2" data-act="reset" data-id="${u.id}">كلمة مرور جديدة</button>`}</div></div>`).join("")}</div></section>`;
-  bindOrg();bindPwReq();
+  bindOrg();bindPwReq();bindSignups();
   $("#nuCreate").onclick=async()=>{
     const name=$("#nuName").value.trim(),un=$("#nuUser").value.trim().toLowerCase(),role=$("#nuRole").value,sec=$("#nuSector").value.trim(),pw=$("#nuPass").value.trim();
     if(!name||!un||!pw){toast("أكمل الاسم واسم المستخدم وكلمة المرور");return}
@@ -1496,6 +1524,7 @@ function renderUsers(){
     if(!r.error&&baseRole!==role){const r3=await sb.rpc("q_update_user",{p_user:r.data,p_role:role,p_sector:sec||"",p_full_name:name});if(r3.error)toast("أُنشئ الحساب لكن تعذر تعيين الدور: "+r3.error.message)}b.disabled=false;
     if(!r.error&&$("#nuEmail").value.trim())await sb.rpc("q_set_email",{p_user:r.data,p_email:$("#nuEmail").value.trim()});
     if(r.error){toast("تعذر الإنشاء: "+r.error.message);return}
+    {const before=(ORG.pending||[]).length;ORG.pending=(ORG.pending||[]).filter(p=>gcl(p.name)!==gcl(name));if(ORG.pending.length!==before){try{await saveOrg()}catch(e){}}}
     await loadUsers();renderUsers();showCred(name,un,pw,"تم إنشاء الحساب");};
   $$("[data-act]").forEach(b=>b.onclick=async()=>{const u=users.find(x=>x.id===b.dataset.id);if(!u)return;
     if(b.dataset.act==="toggle"){const r=await sb.rpc("q_set_active",{p_user:u.id,p_active:!u.active});if(r.error){toast(r.error.message);return}await loadUsers();renderUsers();toast(u.active?"تم إيقاف الحساب":"تم تفعيل الحساب")}
@@ -1560,12 +1589,53 @@ async function doImport(list,replace){
 /* ===================== نسيت كلمة المرور ===================== */
 $("#lgForgot").onclick=()=>{$("#loginForm").hidden=true;$("#fgForm").hidden=false;$("#fgUser").value=$("#lgUser").value.trim();$("#fgMsg").textContent="";$("#fgMsg").className="msg";$("#fgUser").focus()};
 $("#fgBack").onclick=()=>{$("#fgForm").hidden=true;$("#loginForm").hidden=false};
+$("#lgReg").onclick=()=>{$("#loginForm").hidden=true;$("#rgForm").hidden=false;$("#rgMsg").textContent="";$("#rgMsg").className="msg";
+  $("#rgUnit").innerHTML=[ORG.hq].concat((ORG.units||[]).map(u=>u.name)).map(x=>`<option>${esc(x)}</option>`).join("");$("#rgName").focus()};
+$("#rgRole").onchange=()=>{if($("#rgRole").value==="hq_staff"||$("#rgRole").value==="exec")$("#rgUnit").value=ORG.hq};
+$("#rgBack").onclick=()=>{$("#rgForm").hidden=true;$("#loginForm").hidden=false};
+$("#rgForm").onsubmit=async e=>{e.preventDefault();const m=$("#rgMsg");m.className="msg";
+  const name=$("#rgName").value.trim(),mail=$("#rgMail").value.trim().toLowerCase(),phone=$("#rgPhone").value.trim();
+  if(name.split(/\s+/).length<2){m.textContent="اكتب الاسم الكامل";return}
+  if(!/^[^@\s]+@nwc\.com\.sa$/.test(mail)){m.textContent="التسجيل متاح ببريد الشركة فقط (@nwc.com.sa)";return}
+  $("#rgBtn").disabled=true;const {error}=await sb.from("quality_signup_requests").insert({full_name:name,email:mail,phone:phone||null,req_role:$("#rgRole").value,unit:$("#rgUnit").value,note:$("#rgNote").value.trim()||null});$("#rgBtn").disabled=false;
+  if(error){m.textContent="تعذر إرسال الطلب، حاول لاحقاً";return}
+  m.className="msg ok";m.textContent="✓ وصل طلبك لمدير النظام. ستصلك بيانات الدخول بعد الموافقة.";["rgName","rgMail","rgPhone","rgNote"].forEach(id=>$("#"+id).value="")};
 $("#fgForm").onsubmit=async e=>{e.preventDefault();const u=$("#fgUser").value.trim(),m=$("#fgMsg");
   if(u.length<3){m.textContent="اكتب اسم المستخدم";return}
   $("#fgBtn").disabled=true;const {error}=await sb.from("quality_pw_requests").insert({username:u.toLowerCase(),note:$("#fgNote").value.trim()||null});$("#fgBtn").disabled=false;
   if(error){m.textContent="تعذر إرسال الطلب، حاول لاحقاً";return}
   m.className="msg ok";m.textContent="✓ وصل طلبك لمدير النظام. سيرسل لك كلمة مرور مؤقتة، وعند الدخول بها يطلب منك النظام كلمة مرور جديدة.";$("#fgNote").value=""};
-let PWREQ=[];
+let PWREQ=[],SIGNUPS=[];
+const REQ_ROLE={hq_staff:"أخصائي جودة (المركز الرئيسي)",staff:"موظف الجودة",manager:"رئيس الجودة بالوحدة",exec:"مدير الجودة",clerk:"إداري",viewer:"مطّلع"};
+async function loadSignups(){if(!me||me.role!=="admin"){SIGNUPS=[];return}try{const {data}=await sb.from("quality_signup_requests").select("*").eq("status","pending").order("created_at");SIGNUPS=data||[]}catch(e){SIGNUPS=[]}}
+function signupBlock(){if(!SIGNUPS.length)return "";return `<section class="block" style="border-color:var(--navy)"><h2>طلبات التسجيل <span class="sub">${SIGNUPS.length}</span></h2><div class="ulist">${SIGNUPS.map(r=>{const inPend=(ORG.pending||[]).some(p=>gcl(p.name)===gcl(r.full_name));return `<div class="urow"><div class="uinfo"><b>${esc(r.full_name)}${inPend?' <span class="badge b-ok">موجود في الهيكل</span>':""}</b><span dir="ltr">${esc(r.email)}${r.phone?" · "+esc(r.phone):""}</span><small>${esc(REQ_ROLE[r.req_role]||r.req_role||"")} — ${esc(r.unit||"")} — ${fmtD(Date.parse(r.created_at))}${r.note?" — "+esc(r.note):""}</small></div><div class="uact"><button type="button" class="btn2 pri" data-sgok="${r.id}">قبول</button><button type="button" class="btn2" data-sgno="${r.id}">رفض</button></div></div>`}).join("")}</div></section>`}
+function bindSignups(){
+  $$("[data-sgno]").forEach(b=>b.onclick=async()=>{if(!confirm("رفض طلب التسجيل؟"))return;await sb.from("quality_signup_requests").update({status:"rejected",handled_by:me.full_name,handled_at:new Date().toISOString()}).eq("id",b.dataset.sgno);await loadSignups();renderUsers();toast("رُفض الطلب")});
+  $$("[data-sgok]").forEach(b=>b.onclick=()=>{const r=SIGNUPS.find(x=>x.id===b.dataset.sgok);if(r)approveSignup(r)});
+}
+function approveSignup(r){
+  const un0=String(r.email||"").split("@")[0].toLowerCase().replace(/[^a-z0-9._-]/g,"");
+  const role0=r.req_role==="hq_staff"?"staff":(r.req_role||"staff"),unit0=r.req_role==="hq_staff"?ORG.hq:(r.unit||"");
+  $("#sheet").innerHTML=`<h3>قبول طلب ${esc(r.full_name)}</h3><div class="grid" style="margin-top:10px">
+   <label class="f full">الاسم الكامل<input class="in" id="saName" value="${esc(r.full_name)}"></label>
+   <label class="f">اسم المستخدم<input class="in" id="saUser" dir="ltr" value="${esc(un0)}"></label>
+   <label class="f">الدور<select class="in" id="saRole">${Object.entries(ROLE).map(([k,t])=>`<option value="${k}"${k===role0?" selected":""}>${t}</option>`).join("")}</select></label>
+   <label class="f full">الجهة (المركز الرئيسي أو الوحدة)<input class="in" id="saSec" list="secList3" value="${esc(unit0)}"><datalist id="secList3">${sectorOptions().map(x=>`<option value="${esc(x)}">`).join("")}</datalist></label>
+   <label class="f full">البريد الإلكتروني<input class="in" id="saMail" dir="ltr" value="${esc(r.email||"")}"></label>
+   <label class="f full">كلمة مرور مؤقتة<input class="in" id="saPass" dir="ltr" value="${tempPass()}"></label></div>
+   <div class="btns" style="margin-top:12px"><button type="button" class="btn2 pri" id="saGo">إنشاء الحساب وتفعيله</button><button type="button" class="btn2" id="closeSh">إلغاء</button></div>`;
+  openSheet();$("#closeSh").onclick=closeSheet;
+  $("#saGo").onclick=async()=>{const name=$("#saName").value.trim(),un=$("#saUser").value.trim().toLowerCase(),role=$("#saRole").value,sec=$("#saSec").value.trim(),pw=$("#saPass").value.trim(),em=$("#saMail").value.trim();
+    if(!name||!un||!pw){toast("أكمل الاسم واسم المستخدم وكلمة المرور");return}
+    const btn=$("#saGo");btn.disabled=true;const baseRole=["admin","manager","staff"].includes(role)?role:"staff";
+    const c=await sb.rpc("q_create_user",{p_username:un,p_full_name:name,p_role:baseRole,p_password:pw,p_sector:sec||null});
+    if(c.error){btn.disabled=false;toast("تعذر الإنشاء: "+c.error.message);return}
+    if(baseRole!==role){const r3=await sb.rpc("q_update_user",{p_user:c.data,p_role:role,p_sector:sec||"",p_full_name:name});if(r3.error)toast("أُنشئ الحساب لكن تعذر تعيين الدور: "+r3.error.message)}
+    if(em)await sb.rpc("q_set_email",{p_user:c.data,p_email:em});
+    await sb.from("quality_signup_requests").update({status:"approved",handled_by:me.full_name,handled_at:new Date().toISOString()}).eq("id",r.id);
+    const before=(ORG.pending||[]).length;ORG.pending=(ORG.pending||[]).filter(p=>gcl(p.name)!==gcl(name));if(ORG.pending.length!==before){try{await saveOrg()}catch(e){}}
+    await loadSignups();await loadUsers();renderUsers();showCred(name,un,pw,"تم قبول طلب التسجيل وإنشاء الحساب",em)};
+}
 async function loadPwReq(){if(!me||me.role!=="admin"){PWREQ=[];return}try{const {data}=await sb.from("quality_pw_requests").select("*").eq("done",false).order("created_at");PWREQ=data||[]}catch(e){PWREQ=[]}}
 function pwReqBlock(){if(!PWREQ.length)return "";return `<section class="block" style="border-color:var(--warn)"><h2>طلبات إعادة كلمة المرور <span class="sub">${PWREQ.length}</span></h2><div class="ulist">${PWREQ.map(r=>{const u=users.find(x=>x.username===r.username||(x.username||"").toLowerCase()===r.username);return `<div class="urow"><div class="uinfo"><b>${esc(u?u.full_name:"اسم مستخدم غير موجود")}</b><span dir="ltr">${esc(r.username)}</span><small>${fmtD(Date.parse(r.created_at))}${r.note?" — "+esc(r.note):""}</small></div><div class="uact">${u?`<button type="button" class="btn2 pri" data-pwr="${r.id}" data-u="${u.id}">إنشاء كلمة مرور</button>`:""}<button type="button" class="btn2" data-pwx="${r.id}">تجاهل</button></div></div>`}).join("")}</div></section>`}
 function bindPwReq(){
