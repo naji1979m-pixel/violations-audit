@@ -171,6 +171,7 @@ button.attbtn{background:none;font:inherit}
 .kpi.k-bad{border-inline-start-color:var(--bad)}.kpi.k-bad b{color:var(--bad)}
 .kpi.k-warn{border-inline-start-color:var(--warn)}.kpi.k-warn b{color:var(--warn)}
 .kpi.k-navy{border-inline-start-color:var(--navy)}
+.kpi.k-inc{border-inline-start-color:#D9480F}.kpi.k-inc b{color:#D9480F}
 .chart{margin:6px 0 14px;overflow-x:auto}
 .tbl-wrap{overflow-x:auto;border:1px solid var(--line);border-radius:12px}
 .tbl{width:100%;border-collapse:collapse;font-size:13px;min-width:460px}
@@ -1203,7 +1204,7 @@ $("#fClr").onclick=()=>{F={reg:"",gov:"",vst:"",unit:""};setF("reg","")};
 
 function statusBlock(st){
   const T=st.tot.total||0,p=v=>T?Math.round(v/T*1000)/10:0;
-  const items=[["مكتملة",st.tot.completed,"k-ok",C.green,"completed"],["معادة للمفتش",st.tot.returned,"k-bad",C.red,"returned"],["غير مكتملة المرفقات",st.tot.incomplete,"k-bad","#8E44AD","incomplete"],["قيد التدقيق",st.tot.progress,"k-warn",C.amber,"progress"],["غير المقيّمة",st.tot.pending,"k-gray",C.gray,"pending"]];
+  const items=[["مكتملة",st.tot.completed,"k-ok",C.green,"completed"],["معادة للمفتش",st.tot.returned,"k-bad",C.red,"returned"],["غير مكتملة المرفقات",st.tot.incomplete,"k-inc","#D9480F","incomplete"],["قيد التدقيق",st.tot.progress,"k-warn",C.amber,"progress"],["غير المقيّمة",st.tot.pending,"k-gray",C.gray,"pending"]];
   return `<div class="kpis">${kpi("إجمالي المخالفات",T.toLocaleString("en-US"),"k-navy","100%","st:all")}${items.map(i=>kpi(i[0],i[1].toLocaleString("en-US"),i[2],p(i[1])+"%","st:"+i[4])).join("")}</div>
   <div class="sbar" role="img" aria-label="توزيع الحالات">${items.map(i=>T&&i[1]?`<i style="width:${i[1]/T*100}%;background:${i[3]}" title="${i[0]}: ${p(i[1])}%"></i>`:"").join("")}</div>
   <div class="slegend">${items.map(i=>`<span><b style="background:${i[3]}"></b>${i[0]} ${p(i[1])}%</span>`).join("")}</div>`;
@@ -1256,8 +1257,8 @@ function computeStats(period){
     byType:Object.values(byType).sort((a,b)=>b.total-a.total),fail:Object.entries(fail).sort((a,b)=>b[1]-a[1]).slice(0,10)};
 }
 const pct=v=>Math.round(v*100)+"%";
-const SEC_SERIES=[{k:"completed",label:"مكتملة",color:C.green},{k:"incomplete",label:"غير مكتملة",color:"#8E44AD"},{k:"returned",label:"معادة",color:C.red},{k:"progress",label:"قيد التدقيق",color:C.amber},{k:"pending",label:"غير مقيّمة",color:C.gray}];
-const USR_SERIES=[{k:"completed",label:"مكتملة",color:C.green},{k:"incomplete",label:"غير مكتملة",color:"#8E44AD"},{k:"returned",label:"معادة",color:C.red},{k:"progress",label:"قيد التدقيق",color:C.amber}];
+const SEC_SERIES=[{k:"completed",label:"مكتملة",color:C.green},{k:"incomplete",label:"غير مكتملة",color:"#D9480F"},{k:"returned",label:"معادة",color:C.red},{k:"progress",label:"قيد التدقيق",color:C.amber},{k:"pending",label:"غير مقيّمة",color:C.gray}];
+const USR_SERIES=[{k:"completed",label:"مكتملة",color:C.green},{k:"incomplete",label:"غير مكتملة",color:"#D9480F"},{k:"returned",label:"معادة",color:C.red},{k:"progress",label:"قيد التدقيق",color:C.amber}];
 
 /* ----- رسم بياني (SVG للشاشة) ----- */
 function svgBars(items,series,title){
