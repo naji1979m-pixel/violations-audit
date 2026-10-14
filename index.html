@@ -1307,7 +1307,8 @@ function drillRecs(){const since=periodStart(drillPer);const inP=a=>!since||((a.
   const allQ=rowMap();Object.entries(audits).forEach(([k,a])=>{if(k!=="manual"&&a._id&&!qset.has(k)&&!allQ[k]&&inFA(k,a)&&inP(a))out.push({key:k,r:null,a})});
   return out}
 const DRILL_ST={all:"إجمالي المخالفات",completed:"مكتملة",returned:"معادة للمفتش",progress:"قيد التدقيق",pending:"غير المقيّمة"};
-const ST_LAB={completed:["مكتملة","b-ok"],returned:["معادة","b-ret"],progress:["قيد التدقيق","b-prog"],pending:["غير مقيّمة","b-new"]};
+const ST_LAB={completed:["مكتملة","b-ok"],returned:["معادة للمفتش","b-ret"],progress:["قيد التدقيق","b-prog"],pending:["لم تُدقق","b-new"]};
+const DEC_CLS={"معتمدة":"b-ok","معادة (غير معتمدة)":"b-ret","غير مقيّمة (بدون قرار)":"b-prog","غير محدد":"b-new"};
 function drillRow(x){const a=x.a,r=x.r||{},f=(a&&a.f)||{};const t=a&&a.type>=0&&GUIDE[a.type]?GUIDE[a.type].name:(r.type>=0&&GUIDE[r.type]?GUIDE[r.type].name:(r.item||""));
   return {visit:x.key,vid:r.vid||f.vid||"",type:t,region:r.region||(a&&a.region)||f.region||"",gov:r.sector||(a&&a.sector)||f.gov||"",officer:r.officer||f.officer||"",name:r.name||f.name||"",st:stOf(a),auditor:a?userName(a._owner,a.auditor):"",dec:dLab(x.r?x.r.dec:undefined),plat:pLab(x.r?x.r.vstat:"")}}
 function openDrill(spec){
@@ -1316,13 +1317,13 @@ function openDrill(spec){
   else if(kind==="dec"){title="قرار مدير الرقابة: "+val;list=list.filter(x=>dLab(x.r?x.r.dec:undefined)===val)}
   else if(kind==="plat"){title="حالة المخالفة: "+val;list=list.filter(x=>pLab(x.r?x.r.vstat:"")===val)}
   const data=list.map(drillRow),shown=data.slice(0,100);
-  $("#sheet").innerHTML=`<h3>${esc(title)}</h3><div class="sub">${data.length.toLocaleString("en-US")} مخالفة — ${esc(fLabel())}${drillPer!=="all"?" — "+esc(PERIODS[drillPer]):""}</div>
+  $("#sheet").innerHTML=`<h3>${esc(title)}</h3><div class="sub">${data.length.toLocaleString("en-US")} مخالفة — ${esc(fLabel())}${kind==="st"?"":"<br>هذا التصنيف من التقرير الشامل (قرار الرقابة في المنصة)، ومستقل عن تدقيق الجودة."}${drillPer!=="all"?" — "+esc(PERIODS[drillPer]):""}</div>
    <div class="btns" style="margin:12px 0"><button type="button" class="btn2 pri" id="drXls"${data.length?"":" disabled"}>📊 تصدير Excel</button><button type="button" class="btn2" id="closeSh">إغلاق</button></div>
-   ${data.length?`<div class="queue" style="max-height:52vh">${shown.map(d=>`<button type="button" class="qrow" data-dopen="${esc(d.visit)}"><span class="id">${esc(d.visit)}</span><span class="badge ${ST_LAB[d.st][1]}">${ST_LAB[d.st][0]}</span><span class="t">${esc(d.type||"بند غير محدد")}</span><span class="m">${esc([d.officer,d.region,d.gov].filter(Boolean).join(" — "))}${d.auditor?" — المدقق: "+esc(d.auditor):""}</span></button>`).join("")}</div>${data.length>100?`<div class="sub" style="margin-top:6px">يظهر أول 100 من ${data.length.toLocaleString("en-US")}، والقائمة كاملة في ملف Excel.</div>`:""}`:`<div class="empty">لا توجد مخالفات</div>`}`;
+   ${data.length?`<div class="queue" style="max-height:52vh">${shown.map(d=>`<button type="button" class="qrow" data-dopen="${esc(d.visit)}"><span class="id">${esc(d.visit)}</span>${kind==="st"?`<span class="badge ${ST_LAB[d.st][1]}">الجودة: ${ST_LAB[d.st][0]}</span>`:kind==="dec"?`<span class="badge ${DEC_CLS[d.dec]||"b-new"}">الرقابة: ${esc(d.dec)}</span>`:`<span class="badge b-new">${esc(d.plat)}</span>`}<span class="t">${esc(d.type||"بند غير محدد")}</span><span class="m">${esc([d.officer,d.region,d.gov].filter(Boolean).join(" — "))}${kind!=="st"?" — تدقيق الجودة: "+esc(ST_LAB[d.st][0]):""}${d.auditor?" — المدقق: "+esc(d.auditor):""}</span></button>`).join("")}</div>${data.length>100?`<div class="sub" style="margin-top:6px">يظهر أول 100 من ${data.length.toLocaleString("en-US")}، والقائمة كاملة في ملف Excel.</div>`:""}`:`<div class="empty">لا توجد مخالفات</div>`}`;
   openSheet();$("#closeSh").onclick=closeSheet;
   $$("[data-dopen]").forEach(b=>b.onclick=()=>{closeSheet();go("audit");openAudit(b.dataset.dopen);setTimeout(()=>window.scrollTo({top:$("#typeSel").closest("section").offsetTop-8,behavior:"smooth"}),100)});
   $("#drXls").onclick=async()=>{try{
-    const rowsX=data.map(d=>({"رقم الزيارة":d.visit,"معرف المخالفة":d.vid,"وصف بند اللائحة":d.type,"المنطقة":d.region,"المحافظة":d.gov,"اسم المفتش":d.officer,"اسم المخالف":d.name,"حالة التدقيق":ST_LAB[d.st][0],"المدقق":d.auditor,"قرار مدير الرقابة":d.dec,"حالة المخالفة في المنصة":d.plat}));
+    const rowsX=data.map(d=>({"رقم الزيارة":d.visit,"معرف المخالفة":d.vid,"وصف بند اللائحة":d.type,"المنطقة":d.region,"المحافظة":d.gov,"اسم المفتش":d.officer,"اسم المخالف":d.name,"حالة تدقيق الجودة":ST_LAB[d.st][0],"المدقق":d.auditor,"قرار مدير الرقابة":d.dec,"حالة المخالفة في المنصة":d.plat}));
     const ws=XLSX.utils.json_to_sheet(rowsX);ws["!cols"]=Object.keys(rowsX[0]).map(k=>({wch:k==="وصف بند اللائحة"?50:18}));
     const wb=XLSX.utils.book_new();wb.Workbook={Views:[{RTL:true}]};XLSX.utils.book_append_sheet(wb,ws,"التفاصيل");
     const buf=XLSX.write(wb,{bookType:"xlsx",type:"array"});
