@@ -760,7 +760,7 @@ async function addFiles(k,files){
     const attId=uuid(),paths=[];
     for(let i=0;i<pages.length;i++){const blob=await (await fetch(pages[i])).blob();const p=`${a._id}/${attId}/${i+1}.jpg`;const up=await sb.storage.from(BUCKET).upload(p,blob,{contentType:"image/jpeg",upsert:false});if(up.error)throw up.error;paths.push(p)}
     const ins=await sb.from("quality_attachments").insert({id:attId,audit_id:a._id,item_key:k,file_name:f.name,is_pdf:isPdf,page_count:total,pages:paths,file_hash:hash,meta:{exif:exif||{},dup,size:f.size}});if(ins.error)throw ins.error;okN++;
-  }catch(e){toast("تعذر رفع الملف: "+f.name)}}
+  }catch(e){console.error("upload",e);toast("تعذر رفع الملف: "+f.name+" — السبب: "+((e&&(e.message||e.error||e.statusCode))||String(e)))}}
   if(aud!==current)return;if(okN)invalidate(k);await loadAtt();if(a._id)ATT_IDX[a._id]=new Set(attCache.map(r=>r.key));renderCheck();updateBar();if(okN)toast(okN===1?"تم إرفاق الملف":`تم إرفاق ${okN} ملفات`);
 }
 function viewAtt(id){const r=attCache.find(x=>x.id===id);if(!r)return;const it=allItems().find(i=>i.key===r.key);
@@ -982,7 +982,7 @@ function closeSheet(){$("#sheetBg").classList.remove("open")}
 $("#sheetBg").onclick=e=>{if(e.target.id==="sheetBg")closeSheet()};
 document.addEventListener("keydown",e=>{if(e.key==="Escape")closeSheet()});
 async function copy(t){try{await navigator.clipboard.writeText(t);toast("تم النسخ")}catch(e){const ta=document.createElement("textarea");ta.value=t;document.body.appendChild(ta);ta.select();try{document.execCommand("copy");toast("تم النسخ")}catch(_){toast("تعذر النسخ")}ta.remove()}}
-let tt;function toast(m){const t=$("#toast");t.textContent=m;t.classList.add("show");clearTimeout(tt);tt=setTimeout(()=>t.classList.remove("show"),2600)}
+let tt;function toast(m){const t=$("#toast");t.textContent=m;t.classList.add("show");clearTimeout(tt);tt=setTimeout(()=>t.classList.remove("show"),/تعذر/.test(m)?9000:2600)}
 
 function reviews(a){return (a&&a.f&&a.f._rv)||[]}
 function logAct(a,act,note){if(!a||!a.f)return;a.f._log=(a.f._log||[]).concat([{act,by:me?me.full_name:"",at:Date.now(),note:note||""}])}
