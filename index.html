@@ -223,6 +223,12 @@ button.attbtn{background:none;font:inherit}
 .actlog div{padding:6px 0;border-top:1px dashed var(--line)}.actlog div:first-of-type{border-top:0}.actlog small{color:var(--muted)}
 .badge.b-pkret{background:#FDECEA;color:#B42318}.badge.b-pkprev{background:#E8EEF8;color:#2D4F8A}
 .pkinfo{border-radius:10px;padding:10px 12px;font-size:13px;margin-bottom:10px;line-height:1.7}.pkinfo.ret{background:var(--bad-bg);color:var(--bad)}.pkinfo.prev{background:#E8EEF8;color:#2D4F8A}.pkinfo small{color:inherit;opacity:.85}
+.fgovw{position:relative;flex:1 1 150px;display:flex;flex-direction:column;gap:2px;font-size:12px;color:var(--muted);font-weight:600}.fms{text-align:right;cursor:pointer;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-height:38px;padding:4px 8px;font-size:14px;background:var(--field)}
+.fpop{position:absolute;top:100%;inset-inline-start:0;z-index:30;width:min(340px,86vw);background:var(--paper);border:1px solid var(--line);border-radius:14px;box-shadow:0 10px 30px rgba(0,0,0,.18);padding:10px;margin-top:4px;color:var(--ink);font-weight:500}
+.fpopa{display:flex;align-items:center;gap:6px;font-size:12.5px;margin:8px 0}.fpopa .sp{flex:1}.fpopa small{color:var(--muted)}
+.fpopl{max-height:300px;overflow:auto;border:1px solid var(--line);border-radius:10px;padding:4px 8px}.fbar .fpop label.chk{flex:none;flex-direction:row;align-items:center;gap:8px;font-size:14px;color:var(--ink);font-weight:500;padding:5px 2px}.fbar .fpop label.chk span{flex:1}.fbar .fpop label.chk small{color:var(--muted);margin:0}
+.fpopg{font-size:12px;font-weight:700;color:var(--navy);margin:8px 0 2px;border-bottom:1px solid var(--line);padding-bottom:2px}
+.fexp{flex-basis:100%;display:flex;align-items:center;gap:8px;flex-wrap:wrap;border-top:1px dashed var(--line);padding-top:8px;margin-top:2px;font-size:13px;color:var(--muted);font-weight:600}.fexp span{flex:1}.fexp .btn2{padding:6px 14px;font-size:13px}
 #printDoc{display:none}
 @media (prefers-reduced-motion: reduce){*{transition:none!important}}
 @media print{
@@ -294,7 +300,7 @@ button.attbtn{background:none;font:inherit}
   </header>
   <div class="userbar"><span><b id="whoName"></b> — <span id="whoRole"></span></span><span class="sp"></span><button type="button" class="linkbtn" id="refreshBtn">↻ تحديث</button><button type="button" class="linkbtn" id="pwBtn">كلمة المرور</button><button type="button" class="linkbtn" id="logoutBtn">خروج</button></div>
   <nav class="tabs" id="tabs"></nav>
-  <div class="fbar" id="fbar"><label><span>المنطقة</span><select class="in" id="fReg"></select></label><label><span>المحافظة</span><select class="in" id="fGov"></select></label><label><span>الوحدة</span><select class="in" id="fUnit"></select></label><label><span>حالة الزيارة</span><select class="in" id="fVst"></select></label><label><span>نوع الانتظار</span><select class="in" id="fPk"></select></label><button type="button" class="linkbtn" id="fClr" hidden>مسح التصفية</button></div>
+  <div class="fbar" id="fbar"><label><span>المنطقة</span><select class="in" id="fReg"></select></label><div class="fgovw"><span id="fGovL">المدن والمحافظات</span><button type="button" class="in fms" id="fGov" aria-haspopup="true" aria-expanded="false" aria-labelledby="fGovL fGov">كل المحافظات</button><div class="fpop" id="fGovPop" hidden role="dialog" aria-label="اختيار المدن والمحافظات"></div></div><label><span>الوحدة</span><select class="in" id="fUnit"></select></label><label><span>حالة الزيارة</span><select class="in" id="fVst"></select></label><label><span>نوع الانتظار</span><select class="in" id="fPk"></select></label><button type="button" class="linkbtn" id="fClr" hidden>مسح التصفية</button><div class="fexp"><span id="fxInfo">تصدير نتائج التصفية</span><button type="button" class="btn2" id="fxPdf">📄 PDF</button><button type="button" class="btn2" id="fxXls">📊 Excel</button></div></div>
   <div class="pg" data-pg="audit">
 
   <section class="block" id="queueBlock">
@@ -500,7 +506,7 @@ $("#upBtn").onclick=()=>{
   if($("#upDel"))$("#upDel").onclick=deleteDialog;
 };
 function deleteDialog(){
-  const fr=vrows(),on=!!(F.reg||F.gov||F.vst);
+  const fr=vrows(),on=!!(F.reg||F.govs.length||F.vst||F.unit||F.pk);
   $("#sheet").innerHTML=`<h3>حذف المخالفات المرفوعة</h3>
    <div class="sub">يحذف المخالفات من قائمة النظام فقط. التدقيقات المنجزة ومرفقاتها تبقى محفوظة ولا تُحذف.</div>
    <div class="btns" style="margin-top:14px;flex-direction:column">
@@ -1207,13 +1213,14 @@ function missingAtt(a){if(!a||!a._id)return false;const have=ATT_IDX[a._id]||new
 function stOf(a){return !a?"pending":a.status==="ok"?(missingAtt(a)?"incomplete":"completed"):a.status==="ret"?"returned":(a.status==="pend"&&missingAtt(a))?"incomplete":"progress"}
 /* ===================== التصفية العامة ===================== */
 let F=(()=>{try{return JSON.parse(localStorage.getItem("vv:filter")||"{}")}catch(e){return {}}})();
-F={reg:F.reg||"",gov:F.gov||"",vst:F.vst||"",unit:F.unit||"",pk:F.pk||""};
+F={reg:F.reg||"",govs:Array.isArray(F.govs)?F.govs:(F.gov?[F.gov]:[]),vst:F.vst||"",unit:F.unit||"",pk:F.pk||""};
+const govIn=g=>!F.govs.length||F.govs.includes(g||"غير محدد");
 function unitLab(gov){return unitOf(gov)||"غير مسندة لوحدة"}
-function inF(r){return (!F.pk||(r.pkind||PK_UNK)===F.pk)&&(!F.unit||unitLab(r.sector)===F.unit)&&(!F.reg||(r.region||"غير محدد")===F.reg)&&(!F.gov||(r.sector||"غير محدد")===F.gov)&&(!F.vst||(r.vvisit||"غير محدد")===F.vst)}
-function inFA(k,a){const r=rowMap()[k];if(r)return inF(r)&&scopeOK(r.sector,r.region);if(F.vst||F.pk)return false;const g=a.sector||a.f.gov,rg=a.region||a.f.region;if(!scopeOK(g,rg))return false;if(F.unit&&unitLab(g)!==F.unit)return false;return (!F.reg||(a.region||a.f.region||"غير محدد")===F.reg)&&(!F.gov||(a.sector||a.f.gov||"غير محدد")===F.gov)}
+function inF(r){return (!F.pk||(r.pkind||PK_UNK)===F.pk)&&(!F.unit||unitLab(r.sector)===F.unit)&&(!F.reg||(r.region||"غير محدد")===F.reg)&&govIn(r.sector)&&(!F.vst||(r.vvisit||"غير محدد")===F.vst)}
+function inFA(k,a){const r=rowMap()[k];if(r)return inF(r)&&scopeOK(r.sector,r.region);if(F.vst||F.pk)return false;const g=a.sector||a.f.gov,rg=a.region||a.f.region;if(!scopeOK(g,rg))return false;if(F.unit&&unitLab(g)!==F.unit)return false;return (!F.reg||(a.region||a.f.region||"غير محدد")===F.reg)&&govIn(a.sector||a.f.gov)}
 let _rm=null,_rmLen=-1;function rowMap(){if(!_rm||_rmLen!==rows.length||_rm.__src!==rows){_rm={};rows.forEach(r=>_rm[r.vno]=r);_rm.__src=rows;_rmLen=rows.length}return _rm}
-function vrows(){const sc=!seesAll()&&me&&me.sector;return (F.reg||F.gov||F.vst||F.unit||F.pk||sc)?rows.filter(r=>(!sc||scopeOK(r.sector,r.region))&&inF(r)):rows}
-function fLabel(){const p=[];if(F.unit)p.push(F.unit);else if(!seesAll()&&me&&me.sector)p.push(me.sector);p.push(F.reg||"كل المناطق");if(F.gov)p.push(F.gov);p.push(F.vst||"كل حالات الزيارة");if(F.pk)p.push(F.pk);return p.join(" — ")}
+function vrows(){const sc=!seesAll()&&me&&me.sector;return (F.reg||F.govs.length||F.vst||F.unit||F.pk||sc)?rows.filter(r=>(!sc||scopeOK(r.sector,r.region))&&inF(r)):rows}
+function fLabel(){const p=[];if(F.unit)p.push(F.unit);else if(!seesAll()&&me&&me.sector)p.push(me.sector);p.push(F.reg||"كل المناطق");if(F.govs.length)p.push(F.govs.length<=3?F.govs.join("، "):F.govs.length+" محافظات");p.push(F.vst||"كل حالات الزيارة");if(F.pk)p.push(F.pk);return p.join(" — ")}
 function buildFilters(){
   const cnt=(arr,key)=>{const m={};arr.forEach(r=>{const v=r[key]||"غير محدد";m[v]=(m[v]||0)+1});return m};
   const sc=!seesAll()&&me&&me.sector,srows=sc?rows.filter(r=>scopeOK(r.sector,r.region)):rows;
@@ -1221,22 +1228,41 @@ function buildFilters(){
   const base=srows.filter(r=>(!F.vst||(r.vvisit||"غير محدد")===F.vst)&&(!F.unit||unitLab(r.sector)===F.unit));
   const regC=cnt(base,"region");
   const govBase=base.filter(r=>!F.reg||(r.region||"غير محدد")===F.reg);const govC=cnt(govBase,"sector");
-  const vBase=rows.filter(r=>(!F.reg||(r.region||"غير محدد")===F.reg)&&(!F.gov||(r.sector||"غير محدد")===F.gov));const vC=cnt(vBase,"vvisit");
+  const vBase=rows.filter(r=>(!F.reg||(r.region||"غير محدد")===F.reg)&&govIn(r.sector));const vC=cnt(vBase,"vvisit");
   const opt=(m,sel,all,total)=>`<option value="">${all} (${total.toLocaleString("en-US")})</option>`+Object.keys(m).sort((a,b)=>m[b]-m[a]).map(k=>`<option value="${esc(k)}"${k===sel?" selected":""}>${esc(k)} (${m[k].toLocaleString("en-US")})</option>`).join("");
   $("#fReg").innerHTML=opt(regC,F.reg,"كل المناطق",base.length);
-  $("#fGov").innerHTML=opt(govC,F.gov,"كل المحافظات",govBase.length);$("#fGov").disabled=!F.reg;
+  F.govs=F.govs.filter(g=>govC[g]);GOVC=govC;GOVREG={};govBase.forEach(r=>{GOVREG[r.sector||"غير محدد"]=r.region||""});
+  $("#fGov").textContent=!F.govs.length?`كل المحافظات (${govBase.length.toLocaleString("en-US")})`:F.govs.length===1?`${F.govs[0]} (${(govC[F.govs[0]]||0).toLocaleString("en-US")})`:`${F.govs.length} محافظات (${F.govs.reduce((t,g)=>t+(govC[g]||0),0).toLocaleString("en-US")})`;
+  if(!$("#fGovPop").hidden)renderGovPop();
   $("#fVst").innerHTML=opt(vC,F.vst,"كل الحالات",vBase.length);
-  {const pb=srows.filter(r=>(!F.vst||(r.vvisit||"غير محدد")===F.vst)&&(!F.unit||unitLab(r.sector)===F.unit)&&(!F.reg||(r.region||"غير محدد")===F.reg)&&(!F.gov||(r.sector||"غير محدد")===F.gov));const pc={};pb.forEach(r=>{const k=r.pkind||PK_UNK;pc[k]=(pc[k]||0)+1});
+  {const pb=srows.filter(r=>(!F.vst||(r.vvisit||"غير محدد")===F.vst)&&(!F.unit||unitLab(r.sector)===F.unit)&&(!F.reg||(r.region||"غير محدد")===F.reg)&&govIn(r.sector));const pc={};pb.forEach(r=>{const k=r.pkind||PK_UNK;pc[k]=(pc[k]||0)+1});
    $("#fPk").innerHTML=`<option value="">كل الأنواع (${pb.length.toLocaleString("en-US")})</option>`+PK_LIST.filter(k=>pc[k]||k===F.pk).map(k=>`<option value="${esc(k)}"${k===F.pk?" selected":""}>${esc(k)} (${(pc[k]||0).toLocaleString("en-US")})</option>`).join("")}
-  const on=!!(F.reg||F.gov||F.vst||F.unit||F.pk);$("#fbar").classList.toggle("on",on);$("#fClr").hidden=!on;
+  const on=!!(F.reg||F.govs.length||F.vst||F.unit||F.pk);$("#fxInfo").textContent=`تصدير نتائج التصفية (${vrows().length.toLocaleString("en-US")} مخالفة)`;$("#fbar").classList.toggle("on",on);$("#fClr").hidden=!on;
 }
-function setF(k,v){F[k]=v;if(k==="reg")F.gov="";try{localStorage.setItem("vv:filter",JSON.stringify(F))}catch(e){}buildFilters();renderQueue();if(page!=="audit")go(page)}
+let GOVC={},GOVREG={},govQ="";
+function renderGovPop(){const pop=$("#fGovPop"),keys=Object.keys(GOVC).sort((a,b)=>(GOVREG[a]||"").localeCompare(GOVREG[b]||"","ar")||GOVC[b]-GOVC[a]),sel=new Set(F.govs),q=norm(govQ);
+  const vis=keys.filter(k=>!q||norm(k+" "+(GOVREG[k]||"")).includes(q));let lastReg=null;
+  pop.innerHTML=`<input class="in" id="fGovQ" placeholder="ابحث عن مدينة أو محافظة" value="${esc(govQ)}"><div class="fpopa"><button type="button" class="linkbtn" id="fGovAll">تحديد الظاهر</button> · <button type="button" class="linkbtn" id="fGovNone">إلغاء الكل</button><span class="sp"></span><small>${sel.size?`المحدد: ${sel.size}`:"لم تحدد شيئاً = الكل"}</small></div>
+   <div class="fpopl">${vis.map(k=>{const rg=GOVREG[k]||"";const h=!F.reg&&rg!==lastReg?`<div class="fpopg">${esc(rg||"غير محدد")}</div>`:"";lastReg=rg;return h+`<label class="chk"><input type="checkbox" value="${esc(k)}"${sel.has(k)?" checked":""}><span>${esc(k)}</span><small>${GOVC[k].toLocaleString("en-US")}</small></label>`}).join("")||`<div class="sub">لا توجد نتائج</div>`}</div>
+   <div class="btns" style="margin-top:8px"><button type="button" class="btn2 pri" id="fGovOk">تطبيق</button><button type="button" class="btn2" id="fGovX">إغلاق</button></div>`;
+  const cur=()=>[...pop.querySelectorAll(".fpopl input:checked")].map(i=>i.value).concat(F.govs.filter(g=>!vis.includes(g)&&sel.has(g)));
+  $("#fGovQ").oninput=e=>{const keep=cur();F.govs=keep;govQ=e.target.value;renderGovPop();const i=$("#fGovQ");i.focus();i.setSelectionRange(i.value.length,i.value.length)};
+  $("#fGovAll").onclick=()=>{pop.querySelectorAll(".fpopl input").forEach(i=>i.checked=true)};
+  $("#fGovNone").onclick=()=>{pop.querySelectorAll(".fpopl input").forEach(i=>i.checked=false);F.govs=[]};
+  $("#fGovOk").onclick=()=>{const v=[...new Set(cur())];closeGovPop();setF("govs",v)};
+  $("#fGovX").onclick=closeGovPop;
+}
+function openGovPop(){govQ="";$("#fGovPop").hidden=false;$("#fGov").setAttribute("aria-expanded","true");renderGovPop()}
+function closeGovPop(){$("#fGovPop").hidden=true;$("#fGov").setAttribute("aria-expanded","false")}
+document.addEventListener("click",e=>{const p=$("#fGovPop");if(p&&!p.hidden&&!e.target.closest(".fgovw"))closeGovPop()});
+document.addEventListener("keydown",e=>{if(e.key==="Escape"&&$("#fGovPop")&&!$("#fGovPop").hidden){e.stopPropagation();closeGovPop()}},true);
+function setF(k,v){F[k]=v;try{localStorage.setItem("vv:filter",JSON.stringify(F))}catch(e){}buildFilters();renderQueue();if(page!=="audit")go(page)}
 $("#fReg").onchange=e=>setF("reg",e.target.value);
-$("#fGov").onchange=e=>setF("gov",e.target.value);
+$("#fGov").onclick=e=>{e.preventDefault();$("#fGovPop").hidden?openGovPop():closeGovPop()};
 $("#fVst").onchange=e=>setF("vst",e.target.value);
 $("#fUnit").onchange=e=>setF("unit",e.target.value);
 $("#fPk").onchange=e=>setF("pk",e.target.value);
-$("#fClr").onclick=()=>{F={reg:"",gov:"",vst:"",unit:"",pk:""};setF("reg","")};
+$("#fClr").onclick=()=>{F={reg:"",govs:[],vst:"",unit:"",pk:""};setF("reg","")};
 
 function statusBlock(st){
   const T=st.tot.total||0,p=v=>T?Math.round(v/T*1000)/10:0;
@@ -1253,7 +1279,7 @@ function dLab(v){if(v===undefined)return "غير محدد";v=(v||"").trim();retu
 function pctN(n,T){return T?Math.round(n/T*1000)/10:0}
 function platCols(st){const ks=Object.keys(st.tot.plat);return PST.filter(k=>st.tot.plat[k]).concat(ks.filter(k=>!PST.includes(k)).sort((a,b)=>st.tot.plat[b]-st.tot.plat[a]))}
 function decCols(st){return DST.filter(k=>st.tot.dec[k])}
-function platGroups(st){return F.reg&&st.bySec.length===1?st.bySec[0].govList:st.bySec}
+function platGroups(st){return (F.reg||F.govs.length)&&st.bySec.length===1?st.bySec[0].govList:st.bySec}
 function cellNP(n,T){return n?`${n.toLocaleString("en-US")}<small class="pp">${pctN(n,T)}%</small>`:`<span class="z">0</span>`}
 function pkCols(st){return PK_LIST.filter(k=>st.tot.pk[k])}
 function pkBlock(st){const T=st.tot.total,ks=pkCols(st);if(!T)return "";
@@ -1266,7 +1292,7 @@ function pkBlock(st){const T=st.tot.total,ks=pkCols(st);if(!T)return "";
   ${govs.length?`<h3 class="sec" style="margin-top:12px">حسب المحافظة</h3>${tbl("المحافظة",govs)}`:""}
   ${st.tot.pk[PK_UNK]?`<div class="alert" style="margin-top:10px">${st.tot.pk[PK_UNK].toLocaleString("en-US")} مخالفة رُفعت قبل هذا التحديث، فلا يمكن تحديد نوعها. أعد رفع التقرير الشامل لتصنيفها.</div>`:""}</section>`}
 function platBlock(st){
-  const T=st.tot.total;const pc=platCols(st),dc=decCols(st),gs=platGroups(st),gl=F.reg?"المحافظة":"المنطقة";
+  const T=st.tot.total;const pc=platCols(st),dc=decCols(st),gs=platGroups(st),gl=(F.reg||F.govs.length)&&st.bySec.length===1?"المحافظة":"المنطقة";
   const decCards=dc.map(k=>kpi(k,st.tot.dec[k].toLocaleString("en-US"),DCLS[k],pctN(st.tot.dec[k],T)+"%","dec:"+k)).join("");
   return `<section class="block"><h2><span>قرار مدير الرقابة<span class="ftag">من التقرير الشامل</span></span></h2>
   <div class="kpis">${kpi("الإجمالي",T.toLocaleString("en-US"),"k-navy","100%","st:all")}${decCards}</div>
@@ -1276,7 +1302,7 @@ function platBlock(st){
   <div class="sub" style="margin-bottom:6px">حسب ${gl} (العدد والنسبة من إجمالي ${gl})</div>
   <div class="tbl-wrap"><table class="tbl mtx"><thead><tr><th>${gl}</th><th>الإجمالي</th>${pc.map(k=>`<th>${esc(k)}</th>`).join("")}</tr></thead><tbody>${gs.map(g=>`<tr><td>${esc(g.label)}</td><td><b>${g.total.toLocaleString("en-US")}</b></td>${pc.map(k=>`<td>${cellNP(g.plat[k]||0,g.total)}</td>`).join("")}</tr>`).join("")}</tbody></table></div></section>`;
 }
-function chartItems(st){return F.reg&&st.bySec.length===1?st.bySec[0].govList:st.bySec}
+function chartItems(st){return (F.reg||F.govs.length)&&st.bySec.length===1?st.bySec[0].govList:st.bySec}
 function computeStats(period){
   const since=periodStart(period||"all");const inP=a=>!since||((a.doneAt||a.retAt||a.updated||0)>=since);
   const rows=vrows(),qset=new Set(rows.map(r=>r.vno)),recs=[];
@@ -1413,6 +1439,8 @@ function renderReport(){
   $("#repPdf").onclick=e=>exportReportPdf(st,e.currentTarget);
   $("#repXls").onclick=e=>exportReportXls(st,e.currentTarget);
 }
+$("#fxPdf").onclick=e=>{const per=$("#repPeriod")&&page==="report"?$("#repPeriod").value:"all";exportReportPdf(computeStats(per),e.currentTarget)};
+$("#fxXls").onclick=e=>{const per=$("#repPeriod")&&page==="report"?$("#repPeriod").value:"all";exportReportXls(computeStats(per),e.currentTarget,true)};
 async function deliver(blob,name,mime){
   const file=new File([blob],name,{type:mime});
   if(/iPhone|iPad|Android/i.test(navigator.userAgent)&&navigator.canShare&&navigator.canShare({files:[file]})){try{await navigator.share({files:[file],title:name});return}catch(e){if(e&&e.name==="AbortError")return}}
@@ -1440,7 +1468,7 @@ async function exportReportPdf(st,btn){
     const PT=v=>st.tot.total?(Math.round(v/st.tot.total*1000)/10)+"%":"0%";const K=[["إجمالي المخالفات",st.tot.total,C.navy],["مكتملة — "+PT(st.tot.completed),st.tot.completed,C.green],["معادة للمفتش — "+PT(st.tot.returned),st.tot.returned,C.red],["قيد التدقيق — "+PT(st.tot.progress),st.tot.progress,C.amber],["غير المقيّمة — "+PT(st.tot.pending),st.tot.pending,"#7A8896"],["المقيّمة",st.evaluated,C.green],["نسبة الإنجاز",pct(st.rate),C.navy],["نسبة الإعادة من المقيّمة",pct(st.retRate),C.red]];
     const bw=(CW-3*20)/4;K.forEach((k,i)=>{const col=i%4,row=Math.floor(i/4);const bx=R-(col+1)*bw-col*20,by=y+row*130;x.strokeStyle=C.line;x.strokeRect(bx,by,bw,112);x.fillStyle=k[2];x.fillRect(bx+bw-6,by,6,112);font(40,700);txt(String(k[1]),bx+bw-24,by+14,k[2]);font(20);txt(k[0],bx+bw-24,by+70,"#333")});
     y+=270;
-    {const T=st.tot.total,pc=platCols(st),dc=decCols(st),gs=platGroups(st),gl=F.reg?"المحافظة":"المنطقة",NP=(n,t)=>n?`${n} (${pctN(n,t)}%)`:"0";
+    {const T=st.tot.total,pc=platCols(st),dc=decCols(st),gs=platGroups(st),gl=(F.reg||F.govs.length)&&st.bySec.length===1?"المحافظة":"المنطقة",NP=(n,t)=>n?`${n} (${pctN(n,t)}%)`:"0";
       {const ks=pkCols(st);if(ks.length){head("نوع الانتظار (من التقرير الشامل)");table([{t:"النوع",w:.5},{t:"العدد",w:.25},{t:"النسبة",w:.25}],ks.map(k=>[k,st.tot.pk[k],pctN(st.tot.pk[k],T)+"%"]));
         {const w=(1-.22-.1)/ks.length;table([{t:"الوحدة",w:.22},{t:"الإجمالي",w:.1}].concat(ks.map(k=>({t:k,w}))),st.byUnit.map(g=>[g.label,g.total].concat(ks.map(k=>NP(g.pk[k]||0,g.total)))),17)}}}
       head("قرار مدير الرقابة (من التقرير الشامل)");table([{t:"القرار",w:.5},{t:"العدد",w:.25},{t:"النسبة",w:.25}],[["الإجمالي",T,"100%"]].concat(dc.map(k=>[k,st.tot.dec[k],pctN(st.tot.dec[k],T)+"%"])));
@@ -1463,7 +1491,7 @@ async function exportReportPdf(st,btn){
   btn.disabled=false;btn.textContent=old;
 }
 let exjsP=null;function exceljs(){if(!exjsP){exjsP=loadScript("https://cdn.jsdelivr.net/npm/exceljs@4.4.0/dist/exceljs.min.js").then(()=>window.ExcelJS);exjsP.catch(()=>{exjsP=null})}return exjsP}
-async function exportReportXls(st,btn){
+async function exportReportXls(st,btn,withList){
   const old=btn.textContent;btn.disabled=true;btn.textContent="جارٍ التجهيز…";
   try{
     const EX=await exceljs();const wb=new EX.Workbook();wb.creator=me.full_name;wb.created=new Date();
@@ -1480,7 +1508,7 @@ async function exportReportXls(st,btn){
     const s1=sheet("الملخص","تقرير الجودة — الملخص",[{t:"المؤشر",w:32},{t:"العدد",w:14},{t:"النسبة",w:12}],(()=>{const PT=v=>st.tot.total?(Math.round(v/st.tot.total*1000)/10)+"%":"0%";return [["إجمالي المخالفات",st.tot.total,"100%"],["مكتملة",st.tot.completed,PT(st.tot.completed)],["معادة للمفتش",st.tot.returned,PT(st.tot.returned)],["قيد التدقيق",st.tot.progress,PT(st.tot.progress)],["غير المقيّمة",st.tot.pending,PT(st.tot.pending)],["المقيّمة (مكتملة + معادة)",st.evaluated,pct(st.rate)],["نسبة الإعادة من المقيّمة","",pct(st.retRate)]]})());
     const addChart=(ws,row,items,series)=>{if(!items.length)return row;const cv=canvasBars(items,series,900);const id=wb.addImage({base64:cv.toDataURL("image/png"),extension:"png"});ws.addImage(id,{tl:{col:0,row:row},ext:{width:620,height:620*cv.height/cv.width}});return row+Math.ceil(620*cv.height/cv.width/20)+2};
     let rr=addChart(s1.ws,s1.next,chartItems(st),SEC_SERIES);addChart(s1.ws,rr,st.byUser,USR_SERIES);
-    {const T=st.tot.total,pc=platCols(st),dc=decCols(st),gs=platGroups(st),gl=F.reg?"المحافظة":"المنطقة";
+    {const T=st.tot.total,pc=platCols(st),dc=decCols(st),gs=platGroups(st),gl=(F.reg||F.govs.length)&&st.bySec.length===1?"المحافظة":"المنطقة";
       {const ks=pkCols(st);if(ks.length){sheet("نوع الانتظار","نوع الانتظار (من التقرير الشامل)",[{t:"النوع",w:34},{t:"العدد",w:12},{t:"النسبة",w:10}],ks.map(k=>[k,st.tot.pk[k],pctN(st.tot.pk[k],T)+"%"]));
         sheet("الانتظار حسب الوحدة","نوع الانتظار حسب الوحدة",[{t:"الوحدة",w:24},{t:"الإجمالي",w:11}].concat(ks.flatMap(k=>[{t:k+" (عدد)",w:18},{t:k+" (%)",w:12}])),st.byUnit.map(g=>[g.label,g.total].concat(ks.flatMap(k=>[g.pk[k]||0,pctN(g.pk[k]||0,g.total)+"%"]))));
         sheet("الانتظار حسب المحافظة","نوع الانتظار حسب المحافظة",[{t:"المنطقة",w:18},{t:"المحافظة",w:24},{t:"الإجمالي",w:11}].concat(ks.flatMap(k=>[{t:k+" (عدد)",w:18},{t:k+" (%)",w:12}])),st.byGov.map(g=>[g.region,g.label,g.total].concat(ks.flatMap(k=>[g.pk[k]||0,pctN(g.pk[k]||0,g.total)+"%"]))))}}
@@ -1498,6 +1526,14 @@ async function exportReportXls(st,btn){
     const det=Object.entries(audits).filter(([k,a])=>k!=="manual"&&a._id&&inFA(k,a)&&(!since||(a.doneAt||a.retAt||a.updated||0)>=since)).sort((p,q)=>(q[1].updated||0)-(p[1].updated||0))
       .map(([k,a])=>{const s=stOf(a);return [k,a.type>=0&&GUIDE[a.type]?GUIDE[a.type].name:"",a.region||a.f.region||"",a.sector||"",s==="completed"?"مكتملة":s==="returned"?"معادة":s==="incomplete"?"غير مكتملة المرفقات":"قيد التدقيق",userName(a._owner,a.auditor),a.doneAt?fmtD(a.doneAt):"",a.f.name||"",a.f.officer||""]});
     sheet("المعاملات","تفاصيل المعاملات",[{t:"رقم الزيارة",w:16},{t:"وصف بند اللائحة",w:44},{t:"المنطقة",w:16},{t:"المحافظة",w:18},{t:"الحالة",w:12},{t:"المدقق",w:20},{t:"تاريخ الإنجاز",w:14},{t:"اسم المخالف",w:22},{t:"اسم المفتش",w:20}],det);
+    if(withList){const L=vrows();if(L.length){btn.textContent=`جارٍ تجهيز ${L.length.toLocaleString("en-US")} مخالفة…`;await new Promise(r=>setTimeout(r,30));
+      const cols=[["رقم الزيارة",16],["معرف المخالفة",14],["المنطقة",14],["المحافظة",20],["الوحدة",18],["وصف بند اللائحة",46],["نوع المخالفة",12],["اسم المفتش",24],["تاريخ بدء الزيارة",16],["حالة الزيارة",24],["حالة المخالفة",26],["قرار مدير الرقابة",16],["نوع الانتظار",22],["حالة التدقيق",18],["المدقق",20]];
+      const ws=wb.addWorksheet("قائمة المخالفات",{views:[{rightToLeft:true,state:"frozen",ySplit:3}]});ws.columns=cols.map(c=>({width:c[1]}));
+      ws.mergeCells(1,1,1,cols.length);const t=ws.getCell(1,1);t.value=`قائمة المخالفات — ${fLabel()}`;t.font={bold:true,size:14,color:{argb:"FF0E3557"}};t.alignment={horizontal:"right"};
+      ws.mergeCells(2,1,2,cols.length);const t2=ws.getCell(2,1);t2.value=`عدد المخالفات: ${L.length.toLocaleString("en-US")} — المصدر: التقرير الشامل — ${stamp()}`;t2.font={size:10,color:{argb:"FF555555"}};t2.alignment={horizontal:"right"};
+      const hr=ws.getRow(3);cols.forEach((c,i)=>{const cell=hr.getCell(i+1);cell.value=c[0];cell.fill=HEAD;cell.font={bold:true,color:{argb:"FFFFFFFF"}};cell.alignment={horizontal:"center",vertical:"middle",wrapText:true}});hr.height=24;
+      ws.addRows(L.map(r=>{const a=audits[r.vno];return [r.visit||r.vno,r.vid||"",r.region||"",r.sector||"",unitLab(r.sector),r.type>=0&&GUIDE[r.type]?GUIDE[r.type].name:(r.item||""),r.sev||"",r.officer||"",r.date||"",r.vvisit||"",r.vstat||"",r.dec||"",r.pkind||"",ST[statusOf(r.vno)]?ST[statusOf(r.vno)][0]:"",a?userName(a._owner,a.auditor):""]}));
+      ws.autoFilter={from:{row:3,column:1},to:{row:3+L.length,column:cols.length}}}}
     const buf=await wb.xlsx.writeBuffer();
     await deliver(new Blob([buf],{type:"application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"}),`تقرير-الجودة-${stamp().replace(/\//g,"-")}.xlsx`,"application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
   }catch(e){toast("تعذر إنشاء ملف Excel: "+(e.message||""))}
