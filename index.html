@@ -238,6 +238,7 @@ button.attbtn{background:none;font:inherit}
 .fdsl input[type=range]::-moz-range-thumb{pointer-events:auto;width:16px;height:16px;border-radius:50%;background:var(--paper);border:3px solid var(--navy);cursor:pointer}
 .fdsl input[type=range]::-webkit-slider-runnable-track{background:none}.fdsl input[type=range]::-moz-range-track{background:none}
 .fdsl input[type=range]:focus-visible::-webkit-slider-thumb{outline:3px solid var(--sea,#2D6A9F)}
+.badge.b-mine{background:#E7F4EC;color:#1C7A4B}.badge.b-lock{background:#F1F3F5;color:#55687A}
 #printDoc{display:none}
 @media (prefers-reduced-motion: reduce){*{transition:none!important}}
 @media print{
@@ -584,18 +585,18 @@ function renderQueue(){
     body.innerHTML=`<div class="empty">ارفع ملف المخالفات من أيقونة «ملف المخالفات» بالأعلى، ثم اختر مخالفة لتعبئة النموذج تلقائياً.<br>أو اختر نوع المخالفة من النموذج وعبّئ البيانات يدوياً.</div>`;
     return;
   }
-    const counts={all:rows.length,new:0,prog:0,pend:0,ret:0,ok:0,inc:0};rows.forEach(r=>{counts[statusOf(r.vno)]++});const pc=k=>rows.length?Math.round(counts[k]/rows.length*1000)/10+"%":"0%";
+    const counts={all:rows.length,mine:0,new:0,prog:0,pend:0,ret:0,ok:0,inc:0};const isMine=id=>{const a=audits[id];return !!a&&a._owner===me.id&&["prog","inc","pend"].includes(statusOf(id))};rows.forEach(r=>{counts[statusOf(r.vno)]++;if(isMine(r.vno))counts.mine++});const pc=k=>rows.length?Math.round(counts[k]/rows.length*1000)/10+"%":"0%";
   $("#qCount").textContent=`${rows.length} مخالفة`;
-  const fl=[["all","الكل"],["ok","مكتملة"],["inc","غير مكتملة المرفقات"],["pend","بانتظار الاعتماد"],["ret","معادة"],["prog","قيد التدقيق"],["new","غير مقيّمة"]];
+  const fl=[["all","الكل"]].concat(canEditAudit()?[["mine","📌 معاملاتي"]]:[]).concat([["ok","مكتملة"],["inc","غير مكتملة المرفقات"],["pend","بانتظار الاعتماد"],["ret","معادة"],["prog","قيد التدقيق"],["new","غير مقيّمة"]]);
   const list=rows.filter(r=>{const s=statusOf(r.vno);
-    if(qFilter==="new"&&s!=="new")return false;if(qFilter==="pend"&&s!=="pend")return false;if(qFilter==="prog"&&s!=="prog")return false;
+    if(qFilter==="mine"&&!isMine(r.vno))return false;if(qFilter==="new"&&s!=="new")return false;if(qFilter==="pend"&&s!=="pend")return false;if(qFilter==="prog"&&s!=="prog")return false;
     if(qFilter==="ret"&&s!=="ret")return false;if(qFilter==="inc"&&s!=="inc")return false; if(qFilter==="ok"&&s!=="ok")return false;
     if(qSearch){const h=r._h||norm([r.vno,r.vid,r.officer,r.item,r.region,r.sector,r.name].join(" "));return h.includes(norm(qSearch))||r.vno.toLowerCase().includes(qSearch.toLowerCase())}
     return true});
   body.innerHTML=`<div class="queue-tools"><input class="in" id="qSearch" placeholder="بحث برقم الزيارة أو المفتش أو المحافظة" value="${esc(qSearch)}"></div>
-   <div class="pill-row" style="margin-bottom:10px">${fl.map(([k,t])=>`<button type="button" class="pill" data-qf="${k}" aria-pressed="${qFilter===k}">${t} ${counts[k].toLocaleString("en-US")}${k!=="all"?` · ${pc(k)}`:""}</button>`).join("")}</div>
+   <div class="pill-row" style="margin-bottom:10px">${fl.map(([k,t])=>`<button type="button" class="pill" data-qf="${k}" aria-pressed="${qFilter===k}">${t} ${counts[k].toLocaleString("en-US")}${k!=="all"&&k!=="mine"?` · ${pc(k)}`:""}</button>`).join("")}</div>
    <div class="queue">${list.length?list.slice(0,60).map(r=>{const s=statusOf(r.vno);const t=r.type>=0?GUIDE[r.type].name:(r.item||"بند غير محدد");
-     return `<button type="button" class="qrow" data-id="${esc(r.vno)}" aria-current="${current===r.vno}"><span class="id">${esc(r.visit||r.vno)}</span><span class="badge ${ST[s][1]}">${ST[s][0]}</span>${r.pkind===PK_RET?`<span class="badge b-pkret">مسترجعة</span>`:r.pkind===PK_PREV?`<span class="badge b-pkprev">عادت بعد اعتماد</span>`:""}<span class="t">${esc(t)}</span><span class="m">${esc(r.officer)} — ${esc([r.region,r.sector].filter(Boolean).join(" — "))} — ${esc(r.date)}</span></button>`}).join(""):`<div class="empty">لا توجد مخالفات بهذا التصنيف</div>`}</div>${list.length>60?`<div class="sub" style="margin-top:6px">يظهر أول 60 من ${list.length}، استخدم البحث للوصول لغيرها.</div>`:""}
+     return `<button type="button" class="qrow" data-id="${esc(r.vno)}" aria-current="${current===r.vno}"><span class="id">${esc(r.visit||r.vno)}</span><span class="badge ${ST[s][1]}">${ST[s][0]}</span>${(()=>{const a=audits[r.vno];if(!a||!a._owner||!["prog","inc","pend"].includes(s))return "";return a._owner===me.id?`<span class="badge b-mine">📌 معاملتي</span>`:`<span class="badge b-lock">🔒 ${esc(userName(a._owner,a.auditor))}</span>`})()}${r.pkind===PK_RET?`<span class="badge b-pkret">مسترجعة</span>`:r.pkind===PK_PREV?`<span class="badge b-pkprev">عادت بعد اعتماد</span>`:""}<span class="t">${esc(t)}</span><span class="m">${esc(r.officer)} — ${esc([r.region,r.sector].filter(Boolean).join(" — "))} — ${esc(r.date)}</span></button>`}).join(""):`<div class="empty">لا توجد مخالفات بهذا التصنيف</div>`}</div>${list.length>60?`<div class="sub" style="margin-top:6px">يظهر أول 60 من ${list.length}، استخدم البحث للوصول لغيرها.</div>`:""}
    `;
   const qs=$("#qSearch");qs.oninput=e=>{qSearch=e.target.value;const pos=e.target.selectionStart;renderQueue();const n=$("#qSearch");n.focus();n.setSelectionRange(pos,pos)};
   $$("[data-qf]").forEach(b=>b.onclick=()=>{qFilter=b.dataset.qf;renderQueue()});
@@ -849,10 +850,11 @@ async function requestApproval(){const m=missingFields();if(m.length){toast("أ�
   $("#sheet").innerHTML=`<h3>أُرسلت للاعتماد</h3><div class="sub">المعاملة الآن «بانتظار اعتماد رئيس الجودة بالوحدة». تقدر تطبع المستند الداعم بعد الاعتماد.</div><pre>${esc(msg)}</pre><div class="btns">${(()=>{const ap=approverList(a),em=ap.map(u=>u.email).filter(Boolean);const subj=`طلب اعتماد مستند داعم — زيارة ${a.f.vno}`;
   return em.length?`<a class="btn2 pri" style="text-decoration:none" href="mailto:${em.join(",")}?subject=${encodeURIComponent(subj)}&body=${encodeURIComponent(msg)}">✉️ إشعار رئيس الجودة بالوحدة بالبريد (${esc(ap.filter(u=>u.email).map(u=>u.full_name).join("، "))})</a>`:`<div class="alert" style="width:100%">لم يُسجّل بريد إلكتروني لرئيس الجودة بالوحدة المسؤول عن هذه المحافظة. يضيفه مدير النظام من صفحة «المستخدمون».</div>`})()}<button type="button" class="btn2" id="cpAp">نسخ</button><button type="button" class="btn2" id="closeSh">إغلاق</button></div>`;
   openSheet();$("#closeSh").onclick=closeSheet;$("#cpAp").onclick=()=>copy(msg)}
+async function mgrSave(a){a._mgr=true;try{save();await flush()}finally{a._mgr=false}}
 async function approveDoc(){const a=A();if(!canApprove(a)){toast("الاعتماد لرئيس الجودة بالوحدة المسؤول عن المحافظة");return}
   if(!confirm(`اعتماد المستند الداعم للزيارة ${a.f.vno}؟`))return;
   a.status="ok";a.doneAt=a.doneAt||Date.now();a.f._ap={...(a.f._ap||{}),state:"approved",by:me.full_name,at:Date.now()};a.f._rv=reviews(a).concat([{state:"approved",by:me.full_name,at:Date.now()}]);logAct(a,"اعتماد المستند الداعم");
-  save();await flush();renderAll();renderQueue();toast("تم الاعتماد، ويمكن الآن طباعة المستند الداعم")}
+  await mgrSave(a);renderAll();renderQueue();toast("تم الاعتماد، ويمكن الآن طباعة المستند الداعم")}
 function updateBar(){
   const a=A(),items=allItems(),n=items.length,ok=items.filter(i=>okItem(a,i.key)).length,bad=items.filter(i=>a.ans[i.key]?.s==="bad").length;
   $("#trG").style.width=n?ok/n*100+"%":"0";$("#trR").style.width=n?bad/n*100+"%":"0";
@@ -1056,7 +1058,7 @@ function renderReview(){const a=A(),box=$("#revBox");if(!box)return;const rv=rev
   box.innerHTML=h;
   if($("#trBtn"))$("#trBtn").onclick=transferDialog;
   if($("#apOk"))$("#apOk").onclick=approveDoc;
-  if($("#rvOk"))$("#rvOk").onclick=async()=>{const a=A();a.f._rv=reviews(a).concat([{state:"approved",by:me.full_name,at:Date.now()}]);logAct(a,"اعتماد المراجعة");save();await flush();renderReview();renderQueueSoft();toast("تم اعتماد المراجعة")};
+  if($("#rvOk"))$("#rvOk").onclick=async()=>{const a=A();a.f._rv=reviews(a).concat([{state:"approved",by:me.full_name,at:Date.now()}]);logAct(a,"اعتماد المراجعة");await mgrSave(a);renderReview();renderQueueSoft();toast("تم اعتماد المراجعة")};
   if($("#rvNo"))$("#rvNo").onclick=rejectDialog;
 }
 function rejectDialog(){const a=A(),its=allItems();
@@ -1068,13 +1070,13 @@ function rejectDialog(){const a=A(),its=allItems();
   $("#rvGo").onclick=async()=>{const ks=[...document.querySelectorAll("#sheet .chks input:checked")].map(i=>i.value),note=$("#rvNote").value.trim();
     if(!ks.length){toast("حدد فقرة واحدة على الأقل");return}if(!note){toast("اكتب الملاحظة لموظف الجودة");return}
     ks.forEach(k=>{a.ans[k]={s:"bad",n:"رئيس الجودة بالوحدة: "+note}});a.status=null;a.f._rv=reviews(a).concat([{state:"rejected",by:me.full_name,at:Date.now(),items:ks,note}]);logAct(a,"رفض وإرجاع لموظف الجودة",note);
-    closeSheet();save();await flush();renderAll();renderQueue();toast("أُعيدت المعاملة لموظف الجودة");
+    closeSheet();await mgrSave(a);renderAll();renderQueue();toast("أُعيدت المعاملة لموظف الجودة");
     const au=users.find(u=>u.id===a._owner);const msg=`أُعيدت إليك معاملة للتصحيح\nرقم الزيارة: ${a.f.vno}\nالمخالفة: ${a.type>=0?GUIDE[a.type].name:""}\nالفقرات: ${ks.map(k=>k.slice(2)).join("، ")}\nملاحظة رئيس الجودة بالوحدة: ${note}\nالرابط: ${location.origin+location.pathname}`;
     $("#sheet").innerHTML=`<h3>أُعيدت لموظف الجودة</h3><div class="sub">المدقق: ${esc(au?au.full_name:(a.auditor||"-"))}</div><pre>${esc(msg)}</pre><div class="btns">${au&&au.email?`<a class="btn2 pri" style="text-decoration:none" href="mailto:${au.email}?subject=${encodeURIComponent("إعادة معاملة للتصحيح — زيارة "+a.f.vno)}&body=${encodeURIComponent(msg)}">✉️ إشعار موظف الجودة بالبريد</a>`:`<div class="alert" style="width:100%">لا يوجد بريد مسجل لهذا المدقق. يضيفه مدير النظام من «المستخدمون» ← تعديل.</div>`}<button type="button" class="btn2" id="closeSh">إغلاق</button></div>`;openSheet();$("#closeSh").onclick=closeSheet};
 }
 function renderAll(){
   if(!me)return;
-  const a=A();if(!canEditAudit())a._ro=true;const pgA=$(".pg[data-pg=audit]");pgA.classList.toggle("ro",!!a._ro);$("#roNote").hidden=!a._ro;if(a._ro)$("#roNote").textContent=canEditAudit()?"هذه المعاملة يدققها "+(a.auditor||"موظف آخر")+" — للاطلاع فقط":"صلاحيتك للاطلاع فقط";$("#auditor").value=a.auditor||me.full_name;warnedRO=false;$("#typeSel").value=String(a.type);
+  const a=A();if(!canEditAudit())a._ro=true;const pgA=$(".pg[data-pg=audit]");pgA.classList.toggle("ro",!!a._ro);$("#roNote").hidden=!a._ro;if(a._ro)$("#roNote").textContent=canEditAudit()?"🔒 هذه المعاملة يدققها "+(a.auditor||"موظف آخر")+" — للاطلاع فقط":"صلاحيتك للاطلاع فقط";$("#auditor").value=a.auditor||me.full_name;warnedRO=false;$("#typeSel").value=String(a.type);
   {const lockT=a.type>=0&&current!=="manual"&&!["admin","exec"].includes(me.role);$("#typeSel").disabled=lockT;$("#typeSel").title=lockT?"بند المخالفة مقفل أثناء التدقيق":""}
   $$("[data-f]").forEach(el=>el.value=a.f[el.dataset.f]||"");
   if(attFor!==current)attCache=[];
@@ -1129,7 +1131,7 @@ const QCOLS="visit_no,violation_id,violator_name,sector,region,visit_date,office
 async function loadQueue(){const q=await fetchAll("quality_queue",QCOLS,"جارٍ تحميل المخالفات");const MT={};rows=q.map(x=>{const r={vno:x.visit_no,visit:x.visit_no,vid:x.violation_id||"",name:x.violator_name||"",nid:"",loc:"",sector:x.sector||"",region:x.region||"",sev:(x.extra||{}).sev||"",vstat:(x.extra||{}).vstatus||"",pkind:pkFrom(x.extra||{}),reason:(x.extra||{}).reason||"",amin:(x.extra||{}).amin||"",decDate:(x.extra||{}).dec_date||"",vvisit:(x.extra||{}).visit_status||"",dec:("decision" in (x.extra||{}))?x.extra.decision:undefined,date:x.visit_date||"",officer:x.officer||"",explain:"",item:x.item||"",prop:x.property_type||"",type:(x.item||"") in MT?MT[x.item||""]:(MT[x.item||""]=matchType(x.item||""))};r._h=norm([r.vno,r.vid,r.officer,r.item,r.region,r.sector,r.name].join(" "));return r})}
 async function loadAudits(){
   const q=await fetchAll("quality_audits","*");const keep=audits.manual;audits={};
-  q.forEach(x=>{audits[x.visit_no]={_id:x.id,_owner:x.auditor_id,_ro:!canEditAudit()||(me.role==="staff"&&x.auditor_id!==me.id),
+  q.forEach(x=>{audits[x.visit_no]={_id:x.id,_owner:x.auditor_id,_ro:!canEditAudit()||(!!x.auditor_id&&x.auditor_id!==me.id),
     type:x.violation_type==null?-1:x.violation_type,cas:x.case_name,ans:x.answers||{},f:x.fields||{},sector:x.sector||"",region:x.region||"",vid:x.violation_id||"",
     status:x.status==="completed"?"ok":x.status==="returned"?"ret":x.status==="pending_approval"?"pend":null,doneAt:x.completed_at?Date.parse(x.completed_at):null,
     retAt:x.returned_at?Date.parse(x.returned_at):null,auditor:x.auditor_name||"",created:Date.parse(x.created_at),updated:Date.parse(x.updated_at),stage:"مدقق الشركة"}});
@@ -1151,7 +1153,7 @@ async function pushAudit(k){
   if(k==="manual"){const v=String(a.f.vno||"").trim();if(!v)return;
     if(audits[v]&&audits[v]!==a){toast("رقم الزيارة "+v+" موجود مسبقاً، افتحه من القوائم");return}
     audits[v]=a;delete audits.manual;if(current==="manual"){current=v;try{localStorage.setItem("vv:current",v)}catch(e){}}k=v}
-  if(a._ro){if(!warnedRO){toast("هذه المعاملة للاطلاع فقط");warnedRO=true}return}
+  if(a._ro&&!a._mgr){if(!warnedRO){toast("هذه المعاملة للاطلاع فقط");warnedRO=true}return}
   if(!a._id&&!(a.f._log||[]).some(l=>l.act==="بدء التدقيق"))logAct(a,"بدء التدقيق");
   const row={visit_no:k,violation_type:a.type,violation_name:a.type>=0&&GUIDE[a.type]?GUIDE[a.type].name:null,
     case_name:a.cas||null,sector:secOf(k,a)||null,region:regOf(k,a)||null,violation_id:a.f.vid||a.vid||null,fields:a.f,answers:a.ans,
