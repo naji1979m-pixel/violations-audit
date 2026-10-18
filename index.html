@@ -1938,7 +1938,7 @@ let HQDS="";
 function renderHQ(){
   const el=$("#hqBody");if(!canHQ()){el.innerHTML='<section class="block"><div class="empty">🔒 هذه البوابة خاصة بموظفي المركز الرئيسي.</div></section>';return}
   const L=hqRows(),A=hqAgg(L),T=A.T,sc=hqScope(A),ys=hqYears();RD_BASE=hqRows;RD_SCOPE=`بوابة المركز الرئيسي — ${sc.sec}${sc.per?" — "+sc.per:""}`;HQ_CTX=HQSF?{s:HQSF}:{};
-  const secs=HQ_SECS.filter(s=>A.S[s]).concat(A.S["غير محدد"]?["غير محدد"]:[]);
+  const secs=HQ_SECS.filter(s=>A.S[s]);
   const allSecs=HQ_SECS;
   const note=(A.noPres||A.noDec)?`<div class="hq-alert">ℹ️ لتظهر أرقام قرارات الهيئة وأسماء مدراء الرقابة وقيم الغرامات بدقة، أعد رفع التقرير الشامل (استبدال).</div>`:"";
   const V=[["ov","نظرة عامة"],["sec","القطاعات"],["trend","الاتجاه والمقارنات"],["vio","المخالفات"],["mgr","مدراء الرقابة"]];
