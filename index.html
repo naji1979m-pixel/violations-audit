@@ -434,6 +434,33 @@ section.block>h2::after{content:"";position:absolute;bottom:0;inset-inline-start
   .aud-side .queue{max-height:46vh}
 }
 .nwcfoot{text-align:center;color:var(--muted);font-size:12.5px;padding:18px 14px 6px}
+/* ===== صفحة الدخول — بطاقة زجاجية ===== */
+.auth{position:relative;overflow:hidden;justify-content:center;align-items:center;padding:32px 16px 70px;background:radial-gradient(1200px 700px at 80% 8%,#2F6FC0 0%,transparent 60%),radial-gradient(900px 600px at 8% 92%,#1C437E 0%,transparent 60%),#0B2347;color:#fff}
+.auth::before,.auth::after{content:"";position:absolute;border-radius:50%;border:1.5px solid rgba(156,195,238,.16);pointer-events:none}
+.auth::before{width:900px;height:900px;left:-320px;top:-320px;box-shadow:0 0 0 150px rgba(156,195,238,.02),inset 0 0 0 150px rgba(156,195,238,.025)}
+.auth::after{width:1100px;height:1100px;right:-520px;bottom:-640px}
+.auth-card{position:relative;z-index:1;width:100%;max-width:460px;margin:0;background:rgba(255,255,255,.08);-webkit-backdrop-filter:blur(18px);backdrop-filter:blur(18px);border:1px solid rgba(255,255,255,.2);border-radius:28px;padding:32px 32px 26px;color:#fff;box-shadow:0 30px 80px rgba(0,0,0,.35);text-align:center;animation:authIn .5s ease both}
+@keyframes authIn{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
+@media (prefers-reduced-motion:reduce){.auth-card{animation:none}}
+.auth-hero{max-width:none;padding:0;margin:0 0 6px;text-align:center;color:#fff}
+.auth-hero img{display:block;height:46px;width:auto;max-width:100%;margin:0 auto 16px;background:#fff;border-radius:16px;padding:11px 18px;box-sizing:content-box}
+.auth-hero h1{font-size:24px;margin:0;line-height:1.4}.auth-hero p{font-size:14px;opacity:.8;margin:4px 0 0}
+.auth-hero::after{content:"";display:block;width:70px;height:3px;border-radius:2px;background:#4D8FE6;margin:14px auto 4px}
+.auth-card h1{color:#fff}.auth-card .sub{color:#C9D8EC}
+.auth-card form{gap:12px;margin-top:10px}
+.auth-card label.f{color:#C9D8EC;font-weight:600}
+.auth-card .in{background:rgba(255,255,255,.94);border:0;color:#10284A;min-height:50px;border-radius:12px;font-size:15px}
+.auth-card .in:focus-visible{outline:3px solid #4D8FE6}
+.auth-card .btnp{min-height:52px;border-radius:999px;background:linear-gradient(90deg,#4D8FE6,#2F6FC0);font-size:16px;box-shadow:0 10px 24px rgba(31,91,176,.4)}
+.auth-card .btnp:hover{filter:brightness(1.07)}
+.auth-card .linkbtn{color:#9CC3EE;text-decoration:none;font-weight:600;font-size:14px}
+.auth-card .btn2{background:transparent;border:1px solid rgba(255,255,255,.35);color:#fff;border-radius:999px;min-height:46px}
+.auth-card .btn2:hover{background:rgba(255,255,255,.08)}
+.auth-card .msg{color:#FFB4AB;min-height:18px}.auth-card .msg.ok{color:#9FE2BF}
+.auth-card select.in option{color:#10284A}
+.auth .nwcfoot{position:absolute;bottom:18px;left:0;right:0;color:rgba(255,255,255,.55);padding:0 14px}
+@media (max-width:520px){.auth-card{padding:26px 20px 22px;border-radius:24px}.auth-hero h1{font-size:21px}}
+
 @media (max-width:520px){header.top{padding:16px 16px 18px;align-items:flex-start}header.top .lg{height:38px;padding:8px 12px}header.top h1{font-size:17px}}
 @media (prefers-reduced-motion: reduce){*{transition:none!important}}
 @media print{
@@ -444,10 +471,9 @@ section.block>h2::after{content:"";position:absolute;bottom:0;inset-inline-start
 </style>
 </head>
 <body>
-<div class="auth" id="authView" hidden><div class="auth-hero"><img data-nwc src="data:image/gif;base64,R0lGODlhAQABAAAAACw=" alt="شركة المياه الوطنية — National Water Company"><h1>نظام الجودة والتحقق</h1><p>من متطلبات والاشتراطات اللازمة للمخالفات</p></div><div class="auth-card">
+<div class="auth" id="authView" hidden><div class="auth-card"><div class="auth-hero"><img data-nwc src="data:image/gif;base64,R0lGODlhAQABAAAAACw=" alt="شركة المياه الوطنية — National Water Company"><h1>نظام الجودة والتحقق</h1><p>من متطلبات والاشتراطات اللازمة للمخالفات</p></div>
   <form id="loginForm" autocomplete="on">
-    <label class="f">اسم المستخدم<input class="in" id="lgUser" dir="ltr" autocapitalize="off" autocomplete="username"></label>
-    <small class="sub" style="margin-top:-6px">مدير النظام: أدخل بريدك الإلكتروني المستخدم في منصة البلاغات</small>
+    <label class="f">اسم المستخدم أو البريد الإلكتروني<input class="in" id="lgUser" dir="ltr" autocapitalize="off" autocomplete="username"></label>
     <label class="f">كلمة المرور<input class="in" id="lgPass" type="password" dir="ltr" autocomplete="current-password"></label>
     <div class="msg" id="lgMsg" role="alert"></div>
     <button class="btnp" id="lgBtn" type="submit">دخول</button>
@@ -474,8 +500,8 @@ section.block>h2::after{content:"";position:absolute;bottom:0;inset-inline-start
     <button class="btnp" type="submit" id="rgBtn">إرسال الطلب</button>
     <button type="button" class="linkbtn" id="rgBack" style="align-self:center">رجوع لتسجيل الدخول</button>
   </form>
-</div><div class="nwcfoot">شركة المياه الوطنية — نظام الجودة والتحقق</div></div>
-<div class="auth" id="pwView" hidden><div class="auth-hero"><img data-nwc src="data:image/gif;base64,R0lGODlhAQABAAAAACw=" alt="شركة المياه الوطنية"></div><div class="auth-card">
+</div><div class="nwcfoot">شركة المياه الوطنية — إدارة المخالفات والتعديات · نظام الجودة والتحقق © 2026</div></div>
+<div class="auth" id="pwView" hidden><div class="auth-card"><div class="auth-hero"><img data-nwc src="data:image/gif;base64,R0lGODlhAQABAAAAACw=" alt="شركة المياه الوطنية"></div>
   <h1 id="pwTitle">أنشئ كلمة مرور جديدة</h1><span class="sub">8 أحرف على الأقل</span>
   <form id="pwForm">
     <label class="f">كلمة المرور الجديدة<input class="in" id="pw1" type="password" dir="ltr" autocomplete="new-password"></label>
@@ -485,7 +511,7 @@ section.block>h2::after{content:"";position:absolute;bottom:0;inset-inline-start
     <button class="btn2" type="button" id="pwCancel" hidden>إلغاء</button>
   </form>
 </div></div>
-<div class="auth" id="blockView" hidden><div class="auth-hero"><img data-nwc src="data:image/gif;base64,R0lGODlhAQABAAAAACw=" alt="شركة المياه الوطنية"></div><div class="auth-card">
+<div class="auth" id="blockView" hidden><div class="auth-card"><div class="auth-hero"><img data-nwc src="data:image/gif;base64,R0lGODlhAQABAAAAACw=" alt="شركة المياه الوطنية"></div>
   <h1>لا يمكن الدخول</h1><p id="blockMsg" class="sub"></p>
   <button class="btnp" type="button" id="blockLogout">تسجيل الخروج</button>
 </div></div>
