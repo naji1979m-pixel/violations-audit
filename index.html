@@ -389,7 +389,26 @@ body.hqwide #fbar{display:none}
 .hk-h{display:flex;align-items:center;gap:8px}.hk-i{flex:none;width:34px;height:34px;border-radius:10px;display:grid;place-items:center;color:color-mix(in srgb,var(--tone) 65%,#0B2347);background:color-mix(in srgb,var(--tone) 13%,transparent)}
 .hk-l{font-size:12.5px;font-weight:600;color:var(--muted);line-height:1.35}
 .hk-v{font-size:28px;font-weight:700;line-height:1.15;color:var(--ink);margin-top:4px}
-.hk-s{font-size:12px;font-weight:700;color:var(--muted)}.rs-bar{display:flex;flex-wrap:wrap;align-items:center;gap:10px 14px;padding:12px 16px!important}.rs-bar .sp{flex:1}.rs-info{font-size:12.5px;color:var(--muted);font-weight:600;line-height:1.7}.rs-info b{color:var(--ink,#0B2347)}
+.hk-s{font-size:12px;font-weight:700;color:var(--muted)}.ac-bar{display:flex;flex-wrap:wrap;align-items:center;gap:10px 14px;padding:12px 16px!important}.ac-bar .sp{flex:1}
+.ac-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:14px}
+.ac-card{display:flex;flex-direction:column;gap:8px;text-align:start;background:var(--paper);border:1px solid var(--line);border-radius:16px;padding:16px;cursor:pointer;font:inherit;color:inherit;box-shadow:0 2px 10px rgba(16,40,74,.05);transition:transform .15s,border-color .15s;min-width:0}
+.ac-card:hover{transform:translateY(-2px);border-color:#4D8FE6}.ac-card h4{margin:0;font-size:16px;line-height:1.5}.ac-card p{margin:0;color:var(--muted);font-size:13px;line-height:1.7;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;min-height:2.6em}
+.ac-ct{display:flex;flex-wrap:wrap;gap:6px}.ac-cat,.ac-mand,.ac-draft{font-size:11px;font-weight:700;border-radius:99px;padding:2px 10px;background:#E6EEF9;color:#1C437E}.ac-mand{background:#FCE9E7;color:#9B2C22}.ac-draft{background:#EEF0F3;color:#64748B}
+.ac-meta{display:flex;flex-wrap:wrap;gap:4px 12px;font-size:12px;color:var(--muted);font-weight:600}.ac-st{margin-top:auto;padding-top:8px;border-top:1px dashed var(--line);font-size:13px}.ac-st b{color:#1C437E}.ac-st b.ok{color:#2E7D4F}.ac-st b.pr{color:#9A6B0E}
+.ac-card.st-done{border-color:#BFE3CC}
+.ac-vid{position:relative;width:100%;aspect-ratio:16/9;border-radius:14px;overflow:hidden;background:#0B2347}.ac-vid iframe,.ac-vid video{position:absolute;inset:0;width:100%;height:100%;border:0}
+.ac-open{display:inline-flex;align-items:center;gap:8px;padding:12px 18px;border-radius:12px;background:#0B2347;color:#fff;text-decoration:none;font-weight:700}.ac-open small{opacity:.75;font-weight:600}
+.ac-sec{margin-top:16px;display:flex;flex-direction:column;gap:10px}.ac-sec h4{margin:0;font-size:15px}.ac-sec>.btn2{align-self:flex-start}.ac-sum{margin:6px 0 0;color:var(--muted);line-height:1.8}
+.ac-body{line-height:1.9;font-size:14px}.ac-chk{margin:0;padding:0;list-style:none;display:flex;flex-direction:column;gap:6px}.ac-chk li{position:relative;padding:8px 36px 8px 12px;border:1px solid var(--line);border-radius:10px;background:var(--field);font-size:14px}.ac-chk li::before{content:"✓";position:absolute;inset-inline-start:12px;top:8px;color:#2E7D4F;font-weight:800}
+.ac-sample{padding:12px 14px;border-radius:12px;border:1px dashed #3D9B5F;background:#F1F9F4;line-height:1.9;font-size:14px;color:#14301F}
+.ac-q{border:1px solid var(--line);border-radius:12px;padding:10px 14px;margin:0;display:flex;flex-direction:column;gap:6px}.ac-q legend{font-weight:700;padding:0 6px;font-size:14px}.ac-q.ok{border-color:#3D9B5F;background:#F1F9F4}.ac-q.no{border-color:#C0392B;background:#FDF3F2}
+.ac-o{display:flex;align-items:center;gap:10px;min-height:40px;padding:4px 8px;border-radius:9px;cursor:pointer;font-size:14px}.ac-o:hover{background:var(--soft)}.ac-o input{width:18px;height:18px;accent-color:#1C437E}.ac-o.right{font-weight:800;color:#1E6B3F}
+.ac-res{display:flex;align-items:baseline;gap:12px;padding:12px 16px;border-radius:12px}.ac-res b{font-size:24px}.ac-res.ok{background:#E3F4EA;color:#1E6B3F}.ac-res.no{background:#FCE9E7;color:#9B2C22}
+.ac-donebar{margin-top:8px;padding:10px 14px;border-radius:12px;background:#E3F4EA;color:#1E6B3F;font-weight:700}.ac-ok{margin:0;color:#2E7D4F;font-weight:700}
+.ac-form .ac-lbl{font-weight:700;font-size:13px}.ac-qe{border:1px solid var(--line);border-radius:12px;padding:10px 12px;margin:8px 0;display:flex;flex-direction:column;gap:6px;background:var(--field)}.ac-qh{display:flex;justify-content:space-between;align-items:center}.ac-oe{display:flex;align-items:center;gap:8px}.ac-oe input[type=radio]{width:18px;height:18px;flex:none;accent-color:#2E7D4F}.ac-ck{flex-direction:row!important;align-items:center;gap:8px;font-weight:700}.ac-ck input{width:18px;height:18px}
+.ac-act{white-space:nowrap}.ac-act .btn2{margin-inline-start:4px}
+@media(prefers-color-scheme:dark){:root:not([data-theme="light"]) .ac-cat{background:#1E3354;color:#CFE0F7}:root:not([data-theme="light"]) .ac-sample{background:#12301F;color:#D6F0DF}:root:not([data-theme="light"]) .ac-q.ok{background:#12301F}:root:not([data-theme="light"]) .ac-q.no{background:#3A1714}:root:not([data-theme="light"]) .ac-st b{color:#9CC1F2}}
+.rs-bar{display:flex;flex-wrap:wrap;align-items:center;gap:10px 14px;padding:12px 16px!important}.rs-bar .sp{flex:1}.rs-info{font-size:12.5px;color:var(--muted);font-weight:600;line-height:1.7}.rs-info b{color:var(--ink,#0B2347)}
 .lnk{background:none;border:0;padding:0;color:var(--navy,#1C437E);font:inherit;font-weight:700;text-decoration:underline;cursor:pointer}.rs-of{text-align:start}
 .rs-tg.ok{--tone:#3D9B5F}.rs-tg.no{--tone:#C0392B}.rs-tg.ok .hk-s{color:#2E7D4F}.rs-tg.no .hk-s{color:#B03A2E}
 .rs-vn{display:inline-flex;align-items:center;gap:6px;white-space:nowrap}.rs-cp{border:1px solid var(--line);background:var(--paper);border-radius:7px;width:26px;height:26px;cursor:pointer;color:var(--muted);font-size:13px;line-height:1}.rs-cp:hover{color:var(--navy);border-color:var(--navy)}
@@ -574,7 +593,7 @@ section.block>h2::after{content:"";position:absolute;bottom:0;inset-inline-start
     <label class="f">الاسم الكامل<input class="in" id="rgName" autocomplete="name"></label>
     <label class="f">البريد الإلكتروني للشركة<input class="in" id="rgMail" type="email" dir="ltr" placeholder="name@nwc.com.sa" autocomplete="email"></label>
     <label class="f">رقم الجوال<input class="in" id="rgPhone" inputmode="tel" dir="ltr" placeholder="05xxxxxxxx"></label>
-    <label class="f">الدور المطلوب<select class="in" id="rgRole"><option value="hq_staff">أخصائي جودة (المركز الرئيسي)</option><option value="staff">موظف الجودة (الوحدات)</option><option value="manager">رئيس الجودة بالوحدة</option><option value="exec">مدير الجودة</option><option value="clerk">إداري</option><option value="viewer">مطّلع</option></select></label>
+    <label class="f">الدور المطلوب<select class="in" id="rgRole"><option value="hq_staff">أخصائي جودة (المركز الرئيسي)</option><option value="staff">موظف الجودة (الوحدات)</option><option value="manager">رئيس الجودة بالوحدة</option><option value="exec">مدير الجودة</option><option value="clerk">إداري</option><option value="viewer">مطّلع</option><option value="trainee_o">متدرب — مأمور ضبط (الأكاديمية)</option><option value="trainee_m">متدرب — مدير رقابة (الأكاديمية)</option></select></label>
     <label class="f">الجهة<select class="in" id="rgUnit"></select></label>
     <label class="f">ملاحظة (اختياري)<input class="in" id="rgNote"></label>
     <div class="msg" id="rgMsg" role="alert"></div>
@@ -679,6 +698,7 @@ section.block>h2::after{content:"";position:absolute;bottom:0;inset-inline-start
   <div class="pg" data-pg="users" hidden><div id="usersBody"></div></div>
   <div class="pg" data-pg="hq" hidden><div id="hqBody"></div></div>
   <div class="pg" data-pg="perf" hidden><div id="perfBody"></div></div>
+  <div class="pg" data-pg="acad" hidden><div id="acadBody"></div></div>
 </div>
 
 <div class="bar" id="auditBar" hidden>
@@ -1392,7 +1412,9 @@ let dl=null;
 const SB_URL="https://ahsvlqmensttzxbgkcwo.supabase.co",SB_KEY="sb_publishable_ETq2Ug9ids2iqpvCsPjsGg_eiRpd_AE";
 const sb=window.supabase?window.supabase.createClient(SB_URL,SB_KEY,{auth:{persistSession:true,autoRefreshToken:true,storageKey:"jawda-auth"}}):null;
 const BUCKET="quality-files";
-const ROLE={admin:"مدير النظام",exec:"مدير الجودة",manager:"رئيس الجودة بالوحدة",staff:"موظف الجودة",clerk:"إداري",viewer:"مطّلع"};
+const ROLE={admin:"مدير النظام",exec:"مدير الجودة",manager:"رئيس الجودة بالوحدة",staff:"موظف الجودة",clerk:"إداري",viewer:"مطّلع",trainee_o:"متدرب — مأمور ضبط",trainee_m:"متدرب — مدير رقابة"};
+const roleKey=u=>u&&u.role==="trainee"?(u.job==="m"?"trainee_m":"trainee_o"):(u&&u.role);
+const qUpd=o=>String(o.p_role||"").startsWith("trainee")?sb.rpc("q_set_trainee",{p_user:o.p_user,p_job:o.p_role==="trainee_m"?"m":"o",p_sector:o.p_sector||"",p_full_name:o.p_full_name||""}):sb.rpc("q_update_user",o);
 const isMgrR=()=>!!me&&["admin","exec","manager"].includes(me.role);
 const isHQ=u=>!!u&&!!u.sector&&gcl(u.sector)===gcl(ORG.hq||"");
 /* صلاحية استثنائية: كل البوابات والتقارير والطباعة — ما عدا الإدارة والهيكل (لمدير النظام فقط) */
@@ -1401,10 +1423,10 @@ const isVIP=u=>{if(!u||!u.full_name)return false;const t=norm(u.full_name).split
 const seesAll=()=>!!me&&(["admin","exec","viewer"].includes(me.role)||isHQ(me)||isVIP(me));
 const isHQU=u=>!!u&&(u.role==="exec"||isHQ(u)||isVIP(u));
 const canHQ=()=>!!me&&(me.role==="admin"||isHQU(me));
-function pageOK(p){if(!me)return false;if(p[0]==="hq")return canHQ();if(p[2].includes(me.role))return true;return isHQU(me)&&p[0]!=="users"}
+function pageOK(p){if(!me)return false;if(p[0]==="hq")return canHQ();if(p[0]==="acad")return acadOK()&&(isAcadTeam(me)||p[2].includes(me.role)||isHQU(me));if(p[2].includes(me.role))return true;return isHQU(me)&&p[0]!=="users"}
 const needUsers=()=>!!me&&(["admin","exec","manager","viewer"].includes(me.role)||isHQU(me));
 const TITLE_EXEC="المدير التنفيذي لإدارة المخالفات والجودة";const isAid=u=>!!u&&u.role==="exec"&&/عايض/.test(norm(u.full_name))&&/القحطاني/.test(norm(u.full_name));
-function roleLabel(u){if(isAid(u))return TITLE_EXEC;return u.role==="staff"&&isHQ(u)?"أخصائي جودة":(ROLE[u.role]||u.role)}
+function roleLabel(u){if(isAid(u))return TITLE_EXEC;if(u&&u.role==="trainee")return ROLE[roleKey(u)];return u.role==="staff"&&isHQ(u)?"أخصائي جودة":(ROLE[u.role]||u.role)}
 const canEditAudit=()=>!!me&&["admin","exec","manager","staff"].includes(me.role);
 const canUpload=()=>!!me&&["admin","exec","manager","clerk"].includes(me.role);
 /* ----- الهيكل التنظيمي ----- */
@@ -1533,6 +1555,8 @@ async function logout(){try{await flush()}catch(e){}await sb.auth.signOut();loca
 $("#blockLogout").onclick=logout;
 async function enterApp(){
   show("appView");$("#whoName").textContent=me.full_name;$("#whoRole").textContent=roleLabel(me);
+  if(isTrainee(me)&&!acadOK()){blockMsg("أكاديمية إدارة المخالفات قيد التجهيز، وسيتم إشعارك عند افتتاحها.");return}
+  if(isTrainee(me)){buildTabs();page="acad";go("acad");{const f=$("#aiFab");if(f)f.hidden=true}["#upBtn","#auditBar"].forEach(q=>{const x=$(q);if(x)x.hidden=true});return}
   buildTabs();await loadData();if(needUsers())await loadUsers();await loadPwReq();await loadSignups();{const msgs=[];if(PWREQ.length)msgs.push(`${PWREQ.length} طلب إعادة كلمة مرور`);if(SIGNUPS.length)msgs.push(`${SIGNUPS.length} طلب تسجيل`);if(msgs.length)setTimeout(()=>toast(`يوجد ${msgs.join(" و")} — في صفحة الإدارة والهيكل`),1200)}
   current="manual";try{page=localStorage.getItem("vv:page")||(isHQU(me)?"hq":"dash")}catch(e){page="dash"}
   buildTabs();renderAll();go(page);{const f=$("#aiFab");if(f)f.hidden=me.role==="clerk"}
@@ -1544,18 +1568,18 @@ async function boot(){
 }
 
 /* ----- التنقل ----- */
-const PAGES=[["dash","الرئيسية",["admin","exec","manager","staff","clerk","viewer"]],["hq","المركز الرئيسي",[]],["audit","المخالفات والتدقيق",["admin","exec","manager","staff","clerk","viewer"]],["report","تقارير التدقيق",["admin","exec","manager","viewer","clerk"]],["team","أداء الموظفين",["admin","exec","manager","viewer"]],["perf","تقييم الأداء",["admin","exec","manager","staff","viewer"]],["users","الإدارة والهيكل",["admin"]]];
+const PAGES=[["dash","الرئيسية",["admin","exec","manager","staff","clerk","viewer"]],["hq","المركز الرئيسي",[]],["audit","المخالفات والتدقيق",["admin","exec","manager","staff","clerk","viewer"]],["report","تقارير التدقيق",["admin","exec","manager","viewer","clerk"]],["team","أداء الموظفين",["admin","exec","manager","viewer"]],["perf","تقييم الأداء",["admin","exec","manager","staff","viewer"]],["acad","أكاديمية إدارة المخالفات",["admin","exec","manager","staff","clerk","viewer","trainee"]],["users","الإدارة والهيكل",["admin"]]];
 function buildTabs(){$("#tabs").innerHTML=PAGES.filter(pageOK).map(p=>`<button type="button" class="tab" data-go="${p[0]}">${p[1]}</button>`).join("");$$("[data-go]").forEach(b=>b.onclick=()=>go(b.dataset.go))}
 const PG_HERO={dash:["الرئيسية","ملخص أعمالك ومؤشرات التدقيق في نطاقك","eye"],audit:["المخالفات والتدقيق","اختر مخالفة من القائمة وابدأ تدقيقها وفق دليل دراسة المخالفات وآلية ضبطها","check"],report:["تقارير التدقيق","مؤشرات جودة التدقيق حسب الوحدة والموظف وبند اللائحة","xls"],team:["أداء الموظفين","إنجاز موظفي الجودة ونتائج تدقيقهم","clock"],users:["الإدارة والهيكل","الحسابات والصلاحيات والهيكل التنظيمي","search"]};
 function pgHero(p){const h=PG_HERO[p],el=$("#pgHero");if(!el)return;if(!h){el.hidden=true;return}el.hidden=false;el.innerHTML=`<span class="ic">${hqIc(h[2],24)}</span><div><h2>${h[0]}</h2><p>${h[1]}</p></div>`}
 (function(){const pg=document.querySelector('.pg[data-pg="audit"]');if(!pg||pg.querySelector(".aud-side"))return;const side=document.createElement("div");side.className="aud-side";const main=document.createElement("div");main.className="aud-main";[...pg.children].forEach(c=>{(c.id==="queueBlock"||c.id==="doneBlock"?side:main).appendChild(c)});pg.appendChild(side);pg.appendChild(main)})();
-function go(p){if(!PAGES.find(x=>x[0]===p&&pageOK(x)))p="dash";page=p;try{localStorage.setItem("vv:page",p)}catch(e){}
+function go(p){if(!PAGES.find(x=>x[0]===p&&pageOK(x)))p=isTrainee(me)?"acad":"dash";page=p;try{localStorage.setItem("vv:page",p)}catch(e){}
   $$(".pg").forEach(x=>x.hidden=x.dataset.pg!==p);$$("[data-go]").forEach(b=>b.setAttribute("aria-current",String(b.dataset.go===p)));
   $("#auditBar").hidden=p!=="audit";$("#upBtn").hidden=p!=="audit"||!canUpload();
-  if(p==="dash")renderDash();if(p==="report")renderReport();if(p==="team")renderTeam();if(p==="users")renderUsers();document.body.classList.toggle("hqwide",p==="hq"||p==="perf");RD_BASE=null;RD_SCOPE="";pgHero(p);if(p==="hq")renderHQ();if(p==="perf")renderPerf();window.scrollTo(0,0)}
+  if(p==="dash")renderDash();if(p==="report")renderReport();if(p==="team")renderTeam();if(p==="users")renderUsers();document.body.classList.toggle("hqwide",p==="hq"||p==="perf"||p==="acad");RD_BASE=null;RD_SCOPE="";pgHero(p);if(p==="hq")renderHQ();if(p==="perf")renderPerf();if(p==="acad")renderAcad();window.scrollTo(0,0)}
 $("#logoutBtn").onclick=logout;
 $("#pwBtn").onclick=()=>{$("#pwCancel").hidden=false;$("#pwTitle").textContent="تغيير كلمة المرور";$("#pwMsg").textContent="";show("pwView")};
-$("#refreshBtn").onclick=async()=>{const b=$("#refreshBtn");if(b.disabled)return;b.disabled=true;b.textContent="جارٍ التحديث…";await flush();await loadData();if(needUsers())await loadUsers();renderAll();go(page);b.disabled=false;b.textContent="↻ تحديث";toast("تم تحديث البيانات")};
+$("#refreshBtn").onclick=async()=>{const b=$("#refreshBtn");if(b.disabled)return;if(isTrainee(me)){AC.courses=null;renderAcad();return}AC.courses=null;b.disabled=true;b.textContent="جارٍ التحديث…";await flush();await loadData();if(needUsers())await loadUsers();renderAll();go(page);b.disabled=false;b.textContent="↻ تحديث";toast("تم تحديث البيانات")};
 
 /* ===================== الإحصائيات ===================== */
 function periodStart(p){const d=new Date();if(p==="7")return Date.now()-7*864e5;if(p==="30")return Date.now()-30*864e5;if(p==="month")return new Date(d.getFullYear(),d.getMonth(),1).getTime();return 0}
@@ -2113,14 +2137,15 @@ function rsBind(root){const R=document.querySelector(root);if(!R)return;
   const xl=R.querySelector("#rsXls");if(xl)xl.onclick=()=>rsXls(xl);
   const tg=R.querySelector("#rsTg");if(tg)tg.onclick=async()=>{const v=prompt("المستهدف لمتوسط جودة الرصد (%)",RS_CFG.target);if(v==null)return;const n=Math.round(+String(v).replace(/[^\d.]/g,""));if(!(n>0&&n<=100)){toast("أدخل رقماً من 1 إلى 100");return}
     RS_CFG=Object.assign({},RS_CFG,{target:n});const {error}=await sb.from("quality_settings").upsert({key:"rasd_cfg",value:RS_CFG,updated_at:new Date().toISOString()});toast(error?"تعذر الحفظ: "+error.message:"تم حفظ المستهدف");rsRe()}}
-async function rsDraw(month,btn){if(!rsEdit())return;const scf=x=>true,pool=rsPool(month,scf),have=new Set((RASD||[]).filter(x=>x.month===month).map(x=>x.visit_no)),rate=(+RS_CFG.sample||25)/100,by={},add=[];
+async function rsDraw(month,btn){if(!rsEdit())return;btn.disabled=true;RASD=null;await rsLoad();btn.disabled=false;const scf=x=>true,pool=rsPool(month,scf),have=new Set((RASD||[]).filter(x=>x.month===month).map(x=>x.visit_no)),rate=(+RS_CFG.sample||25)/100,by={},add=[];
   pool.forEach(r=>{const s=secOf(r.region);(by[s]=by[s]||[]).push(r)});
   Object.entries(by).forEach(([s,L])=>{const need=Math.ceil(L.length*rate)-L.filter(r=>have.has(r.vno)).length;if(need<=0)return;rsShuffle(L.filter(r=>!have.has(r.vno))).slice(0,need).forEach(r=>add.push({month,visit_no:r.vno,visit:r.visit||r.vno,sec:s,gov:(r.sector||"").trim(),region:(r.region||"").trim(),officer:(r.officer||"").trim(),mgr:(r.mgr||"").trim(),item:(r.item||"").trim(),vdate:r.date||"",ans:{},created_by:me.id}))});
-  if(!add.length){toast("عينة هذا الشهر مكتملة");return}
+  {const seen=new Set();for(let i=add.length-1;i>=0;i--){if(seen.has(add[i].visit_no))add.splice(i,1);else seen.add(add[i].visit_no)}}
+  if(!add.length){toast("عينة هذا الشهر مكتملة");rsRe();return}
   if(!confirm(`سيتم سحب ${add.length} مخالفة عشوائياً (${Math.round(rate*100)}% من المرسلة للهيئة في ${rsMLab(month)}، موزعة على القطاعات).\nمتابعة؟`))return;
   const old=btn.innerHTML;btn.disabled=true;btn.textContent="جارٍ السحب…";
-  try{for(let i=0;i<add.length;i+=400){const {data,error}=await sb.from("quality_rasd").insert(add.slice(i,i+400)).select();if(error)throw error;RASD.push(...(data||[]))}toast(`تم سحب ${add.length} مخالفة`)}
-  catch(e){toast("تعذر السحب: "+(e.message||e))}finally{btn.disabled=false;btn.innerHTML=old;rsRe()}}
+  try{for(let i=0;i<add.length;i+=400){const {error}=await sb.from("quality_rasd").upsert(add.slice(i,i+400),{onConflict:"month,visit_no",ignoreDuplicates:true});if(error)throw error}toast(`تم سحب ${add.length} مخالفة`)}
+  catch(e){toast("تعذر السحب: "+(e.message||e))}finally{RASD=null;await rsLoad();btn.disabled=false;btn.innerHTML=old;rsRe()}}
 function rsOpen(key){const x=(RASD||[]).find(z=>rsKey(z)===key);if(!x)return;const ed=RS_CTX==="hq"&&rsEdit(),a=Object.assign({},x.ans||{});
   const draw=()=>{const sc=rsScore(a);
     $("#sheet").innerHTML=`<div class="rd-h"><div><span class="er-tag">جودة الرصد — ${rsMLab(x.month)}</span><h3><span class="rs-vn">${esc(x.visit||x.visit_no)}<button type="button" class="rs-cp" data-cp="${esc(x.visit||x.visit_no)}" title="نسخ">⧉</button></span></h3>
@@ -2151,6 +2176,147 @@ async function rsXls(btn){const scf=RS_CTX==="hq"?rsScopeHQ():rsScopePF(),L=(RAS
     sheet("المعايير",["المعيار","الوزن %","لم يتجاوز","نسبة الرسوب %"],RS_C.map(([k,l,w])=>[l,w,A.T.f[k]||0,A.T.done?Math.round((A.T.f[k]||0)/A.T.done*1000)/10:""]));
     const buf=await wb.xlsx.writeBuffer();deliver(new Blob([buf],{type:"application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"}),`جودة-الرصد-${RSM}.xlsx`)}
   catch(e){toast("تعذر التصدير: "+(e.message||e))}finally{btn.disabled=false;btn.innerHTML=old}}
+/* ===================== أكاديمية إدارة المخالفات ===================== */
+const AC_AUD={all:"الجميع",o:"مأمورو الضبط",m:"مدراء الرقابة"};
+const AC_CAT=["معايير جودة الرصد","بنود المخالفات","الأنظمة واللوائح","مهارات عامة"];
+let AC={courses:null,prog:[],err:"",loading:null},ACV="cat",ACF="all",ACK="",ACQ="",ACU="";
+const isTrainee=u=>!!u&&u.role==="trainee";
+/* مرحلة التجهيز: الأكاديمية لا يراها إلا فريق التجهيز — غيّر ACAD_OPEN إلى true عند الافتتاح */
+const ACAD_OPEN=false,ACAD_TEAM=[["نايف","البقمي"],["حسين","الرمضان"]];
+const isAcadTeam=u=>{if(!u)return false;if(u.role==="admin")return true;const t=norm(u.full_name||"").split(" ");return ACAD_TEAM.some(n=>n.every(w=>t.includes(norm(w))))};
+const acadOK=()=>!!me&&(ACAD_OPEN||isAcadTeam(me));
+const jobLab=j=>j==="m"?"مدير رقابة":j==="o"?"مأمور ضبط":"";
+const acEdit=()=>!!me&&!isTrainee(me)&&(isAcadTeam(me)||(ACAD_OPEN&&rsEdit()));
+const acRecOK=()=>!!me&&!isTrainee(me)&&(isAcadTeam(me)||seesAll()||me.role==="manager");
+const acRecScope=x=>isAcadTeam(me)||seesAll()||gcl(x.sector||"")===gcl(me.sector||"");
+async function sbAll(mk){const out=[];let f=0;while(true){const {data,error}=await mk().range(f,f+999);if(error)throw error;out.push(...(data||[]));if(!data||data.length<1000)break;f+=1000}return out}
+function acLoad(){if(AC.courses)return Promise.resolve();if(AC.loading)return AC.loading;
+  AC.loading=(async()=>{try{AC.courses=await sbAll(()=>sb.from("quality_courses").select("*").order("sort").order("created_at"));
+      AC.prog=await sbAll(()=>{let q=sb.from("quality_course_progress").select("*").order("course_id");if(!acRecOK())q=q.eq("user_id",me.id);return q});AC.err=""}
+    catch(e){AC.courses=[];AC.prog=[];AC.err=/quality_course|relation|schema cache/i.test(e.message||"")?"setup":(e.message||String(e))}finally{AC.loading=null}})();return AC.loading}
+const acQz=c=>Array.isArray(c&&c.quiz)?c.quiz.filter(q=>q&&q.q&&Array.isArray(q.o)&&q.o.filter(Boolean).length>=2):[];
+const acMyP=cid=>AC.prog.find(x=>x.user_id===me.id&&x.course_id===cid);
+function acSt(c,pr){if(!pr)return "new";if(pr.passed||(!acQz(c).length&&pr.video_done))return "done";return "prog"}
+const acForMe=c=>c.audience==="all"||!c.audience||!isTrainee(me)||c.audience===me.job;
+function acMine(){return (AC.courses||[]).filter(c=>(c.active||acEdit())&&acForMe(c))}
+function acEmbed(u){u=String(u||"").trim();if(!u)return "";let m;
+  if((m=u.match(/(?:youtube\.com\/(?:watch\?(?:.*&)?v=|embed\/|shorts\/|live\/)|youtu\.be\/)([\w-]{6,})/)))return `<div class="ac-vid"><iframe src="https://www.youtube-nocookie.com/embed/${m[1]}?rel=0" title="فيديو الدورة" allow="accelerometer; encrypted-media; picture-in-picture; fullscreen" allowfullscreen loading="lazy"></iframe></div>`;
+  if((m=u.match(/vimeo\.com\/(?:video\/)?(\d+)/)))return `<div class="ac-vid"><iframe src="https://player.vimeo.com/video/${m[1]}" title="فيديو الدورة" allow="fullscreen; picture-in-picture" allowfullscreen loading="lazy"></iframe></div>`;
+  if((m=u.match(/drive\.google\.com\/file\/d\/([\w-]+)/)))return `<div class="ac-vid"><iframe src="https://drive.google.com/file/d/${m[1]}/preview" title="فيديو الدورة" allow="fullscreen" allowfullscreen loading="lazy"></iframe></div>`;
+  if(/\.(mp4|webm|m4v|mov)(\?|$)/i.test(u))return `<div class="ac-vid"><video src="${esc(u)}" controls preload="metadata" playsinline></video></div>`;
+  if(/^https:\/\//.test(u)&&/(embed|player|\/_layouts\/15\/embed|stream\.aspx|web\.microsoftstream)/i.test(u))return `<div class="ac-vid"><iframe src="${esc(u)}" title="فيديو الدورة" allow="fullscreen; autoplay" allowfullscreen loading="lazy"></iframe></div><p class="hq-note">إن لم يظهر الفيديو: <a href="${esc(u)}" target="_blank" rel="noopener">افتحه في نافذة جديدة ↗</a></p>`;
+  if(/^https?:\/\//.test(u))return `<a class="ac-open" href="${esc(u)}" target="_blank" rel="noopener">▶ افتح فيديو الدورة <small>(نافذة جديدة)</small></a>`;return ""}
+function acStats(){const L=acMine().filter(c=>c.active),pr=L.map(c=>[c,acMyP(c.id)]);const done=pr.filter(([c,p])=>acSt(c,p)==="done").length,mand=L.filter(c=>c.mandatory),mandLeft=mand.filter(c=>acSt(c,acMyP(c.id))!=="done").length;
+  const sc=pr.map(([,p])=>p&&p.best!=null?+p.best:null).filter(v=>v!=null);return {n:L.length,done,mand:mand.length,mandLeft,avg:sc.length?Math.round(sc.reduce((a,b)=>a+b,0)/sc.length*10)/10:null}}
+function renderAcad(){const el=$("#acadBody");if(!el)return;
+  const shell=b=>`<div class="hq pv ac"><div class="hq-top"><div class="hq-t1"><div><span class="hq-badge">الأكاديمية${ACAD_OPEN?"":" · قيد التجهيز"}</span><h2>أكاديمية إدارة المخالفات</h2><p>دورات رصد مخالفات المياه وتدقيقها — لمأموري الضبط ومدراء الرقابة${ACAD_OPEN?"":" · <b>مرحلة التجهيز: لا يراها حالياً إلا فريق الأكاديمية</b>"}</p></div></div></div>${b}</div>`;
+  if(!AC.courses){el.innerHTML=shell('<div class="hq-card"><div class="empty">جارٍ تحميل الأكاديمية…</div></div>');acLoad().then(renderAcad);return}
+  if(AC.err==="setup"){el.innerHTML=shell(`<div class="hq-card"><div class="empty">⚙️ الأكاديمية تحتاج تجهيز قاعدة البيانات مرة واحدة.<br>${me.role==="admin"?"شغّل ملف <b>academy-setup.sql</b> في Supabase ← SQL Editor ثم حدّث الصفحة.":"تواصل مع مدير النظام."}</div></div>`);return}
+  if(AC.err){el.innerHTML=shell(`<div class="hq-card"><div class="empty">تعذر تحميل الأكاديمية: ${esc(AC.err)}</div></div>`);return}
+  const V=[["cat","الدورات"]].concat(acRecOK()?[["rec","سجل التدريب"]]:[],acEdit()?[["man","إدارة الدورات"]]:[]);if(!V.some(v=>v[0]===ACV))ACV="cat";
+  const S=acStats();
+  const tl=(l,v,sub,tone)=>`<div class="hk" style="--tone:${tone}"><div class="hk-h"><span class="hk-l">${l}</span></div><b class="hk-v">${v}</b><div class="hk-s">${sub||"&nbsp;"}</div></div>`;
+  const head=`<div class="hq-kgrid">${tl("الدورات المتاحة لك",hqF(S.n),isTrainee(me)?esc(jobLab(me.job)):"","#1F5BB0")}${tl("المكتملة",hqF(S.done),S.n?hqP(S.done,S.n)+" من دوراتك":"","#3D9B5F")}${tl("الإلزامية المتبقية",hqF(S.mandLeft),S.mand?`من ${hqF(S.mand)} إلزامية`:"لا توجد دورات إلزامية",S.mandLeft?"#C0392B":"#3D9B5F")}<div class="hk pf-qt ${qCls(S.avg)}"><div class="hk-h"><span class="hk-l">متوسط درجاتك</span></div><b class="hk-v">${qTxt(S.avg)}</b><div class="hk-s">${S.avg==null?"لم تختبر بعد":esc(qLab(S.avg))}</div></div></div>`;
+  let body="";
+  if(ACV==="cat"){let L=acMine();const cats=[...new Set(L.map(c=>c.category).filter(Boolean))];
+    if(ACK)L=L.filter(c=>c.category===ACK);if(ACF==="mand")L=L.filter(c=>c.mandatory);else if(ACF==="todo")L=L.filter(c=>acSt(c,acMyP(c.id))!=="done");else if(ACF==="done")L=L.filter(c=>acSt(c,acMyP(c.id))==="done");
+    if(ACQ){const q=norm(ACQ);L=L.filter(c=>[c.title,c.summary,c.item,c.category].some(v=>norm(v||"").includes(q)))}
+    body=`<div class="hq-card ac-bar"><div class="hq-chips rs-f">${[["all","الكل"],["mand","الإلزامية"],["todo","لم أكملها"],["done","المكتملة"]].map(([k,l])=>`<button type="button" class="hq-chip" data-acf="${k}" aria-pressed="${ACF===k}">${l}</button>`).join("")}</div>
+      <label class="hq-sel"><span>الفئة</span><select id="acCat"><option value="">كل الفئات</option>${cats.map(k=>`<option${ACK===k?" selected":""}>${esc(k)}</option>`).join("")}</select></label><span class="sp"></span><input class="in pf-q" id="acQ" type="search" placeholder="ابحث عن دورة" value="${esc(ACQ)}"></div>
+      ${L.length?`<div class="ac-grid">${L.map(c=>{const pr=acMyP(c.id),st=acSt(c,pr),nq=acQz(c).length;return `<button type="button" class="ac-card st-${st}" data-ac="${esc(c.id)}"><div class="ac-ct"><span class="ac-cat">${esc(c.category||"عام")}</span>${c.mandatory?'<span class="ac-mand">إلزامية</span>':""}${c.active?"":'<span class="ac-draft">مسودة</span>'}</div>
+        <h4>${esc(c.title)}</h4><p>${esc(c.summary||"")}</p><div class="ac-meta"><span>👥 ${esc(AC_AUD[c.audience||"all"])}</span>${c.minutes?`<span>⏱ ${hqF(c.minutes)} د</span>`:""}${c.video_url?"<span>▶ فيديو</span>":""}${nq?`<span>📝 ${hqF(nq)} أسئلة</span>`:""}</div>
+        <div class="ac-st">${st==="done"?`<b class="ok">✓ مكتملة${pr&&pr.best!=null?" — "+qTxt(+pr.best):""}</b>`:st==="prog"?`<b class="pr">قيد التعلّم${pr&&pr.attempts?` — ${hqF(pr.attempts)} محاولة`:""}</b>`:"<b>ابدأ الدورة ‹</b>"}</div></button>`}).join("")}</div>`:`<div class="hq-card"><div class="empty">${(AC.courses||[]).length?"لا توجد دورات بهذا الفلتر":acEdit()?"لا توجد دورات بعد — أضفها من «إدارة الدورات»":"لا توجد دورات منشورة بعد"}</div></div>`}`;
+  }else if(ACV==="rec"){const act=(AC.courses||[]).filter(c=>c.active),txb='<span class="tx-bs"><button type="button" class="btn2 tx-b" data-tx="pdf">📄 PDF</button><button type="button" class="btn2 pri tx-b" data-tx="xls">📊 Excel</button></span>';
+    const P={};AC.prog.filter(acRecScope).forEach(x=>{const o=P[x.user_id]=P[x.user_id]||{n:x.full_name,j:x.job,s:x.sector,L:[],last:""};o.L.push(x);if((x.updated_at||"")>o.last)o.last=x.updated_at||""});
+    if(me.role==="admin")(users||[]).filter(u=>isTrainee(u)&&u.active&&!P[u.id]&&acRecScope(u)).forEach(u=>P[u.id]={n:u.full_name,j:u.job,s:u.sector,L:[],last:""});
+    const units=[...new Set(Object.values(P).map(o=>o.s||"").filter(Boolean))].sort((a,b)=>a.localeCompare(b,"ar"));
+    let R=Object.entries(P).map(([id,o])=>{const av=act.filter(c=>c.audience==="all"||!c.audience||!o.j||c.audience===o.j),dn=av.filter(c=>acSt(c,o.L.find(x=>x.course_id===c.id))==="done"),md=av.filter(c=>c.mandatory),mdn=md.filter(c=>dn.includes(c)),sc=o.L.map(x=>x.best).filter(v=>v!=null).map(Number);return {id,o,av:av.length,dn:dn.length,md:md.length,mdn:mdn.length,avg:sc.length?Math.round(sc.reduce((a,b)=>a+b,0)/sc.length*10)/10:null}});
+    if(ACU)R=R.filter(r=>(r.o.s||"")===ACU);R.sort((a,b)=>(a.av?a.dn/a.av:0)-(b.av?b.dn/b.av:0)||(a.o.n||"").localeCompare(b.o.n||"","ar"));
+    const C=act.map(c=>{const L=AC.prog.filter(x=>x.course_id===c.id&&acRecScope(x)&&(!ACU||(x.sector||"")===ACU)),dn=L.filter(x=>acSt(c,x)==="done"),sc=L.map(x=>x.best).filter(v=>v!=null).map(Number);return {c,st:L.length,dn:dn.length,avg:sc.length?Math.round(sc.reduce((a,b)=>a+b,0)/sc.length*10)/10:null}});
+    body=`<div class="hq-card ac-bar">${units.length>1?`<label class="hq-sel"><span>الجهة</span><select id="acU"><option value="">كل الجهات</option>${units.map(u=>`<option${ACU===u?" selected":""}>${esc(u)}</option>`).join("")}</select></label>`:""}<span class="rs-info">${hqF(R.length)} متدرب · ${hqF(act.length)} دورة منشورة${me.role==="admin"?"":" · يظهر من بدأ التدريب"}</span></div>
+      <div class="hq-card"><div class="hq-ch"><h3>سجل المتدربين <span class="sub">الأقل إنجازاً أولاً</span></h3>${txb}</div>${R.length?`<div class="tbl-wrap"><table class="tbl" data-tt="أكاديمية إدارة المخالفات — سجل المتدربين"><thead><tr><th>#</th><th>المتدرب</th><th>الصفة</th><th>الجهة</th><th>المكتملة</th><th>الإنجاز</th><th>الإلزامية</th><th>متوسط الدرجات</th><th>آخر نشاط</th></tr></thead><tbody>
+        ${R.map((r,i)=>`<tr><td>${i+1}</td><td><b>${esc(r.o.n||"")}</b></td><td>${esc(jobLab(r.o.j)||"—")}</td><td>${esc(r.o.s||"—")}</td><td>${hqF(r.dn)} / ${hqF(r.av)}</td><td><div class="pf-ib pf-q100"><span class="pf-tr"><i class="${qCls(r.av?r.dn/r.av*100:null)}" style="width:${r.av?Math.max(2,r.dn/r.av*100):0}%"></i></span><b>${hqP(r.dn,r.av)}</b></div></td><td>${r.md?`${hqF(r.mdn)} / ${hqF(r.md)}${r.mdn<r.md?' <span class="ac-mand">ناقصة</span>':" ✓"}`:"—"}</td><td>${r.avg==null?"—":`<span class="qb ${qCls(r.avg)}">${qTxt(r.avg)}</span>`}</td><td>${r.o.last?esc(new Date(r.o.last).toLocaleDateString("ar-SA-u-nu-latn-ca-gregory")):"—"}</td></tr>`).join("")}</tbody></table></div>`:'<div class="empty">لا يوجد متدربون بعد</div>'}</div>
+      <div class="hq-card"><div class="hq-ch"><h3>إنجاز الدورات</h3>${txb}</div>${C.length?`<div class="tbl-wrap"><table class="tbl" data-tt="أكاديمية إدارة المخالفات — إنجاز الدورات"><thead><tr><th>الدورة</th><th>الفئة</th><th>المستهدفون</th><th>إلزامية</th><th>بدأها</th><th>أكملها</th><th>متوسط الدرجة</th></tr></thead><tbody>
+        ${C.map(x=>`<tr><td><b>${esc(x.c.title)}</b></td><td>${esc(x.c.category||"")}</td><td>${esc(AC_AUD[x.c.audience||"all"])}</td><td>${x.c.mandatory?"نعم":"—"}</td><td>${hqF(x.st)}</td><td>${hqF(x.dn)} <small>(${hqP(x.dn,x.st)})</small></td><td>${x.avg==null?"—":`<span class="qb ${qCls(x.avg)}">${qTxt(x.avg)}</span>`}</td></tr>`).join("")}</tbody></table></div>`:'<div class="empty">لا توجد دورات منشورة</div>'}</div>`;
+  }else{const L=(AC.courses||[]).slice();
+    body=`<div class="hq-card ac-bar"><span class="rs-info">${hqF(L.length)} دورة · ${hqF(L.filter(c=>c.active).length)} منشورة — المسودات لا تظهر للمتدربين</span><span class="sp"></span><button type="button" class="btn2 pri" id="acNew">➕ دورة جديدة</button></div>
+      <div class="hq-card"><div class="tbl-wrap"><table class="tbl"><thead><tr><th>#</th><th>الدورة</th><th>الفئة</th><th>المستهدفون</th><th>إلزامية</th><th>الأسئلة</th><th>أكملها</th><th>الحالة</th><th></th></tr></thead><tbody>
+      ${L.map(c=>`<tr><td>${hqF(c.sort||0)}</td><td><b>${esc(c.title)}</b>${c.video_url?" ▶":""}</td><td>${esc(c.category||"")}</td><td>${esc(AC_AUD[c.audience||"all"])}</td><td>${c.mandatory?"نعم":"—"}</td><td>${hqF(acQz(c).length)}</td><td>${hqF(AC.prog.filter(x=>x.course_id===c.id&&acSt(c,x)==="done").length)}</td><td>${c.active?'<span class="qb q-e">منشورة</span>':'<span class="qb q-na">مسودة</span>'}</td>
+        <td class="ac-act"><button type="button" class="btn2" data-ace="${esc(c.id)}">تعديل</button><button type="button" class="btn2" data-acp="${esc(c.id)}">${c.active?"إخفاء":"نشر"}</button><button type="button" class="btn2" data-acv="${esc(c.id)}">عرض</button></td></tr>`).join("")||'<tr><td colspan="9"><div class="empty">لا توجد دورات</div></td></tr>'}</tbody></table></div></div>`}
+  el.innerHTML=shell(`${head}<nav class="hq-nav" role="tablist">${V.map(([k,l])=>`<button type="button" role="tab" data-acvw="${k}" aria-selected="${ACV===k}">${l}</button>`).join("")}</nav><div class="hq-body">${body}</div>`);
+  $$("#acadBody [data-acvw]").forEach(b=>b.onclick=()=>{ACV=b.dataset.acvw;renderAcad()});
+  $$("#acadBody [data-acf]").forEach(b=>b.onclick=()=>{ACF=b.dataset.acf;renderAcad()});
+  if($("#acCat"))$("#acCat").onchange=e=>{ACK=e.target.value;renderAcad()};if($("#acU"))$("#acU").onchange=e=>{ACU=e.target.value;renderAcad()};
+  if($("#acQ"))$("#acQ").oninput=e=>{ACQ=e.target.value;clearTimeout(window._act);window._act=setTimeout(()=>{renderAcad();const i=$("#acQ");if(i){i.focus();i.setSelectionRange(i.value.length,i.value.length)}},250)};
+  $$("#acadBody [data-ac],#acadBody [data-acv]").forEach(b=>b.onclick=()=>acOpen(b.dataset.ac||b.dataset.acv));
+  $$("#acadBody [data-ace]").forEach(b=>b.onclick=()=>acForm((AC.courses||[]).find(c=>c.id===b.dataset.ace)));
+  if($("#acNew"))$("#acNew").onclick=()=>acForm(null);
+  $$("#acadBody [data-acp]").forEach(b=>b.onclick=async()=>{const c=(AC.courses||[]).find(x=>x.id===b.dataset.acp);if(!c)return;b.disabled=true;const {error}=await sb.from("quality_courses").update({active:!c.active,updated_at:new Date().toISOString()}).eq("id",c.id);if(error){toast("تعذر الحفظ: "+error.message);b.disabled=false;return}c.active=!c.active;toast(c.active?"تم نشر الدورة":"أصبحت الدورة مسودة");renderAcad()});
+  $$("#acadBody .tx-b").forEach(b=>b.onclick=()=>txExport(b,b.dataset.tx))}
+async function acSave(c,patch){const pr=acMyP(c.id)||{};const row=Object.assign({user_id:me.id,course_id:c.id,full_name:me.full_name,job:me.job||null,sector:me.sector||null,started_at:pr.started_at||new Date().toISOString()},pr,patch,{updated_at:new Date().toISOString()});
+  const {error}=await sb.from("quality_course_progress").upsert(row,{onConflict:"user_id,course_id"});if(error){toast("تعذر حفظ التقدم: "+error.message);return false}
+  const i=AC.prog.findIndex(x=>x.user_id===me.id&&x.course_id===c.id);if(i>=0)AC.prog[i]=row;else AC.prog.push(row);return true}
+function acOpen(id){const c=(AC.courses||[]).find(x=>x.id===id);if(!c)return;const Q=acQz(c);let sel={},res=null;
+  if(!acMyP(c.id)&&c.active&&!acEdit())acSave(c,{});
+  const draw=()=>{const pr=acMyP(c.id)||{},st=acSt(c,pr),list=(c.checklist||[]).filter(Boolean);
+    $("#sheet").innerHTML=`<div class="rd-h"><div><span class="er-tag">${esc(c.category||"دورة")}${c.mandatory?" · إلزامية":""}${c.active?"":" · مسودة"}</span><h3>${esc(c.title)}</h3><div class="sub">👥 ${esc(AC_AUD[c.audience||"all"])}${c.minutes?` · ⏱ ${hqF(c.minutes)} دقيقة`:""}${c.item?` · البند: ${esc(c.item)}`:""}</div></div>
+      <div class="rd-b">${acEdit()?'<button type="button" class="btn2" id="acEd">تعديل</button>':""}<button type="button" class="btn2" id="acCl">إغلاق</button></div></div>
+      ${st==="done"?`<div class="ac-donebar">✓ أكملت هذه الدورة${pr.best!=null?` — أفضل درجة ${qTxt(+pr.best)}`:""}</div>`:""}
+      ${c.summary?`<p class="ac-sum">${esc(c.summary)}</p>`:""}
+      ${c.video_url?`<section class="ac-sec">${acEmbed(c.video_url)}${pr.video_done?'<p class="ac-ok">✓ شاهدت الفيديو</p>':'<button type="button" class="btn2 pri" id="acVd">✓ أكملت مشاهدة الفيديو</button>'}</section>`:""}
+      ${c.body?`<section class="ac-sec"><h4>الشرح</h4><div class="ac-body">${aiMd(c.body)}</div></section>`:""}
+      ${list.length?`<section class="ac-sec"><h4>قائمة التحقق</h4><ul class="ac-chk">${list.map(x=>`<li>${esc(x)}</li>`).join("")}</ul></section>`:""}
+      ${c.sample?`<section class="ac-sec"><h4>نموذج مقبول</h4><div class="ac-sample">${esc(c.sample).replace(/\n/g,"<br>")}</div><button type="button" class="btn2" id="acCp">⧉ نسخ النموذج</button></section>`:""}
+      ${Q.length?`<section class="ac-sec ac-quiz"><h4>الاختبار <span class="sub">${hqF(Q.length)} أسئلة · النجاح ${hqF(c.pass_mark||80)}%${pr.attempts?` · محاولاتك ${hqF(pr.attempts)}`:""}</span></h4>
+        ${Q.map((q,i)=>`<fieldset class="ac-q${res?(res[i]?" ok":" no"):""}"><legend>${i+1}. ${esc(q.q)}</legend>${q.o.map((o,j)=>o?`<label class="ac-o${res&&j===q.a?" right":""}"><input type="radio" name="q${i}" value="${j}"${sel[i]===j?" checked":""}${res?" disabled":""}><span>${esc(o)}</span></label>`:"").join("")}</fieldset>`).join("")}
+        ${res?`<div class="ac-res ${res.pass?"ok":"no"}"><b>${qTxt(res.score)}</b><span>${res.pass?"✓ ناجح — أحسنت":"لم تبلغ درجة النجاح — راجع الشرح وأعد المحاولة"}</span></div><button type="button" class="btn2" id="acRe">إعادة الاختبار</button>`:'<button type="button" class="btn2 pri" id="acSub">إرسال الإجابات</button>'}</section>`
+        :(!c.video_url||pr.video_done)&&st!=="done"?'<button type="button" class="btn2 pri" id="acFin">✓ أنهيت الدورة</button>':""}`;
+    $("#acCl").onclick=closeSheet;if($("#acEd"))$("#acEd").onclick=()=>acForm(c);
+    if($("#acCp"))$("#acCp").onclick=()=>copy(c.sample);
+    if($("#acVd"))$("#acVd").onclick=async()=>{if(await acSave(c,{video_done:true,completed_at:!Q.length?new Date().toISOString():(acMyP(c.id)||{}).completed_at||null}))draw()};
+    if($("#acFin"))$("#acFin").onclick=async()=>{if(await acSave(c,{video_done:true,completed_at:new Date().toISOString()})){toast("تم تسجيل إتمام الدورة");draw();renderAcad()}};
+    $$("#sheet .ac-q input").forEach(r=>r.onchange=()=>{sel[+r.name.slice(1)]=+r.value});
+    if($("#acRe"))$("#acRe").onclick=()=>{sel={};res=null;draw()};
+    if($("#acSub"))$("#acSub").onclick=async()=>{if(Object.keys(sel).length<Q.length){toast("أجب عن جميع الأسئلة");return}
+      const ok=Q.map((q,i)=>sel[i]===q.a),score=Math.round(ok.filter(Boolean).length/Q.length*1000)/10,pass=score>=(+c.pass_mark||80),pr0=acMyP(c.id)||{};
+      res=Object.assign(ok,{score,pass});const best=Math.max(score,pr0.best==null?0:+pr0.best);
+      await acSave(c,{score,best,attempts:(pr0.attempts||0)+1,passed:!!pr0.passed||pass,completed_at:pr0.completed_at||(pass?new Date().toISOString():null)});draw();renderAcad();const x=$("#sheet .ac-res");if(x)x.scrollIntoView({behavior:"smooth",block:"center"})}};
+  $("#sheet").classList.add("wide");draw();openSheet()}
+function acForm(c){if(!acEdit())return;const E=c||{title:"",summary:"",category:AC_CAT[0],audience:"all",item:"",minutes:10,video_url:"",body:"",checklist:[],sample:"",quiz:[],pass_mark:80,mandatory:false,active:false,sort:((AC.courses||[]).reduce((m,x)=>Math.max(m,+x.sort||0),0)+1)};
+  let QZ=JSON.parse(JSON.stringify(acQz(E).length?E.quiz:[]));const items=[...new Set(rows.map(r=>(r.item||"").trim()).filter(Boolean))].sort((a,b)=>a.localeCompare(b,"ar"));
+  const qHtml=()=>QZ.map((q,i)=>`<div class="ac-qe" data-qi="${i}"><div class="ac-qh"><b>سؤال ${i+1}</b><button type="button" class="btn2" data-qdel="${i}">حذف</button></div><input class="in" data-qq="${i}" placeholder="نص السؤال" value="${esc(q.q||"")}">
+    ${[0,1,2,3].map(j=>`<label class="ac-oe"><input type="radio" name="qa${i}" value="${j}"${(q.a||0)===j?" checked":""} title="الإجابة الصحيحة"><input class="in" data-qo="${i}-${j}" placeholder="الخيار ${j+1}${j<2?"":" (اختياري)"}" value="${esc((q.o||[])[j]||"")}"></label>`).join("")}<small>اختر الدائرة بجانب الإجابة الصحيحة</small></div>`).join("");
+  const grab=()=>{QZ=QZ.map((q,i)=>({q:($(`[data-qq="${i}"]`)||{}).value||"",o:[0,1,2,3].map(j=>($(`[data-qo="${i}-${j}"]`)||{}).value||""),a:+((document.querySelector(`input[name="qa${i}"]:checked`)||{}).value||0)}))};
+  $("#sheet").innerHTML=`<div class="rd-h"><div><span class="er-tag">إدارة الدورات</span><h3>${c?"تعديل دورة":"دورة جديدة"}</h3></div><div class="rd-b"><button type="button" class="btn2 pri" id="afSave">حفظ</button>${c?'<button type="button" class="btn2" id="afDel">حذف</button>':""}<button type="button" class="btn2" id="afCl">إلغاء</button></div></div>
+    <div class="grid ac-form"><label class="f full">عنوان الدورة *<input class="in" id="afT" value="${esc(E.title)}" placeholder="مثال: تصوير مخالفة التوصيل غير النظامي"></label>
+    <label class="f full">نبذة قصيرة<input class="in" id="afS" value="${esc(E.summary||"")}" placeholder="سطر يوضح ماذا سيتعلم المتدرب"></label>
+    <label class="f">الفئة<input class="in" id="afC" list="afCl2" value="${esc(E.category||"")}"><datalist id="afCl2">${AC_CAT.map(k=>`<option value="${k}">`).join("")}</datalist></label>
+    <label class="f">المستهدفون<select class="in" id="afA">${Object.entries(AC_AUD).map(([k,l])=>`<option value="${k}"${(E.audience||"all")===k?" selected":""}>${l}</option>`).join("")}</select></label>
+    <label class="f">بند المخالفة (اختياري)<input class="in" id="afI" list="afIl" value="${esc(E.item||"")}"><datalist id="afIl">${items.slice(0,300).map(k=>`<option value="${esc(k)}">`).join("")}</datalist></label>
+    <label class="f">المدة (دقائق)<input class="in" id="afM" type="number" min="0" value="${esc(E.minutes||"")}"></label>
+    <label class="f full">رابط الفيديو<input class="in" id="afV" dir="ltr" value="${esc(E.video_url||"")}" placeholder="YouTube أو SharePoint/Stream أو Google Drive أو رابط mp4"><small class="hq-note">يوتيوب ويفضّل «غير مدرج»، أو رابط تضمين (Embed) من SharePoint/Stream الخاص بالشركة.</small></label>
+    <label class="f full">الشرح<textarea class="in" id="afB" rows="7" placeholder="اكتب الشرح — تدعم **عريض** والقوائم بـ - في بداية السطر">${esc(E.body||"")}</textarea></label>
+    <label class="f full">قائمة التحقق (بند في كل سطر)<textarea class="in" id="afK" rows="5">${esc((E.checklist||[]).join("\n"))}</textarea></label>
+    <label class="f full">نموذج مقبول (مثل نموذج وصف)<textarea class="in" id="afX" rows="4">${esc(E.sample||"")}</textarea></label>
+    <div class="f full"><span class="ac-lbl">الاختبار</span><div id="afQ">${qHtml()}</div><button type="button" class="btn2" id="afQA">➕ إضافة سؤال</button></div>
+    <label class="f">درجة النجاح %<input class="in" id="afP" type="number" min="1" max="100" value="${esc(E.pass_mark||80)}"></label>
+    <label class="f">الترتيب<input class="in" id="afO" type="number" value="${esc(E.sort||0)}"></label>
+    <label class="f ac-ck"><input type="checkbox" id="afMd"${E.mandatory?" checked":""}> دورة إلزامية</label>
+    <label class="f ac-ck"><input type="checkbox" id="afAc"${E.active?" checked":""}> منشورة (تظهر للمتدربين)</label></div>`;
+  const bindQ=()=>{$$("#afQ [data-qdel]").forEach(b=>b.onclick=()=>{grab();QZ.splice(+b.dataset.qdel,1);$("#afQ").innerHTML=qHtml();bindQ()})};bindQ();
+  $("#afQA").onclick=()=>{grab();QZ.push({q:"",o:["","","",""],a:0});$("#afQ").innerHTML=qHtml();bindQ();const l=$$("#afQ [data-qq]");if(l.length)l[l.length-1].focus()};
+  $("#afCl").onclick=closeSheet;
+  if($("#afDel"))$("#afDel").onclick=async()=>{if(!confirm(`حذف دورة «${c.title}» وسجلات إنجازها؟`))return;const {error}=await sb.from("quality_courses").delete().eq("id",c.id);if(error){toast("تعذر الحذف: "+error.message);return}AC.courses=AC.courses.filter(x=>x.id!==c.id);AC.prog=AC.prog.filter(x=>x.course_id!==c.id);closeSheet();toast("تم حذف الدورة");renderAcad()};
+  $("#afSave").onclick=async()=>{grab();const t=$("#afT").value.trim();if(!t){toast("اكتب عنوان الدورة");$("#afT").focus();return}
+    const bad=QZ.findIndex(q=>!q.q.trim()||q.o.filter(o=>o.trim()).length<2||!String(q.o[q.a]||"").trim());if(bad>=0){toast(`أكمل السؤال ${bad+1}: نص السؤال وخياران على الأقل، والإجابة الصحيحة غير فارغة`);return}
+    const row={title:t,summary:$("#afS").value.trim(),category:$("#afC").value.trim()||"مهارات عامة",audience:$("#afA").value,item:$("#afI").value.trim()||null,minutes:+$("#afM").value||null,video_url:$("#afV").value.trim()||null,body:$("#afB").value,checklist:$("#afK").value.split("\n").map(x=>x.trim()).filter(Boolean),sample:$("#afX").value.trim()||null,
+      quiz:QZ.map(q=>({q:q.q.trim(),o:q.o.map(o=>o.trim()),a:q.a})),pass_mark:Math.min(100,Math.max(1,+$("#afP").value||80)),sort:+$("#afO").value||0,mandatory:$("#afMd").checked,active:$("#afAc").checked,updated_at:new Date().toISOString()};
+    const b=$("#afSave");b.disabled=true;b.textContent="جارٍ الحفظ…";
+    const r=c?await sb.from("quality_courses").update(row).eq("id",c.id).select():await sb.from("quality_courses").insert(Object.assign(row,{created_by:me.id})).select();
+    if(r.error){toast("تعذر الحفظ: "+r.error.message);b.disabled=false;b.textContent="حفظ";return}
+    const d=(r.data||[])[0]||Object.assign({},c,row);if(c){const i=AC.courses.findIndex(x=>x.id===c.id);AC.courses[i]=d}else AC.courses.push(d);AC.courses.sort((a,b)=>(+a.sort||0)-(+b.sort||0));
+    closeSheet();toast("تم حفظ الدورة");ACV="man";renderAcad()};
+  $("#sheet").classList.add("wide");openSheet()}
 function renderHQ(){
   const el=$("#hqBody");if(!canHQ()){el.innerHTML='<section class="block"><div class="empty">🔒 هذه البوابة خاصة بموظفي المركز الرئيسي.</div></section>';return}
   const L=hqRows(),A=hqAgg(L),T=A.T,sc=hqScope(A),ys=hqYears();RD_BASE=hqRows;RD_SCOPE=`بوابة المركز الرئيسي — ${sc.sec}${sc.per?" — "+sc.per:""}`;HQ_CTX=HQSF?{s:HQSF}:{};
@@ -2867,7 +3033,7 @@ function orgEditor(){const govs=[...new Set(rows.map(r=>r.sector).filter(Boolean
   <h3 class="sec" style="margin-top:18px">أعضاء بانتظار التفعيل <span>${(ORG.pending||[]).length}</span></h3>
   <div class="sub" style="margin-bottom:8px">يظهرون في الهيكل دون حسابات، ويُفعَّلون عند قبول طلب تسجيلهم أو إنشاء حسابهم.</div>
   <div class="ulist">${(ORG.pending||[]).map((p,i)=>`<div class="urow off"><div class="uinfo"><b>${esc(p.name)}</b><small>${esc(pendLabel(p))} — ${esc(p.unit||ORG.hq)}</small></div><div class="uact"><button type="button" class="btn2" data-pdel="${i}">حذف</button></div></div>`).join("")||`<div class="empty">لا يوجد</div>`}</div>
-  <div class="grid" style="margin-top:10px"><label class="f">الاسم<input class="in" id="pnName"></label><label class="f">الدور<select class="in" id="pnRole"><option value="hq_staff">أخصائي جودة (المركز الرئيسي)</option><option value="exec">مدير الجودة</option><option value="manager">رئيس الجودة بالوحدة</option><option value="staff">موظف الجودة</option><option value="clerk">إداري</option><option value="viewer">مطّلع</option></select></label>
+  <div class="grid" style="margin-top:10px"><label class="f">الاسم<input class="in" id="pnName"></label><label class="f">الدور<select class="in" id="pnRole"><option value="hq_staff">أخصائي جودة (المركز الرئيسي)</option><option value="exec">مدير الجودة</option><option value="manager">رئيس الجودة بالوحدة</option><option value="staff">موظف الجودة</option><option value="clerk">إداري</option><option value="viewer">مطّلع</option><option value="trainee_o">متدرب — مأمور ضبط (الأكاديمية)</option><option value="trainee_m">متدرب — مدير رقابة (الأكاديمية)</option></select></label>
   <label class="f full">الجهة<select class="in" id="pnUnit">${[ORG.hq].concat((ORG.units||[]).map(u=>u.name)).map(x=>`<option>${esc(x)}</option>`).join("")}</select></label></div>
   <div class="btns" style="margin-top:8px"><button type="button" class="btn2" id="pnAdd">＋ إضافة للهيكل</button></div>
   <h3 class="sec" style="margin-top:18px">الوحدات</h3><div class="ulist">${(ORG.units||[]).map((u,i)=>`<div class="urow"><div class="uinfo"><b>${esc(u.name)}</b><small>${esc(u.sector||"")} — ${(u.govs||[]).length} محافظات</small></div><div class="uact"><button type="button" class="btn2" data-udel="${i}">حذف</button></div></div>`).join("")}</div>
@@ -2905,7 +3071,7 @@ function renderUsers(){
     const name=$("#nuName").value.trim(),un=$("#nuUser").value.trim().toLowerCase(),role=$("#nuRole").value,sec=$("#nuSector").value.trim(),pw=$("#nuPass").value.trim();
     if(!name||!un||!pw){toast("أكمل الاسم واسم المستخدم وكلمة المرور");return}
     const b=$("#nuCreate");b.disabled=true;const baseRole=["admin","manager","staff"].includes(role)?role:"staff";const r=await sb.rpc("q_create_user",{p_username:un,p_full_name:name,p_role:baseRole,p_password:pw,p_sector:sec||null});
-    if(!r.error&&baseRole!==role){const r3=await sb.rpc("q_update_user",{p_user:r.data,p_role:role,p_sector:sec||"",p_full_name:name});if(r3.error)toast("أُنشئ الحساب لكن تعذر تعيين الدور: "+r3.error.message)}b.disabled=false;
+    if(!r.error&&baseRole!==role){const r3=await qUpd({p_user:r.data,p_role:role,p_sector:sec||"",p_full_name:name});if(r3.error)toast("أُنشئ الحساب لكن تعذر تعيين الدور: "+r3.error.message)}b.disabled=false;
     if(!r.error&&$("#nuEmail").value.trim())await sb.rpc("q_set_email",{p_user:r.data,p_email:$("#nuEmail").value.trim()});
     if(r.error){toast("تعذر الإنشاء: "+r.error.message);return}
     {const before=(ORG.pending||[]).length;ORG.pending=(ORG.pending||[]).filter(p=>gcl(p.name)!==gcl(name));if(ORG.pending.length!==before){try{await saveOrg()}catch(e){}}}
@@ -2924,12 +3090,12 @@ function editUser(u){
   const secs=sectorOptions();
   $("#sheet").innerHTML=`<h3>تعديل ${esc(u.full_name)}</h3><div class="grid" style="margin-top:10px">
     <label class="f full">الاسم الكامل<input class="in" id="euName" value="${esc(u.full_name)}"></label>
-    <label class="f">الدور<select class="in" id="euRole">${Object.entries(ROLE).map(([k,t])=>`<option value="${k}"${k===u.role?" selected":""}>${t}</option>`).join("")}</select></label>
+    <label class="f">الدور<select class="in" id="euRole">${Object.entries(ROLE).map(([k,t])=>`<option value="${k}"${k===roleKey(u)?" selected":""}>${t}</option>`).join("")}</select></label>
     <label class="f full">البريد الإلكتروني<input class="in" id="euEmail" type="email" dir="ltr" value="${esc(u.email||"")}"></label>
     <label class="f">الوحدة (أو فارغ للمركز الرئيسي)<input class="in" id="euSec" list="secList2" value="${esc(u.sector||"")}"><datalist id="secList2">${secs.map(s=>`<option value="${esc(s)}">`).join("")}</datalist></label></div>
     <div class="btns" style="margin-top:14px"><button type="button" class="btn2 pri" id="euSave">حفظ</button><button type="button" class="btn2" id="closeSh">إلغاء</button></div>`;
   openSheet();$("#closeSh").onclick=closeSheet;
-  $("#euSave").onclick=async()=>{const r=await sb.rpc("q_update_user",{p_user:u.id,p_role:$("#euRole").value,p_sector:$("#euSec").value,p_full_name:$("#euName").value});if(r.error){toast(r.error.message);return}
+  $("#euSave").onclick=async()=>{const r=await qUpd({p_user:u.id,p_role:$("#euRole").value,p_sector:$("#euSec").value,p_full_name:$("#euName").value});if(r.error){toast(r.error.message);return}
     const r2=await sb.rpc("q_set_email",{p_user:u.id,p_email:$("#euEmail").value.trim()});if(r2.error){toast("تعذر حفظ البريد: "+r2.error.message);return}await loadApprovers();closeSheet();await loadUsers();renderUsers();toast("تم الحفظ")};
 }
 
@@ -2991,7 +3157,7 @@ $("#fgForm").onsubmit=async e=>{e.preventDefault();const u=$("#fgUser").value.tr
   if(error){m.textContent="تعذر إرسال الطلب، حاول لاحقاً";return}
   m.className="msg ok";m.textContent="✓ وصل طلبك لمدير النظام. سيرسل لك كلمة مرور مؤقتة، وعند الدخول بها يطلب منك النظام كلمة مرور جديدة.";$("#fgNote").value=""};
 let PWREQ=[],SIGNUPS=[];
-const REQ_ROLE={hq_staff:"أخصائي جودة (المركز الرئيسي)",staff:"موظف الجودة",manager:"رئيس الجودة بالوحدة",exec:"مدير الجودة",clerk:"إداري",viewer:"مطّلع"};
+const REQ_ROLE={trainee_o:"متدرب — مأمور ضبط",trainee_m:"متدرب — مدير رقابة",hq_staff:"أخصائي جودة (المركز الرئيسي)",staff:"موظف الجودة",manager:"رئيس الجودة بالوحدة",exec:"مدير الجودة",clerk:"إداري",viewer:"مطّلع"};
 async function loadSignups(){if(!me||me.role!=="admin"){SIGNUPS=[];return}try{const {data}=await sb.from("quality_signup_requests").select("*").eq("status","pending").order("created_at");SIGNUPS=data||[]}catch(e){SIGNUPS=[]}}
 function signupBlock(){if(!SIGNUPS.length)return "";return `<section class="block" style="border-color:var(--navy)"><h2>طلبات التسجيل <span class="sub">${SIGNUPS.length}</span></h2><div class="ulist">${SIGNUPS.map(r=>{const inPend=(ORG.pending||[]).some(p=>gcl(p.name)===gcl(r.full_name));return `<div class="urow"><div class="uinfo"><b>${esc(r.full_name)}${inPend?' <span class="badge b-ok">موجود في الهيكل</span>':""}</b><span dir="ltr">${esc(r.email)}${r.phone?" · "+esc(r.phone):""}</span><small>${esc(REQ_ROLE[r.req_role]||r.req_role||"")} — ${esc(r.unit||"")} — ${fmtD(Date.parse(r.created_at))}${r.note?" — "+esc(r.note):""}</small></div><div class="uact"><button type="button" class="btn2 pri" data-sgok="${r.id}">قبول</button><button type="button" class="btn2" data-sgno="${r.id}">رفض</button></div></div>`}).join("")}</div></section>`}
 function bindSignups(){
@@ -3015,7 +3181,7 @@ function approveSignup(r){
     const btn=$("#saGo");btn.disabled=true;const baseRole=["admin","manager","staff"].includes(role)?role:"staff";
     const c=await sb.rpc("q_create_user",{p_username:un,p_full_name:name,p_role:baseRole,p_password:pw,p_sector:sec||null});
     if(c.error){btn.disabled=false;toast("تعذر الإنشاء: "+c.error.message);return}
-    if(baseRole!==role){const r3=await sb.rpc("q_update_user",{p_user:c.data,p_role:role,p_sector:sec||"",p_full_name:name});if(r3.error)toast("أُنشئ الحساب لكن تعذر تعيين الدور: "+r3.error.message)}
+    if(baseRole!==role){const r3=await qUpd({p_user:c.data,p_role:role,p_sector:sec||"",p_full_name:name});if(r3.error)toast("أُنشئ الحساب لكن تعذر تعيين الدور: "+r3.error.message)}
     if(em)await sb.rpc("q_set_email",{p_user:c.data,p_email:em});
     await sb.from("quality_signup_requests").update({status:"approved",handled_by:me.full_name,handled_at:new Date().toISOString()}).eq("id",r.id);
     const before=(ORG.pending||[]).length;ORG.pending=(ORG.pending||[]).filter(p=>gcl(p.name)!==gcl(name));if(ORG.pending.length!==before){try{await saveOrg()}catch(e){}}
