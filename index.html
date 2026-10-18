@@ -832,7 +832,7 @@ function fmtDate(v){
   return s.split(" ")[0];
 }
 $("#upBtn").onclick=()=>{
-  const canDel=me&&["admin","exec","manager","clerk"].includes(me.role);
+  const canDel=canUpload();
   if(!window.lastOut&&!canDel){$("#fileIn").click();return}
   $("#sheet").innerHTML=`<h3>ملف المخالفات</h3><div class="sub">القائمة الحالية فيها ${rows.length.toLocaleString("en-US")} مخالفة.</div>
    <div class="btns" style="margin-top:14px;flex-direction:column">
@@ -858,7 +858,7 @@ function deleteDialog(){
   if($("#delF"))$("#delF").onclick=()=>doDelete(fr.map(r=>r.vno),fLabel());
   $("#delAll").onclick=()=>doDelete(null,"كل المخالفات");
 }
-async function doDelete(keys,label){
+async function doDelete(keys,label){if(!canUpload()){toast("غير مصرح لك بالحذف");return}
   const n=keys?keys.length:rows.length;
   if(!n){toast("لا توجد مخالفات للحذف");return}
   if(!confirm(`تأكيد حذف ${n.toLocaleString("en-US")} مخالفة (${label}) من قائمة النظام؟\nلا يمكن التراجع، ويمكنك رفعها مرة أخرى من الملف.`))return;
@@ -870,7 +870,7 @@ async function doDelete(keys,label){
   await loadData();if(current!=="manual"&&!audits[current]&&!rows.find(r=>r.vno===current))current="manual";renderAll();go(page);toast(`تم حذف ${n.toLocaleString("en-US")} مخالفة`);
 }
 
-$("#fileIn").onchange=async e=>{
+$("#fileIn").onchange=async e=>{if(!canUpload()){toast("تزويد المنصة بالتقرير الشامل لمدير النظام ونايف البقمي فقط");e.target.value="";return}
   const f=e.target.files[0];if(!f)return;
   if(typeof XLSX==="undefined"){toast("تعذر تحميل قارئ ملفات الإكسل، أعد فتح الصفحة");return}
   try{
@@ -1428,7 +1428,9 @@ const needUsers=()=>!!me&&(["admin","exec","manager","viewer"].includes(me.role)
 const TITLE_EXEC="المدير التنفيذي لإدارة المخالفات والجودة";const isAid=u=>!!u&&u.role==="exec"&&/عايض/.test(norm(u.full_name))&&/القحطاني/.test(norm(u.full_name));
 function roleLabel(u){if(isAid(u))return TITLE_EXEC;if(u&&u.role==="trainee")return ROLE[roleKey(u)];return u.role==="staff"&&isHQ(u)?"أخصائي جودة":(ROLE[u.role]||u.role)}
 const canEditAudit=()=>!!me&&["admin","exec","manager","staff"].includes(me.role);
-const canUpload=()=>!!me&&["admin","exec","manager","clerk"].includes(me.role);
+/* تزويد المنصة بالتقرير الشامل (رفع/استبدال/حذف): مدير النظام + نايف البقمي فقط */
+const isFeeder=u=>{if(!u||u.role==="trainee")return false;if(u.role==="admin")return true;const t=norm(u.full_name||"").split(" ");return ["نايف","البقمي"].every(w=>t.includes(norm(w)))};
+const canUpload=()=>isFeeder(me);
 /* ----- الهيكل التنظيمي ----- */
 const ORG_DEFAULT={hq:"المركز الرئيسي - الرياض",units:[
   {name:"الوحدة الشمالية",sector:"القطاع الشرقي",govs:["محافظة حفر الباطن","محافظة الخفجي","محافظة النعيرية","محافظة قرية العليا"]},
@@ -3126,7 +3128,7 @@ function importDialog(out,fresh){
   $("#impGo").onclick=()=>{const l=sel(),rp=!!($("#impRep")&&$("#impRep").checked);if(rp&&!confirm(`سيتم حذف ${rows.length.toLocaleString("en-US")} مخالفة الحالية ووضع ${l.length.toLocaleString("en-US")} مخالفة من الملف الجديد بدلها. متابعة؟`))return;closeSheet();doImport(l,rp)};
   upd();
 }
-async function doImport(list,replace){
+async function doImport(list,replace){if(!canUpload()){toast("غير مصرح لك بتزويد المنصة");return}
   if(window.lastHeaders&&window.lastHeaders.length){REPORT_COLS=window.lastHeaders;try{await sb.from("quality_settings").upsert({key:"report_cols",value:{cols:window.lastHeaders},updated_at:new Date().toISOString()})}catch(e){}}
   const seen=new Set(),uniq=[];let dup=0;
   list.forEach(r=>{const k=r.visit||r.vno;if(!k)return;if(seen.has(k)){dup++;return}seen.add(k);uniq.push(r)});
