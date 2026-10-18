@@ -1288,8 +1288,11 @@ const BUCKET="quality-files";
 const ROLE={admin:"مدير النظام",exec:"مدير الجودة",manager:"رئيس الجودة بالوحدة",staff:"موظف الجودة",clerk:"إداري",viewer:"مطّلع"};
 const isMgrR=()=>!!me&&["admin","exec","manager"].includes(me.role);
 const isHQ=u=>!!u&&!!u.sector&&gcl(u.sector)===gcl(ORG.hq||"");
-const seesAll=()=>!!me&&(["admin","exec","viewer"].includes(me.role)||isHQ(me));
-const isHQU=u=>!!u&&(u.role==="exec"||isHQ(u));
+/* صلاحية استثنائية: كل البوابات والتقارير والطباعة — ما عدا الإدارة والهيكل (لمدير النظام فقط) */
+const VIP_LIST=["لمى صالح العنزي","بدر عوض المطيري","حسين علي الرمضان"];
+const isVIP=u=>{if(!u||!u.full_name)return false;const t=norm(u.full_name).split(" ");return VIP_LIST.some(n=>norm(n).split(" ").every(w=>t.includes(w)))};
+const seesAll=()=>!!me&&(["admin","exec","viewer"].includes(me.role)||isHQ(me)||isVIP(me));
+const isHQU=u=>!!u&&(u.role==="exec"||isHQ(u)||isVIP(u));
 const canHQ=()=>!!me&&(me.role==="admin"||isHQU(me));
 function pageOK(p){if(!me)return false;if(p[0]==="hq")return canHQ();if(p[2].includes(me.role))return true;return isHQU(me)&&p[0]!=="users"}
 const needUsers=()=>!!me&&(["admin","exec","manager","viewer"].includes(me.role)||isHQU(me));
