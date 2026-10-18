@@ -389,7 +389,19 @@ body.hqwide #fbar{display:none}
 .hk-h{display:flex;align-items:center;gap:8px}.hk-i{flex:none;width:34px;height:34px;border-radius:10px;display:grid;place-items:center;color:color-mix(in srgb,var(--tone) 65%,#0B2347);background:color-mix(in srgb,var(--tone) 13%,transparent)}
 .hk-l{font-size:12.5px;font-weight:600;color:var(--muted);line-height:1.35}
 .hk-v{font-size:28px;font-weight:700;line-height:1.15;color:var(--ink);margin-top:4px}
-.hk-s{font-size:12px;font-weight:700;color:var(--muted)}.rsp{display:flex;flex-direction:column;gap:4px;margin-top:7px}.rsp-i{display:flex;justify-content:space-between;align-items:center;gap:8px;font-size:11.5px;font-weight:700;padding:4px 9px;border-radius:9px;background:var(--soft,#EEF3FA);color:var(--ink,#0B2347)}.rsp-i b{font-size:13px}.rsp-i.w b{color:#B7861A}.rsp-i.c b{color:#64748B}.rsp-i:hover{box-shadow:inset 0 0 0 1.5px var(--tone,#2F6FC0)}.hk:has(.rsp){padding-bottom:28px}.er-k small .rsp{margin-top:6px}
+.hk-s{font-size:12px;font-weight:700;color:var(--muted)}.rs-bar{display:flex;flex-wrap:wrap;align-items:center;gap:10px 14px;padding:12px 16px!important}.rs-bar .sp{flex:1}.rs-info{font-size:12.5px;color:var(--muted);font-weight:600;line-height:1.7}.rs-info b{color:var(--ink,#0B2347)}
+.lnk{background:none;border:0;padding:0;color:var(--navy,#1C437E);font:inherit;font-weight:700;text-decoration:underline;cursor:pointer}.rs-of{text-align:start}
+.rs-tg.ok{--tone:#3D9B5F}.rs-tg.no{--tone:#C0392B}.rs-tg.ok .hk-s{color:#2E7D4F}.rs-tg.no .hk-s{color:#B03A2E}
+.rs-vn{display:inline-flex;align-items:center;gap:6px;white-space:nowrap}.rs-cp{border:1px solid var(--line);background:var(--paper);border-radius:7px;width:26px;height:26px;cursor:pointer;color:var(--muted);font-size:13px;line-height:1}.rs-cp:hover{color:var(--navy);border-color:var(--navy)}
+.rs-f .hq-chip{border-color:var(--line);color:var(--muted);background:var(--paper)}.rs-f .hq-chip[aria-pressed=true]{background:var(--navy,#1C437E);border-color:var(--navy,#1C437E);color:#fff}.rs-t td{white-space:normal}.rs-t td:first-child,.rs-t td:last-child{white-space:nowrap}.rs-f{margin:0}
+.rs-meta{display:flex;flex-wrap:wrap;gap:8px 18px;margin:6px 0 14px;font-size:13px;color:var(--muted)}.rs-meta b{color:var(--ink,#0B2347);font-weight:700}.rs-meta .w{flex-basis:100%}
+.rs-cr{display:flex;flex-direction:column;border:1px solid var(--line);border-radius:14px;overflow:hidden}.rs-row{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:11px 14px;border-top:1px solid var(--line)}.rs-row:first-child{border-top:0}.rs-row>div:first-child{display:flex;flex-direction:column;gap:2px}.rs-row small{color:var(--muted);font-weight:600}
+.rs-yn{display:flex;gap:6px;flex-shrink:0}.rs-yn button{min-height:40px;padding:0 14px;border-radius:10px;border:1.5px solid var(--line);background:var(--paper);font:inherit;font-weight:700;font-size:13px;cursor:pointer;color:var(--muted)}.rs-yn button:disabled{cursor:default}
+.rs-yn .y[aria-pressed=true]{background:#E3F4EA;border-color:#3D9B5F;color:#1E6B3F}.rs-yn .n[aria-pressed=true]{background:#FCE9E7;border-color:#C0392B;color:#9B2C22}
+.rs-nt{display:flex;flex-direction:column;gap:6px;margin-top:12px;font-weight:700;font-size:13px}.rs-nt textarea{resize:vertical}
+.rs-sum{display:flex;align-items:baseline;flex-wrap:wrap;gap:6px 12px;margin-top:12px;padding:12px 16px;border-radius:14px;background:var(--field);border:1px solid var(--line)}.rs-sum b{font-size:24px}.rs-sum.q-e b{color:#0E5A34}.rs-sum.q-g b{color:#2E7D4F}.rs-sum.q-y b{color:#9A6B0E}.rs-sum.q-r b{color:#B03A2E}.rs-sum small{font-weight:700;color:var(--muted)}
+@media(max-width:640px){.rs-row{flex-direction:column;align-items:stretch}.rs-yn button{flex:1}}
+.rsp{display:flex;flex-direction:column;gap:4px;margin-top:7px}.rsp-i{display:flex;justify-content:space-between;align-items:center;gap:8px;font-size:11.5px;font-weight:700;padding:4px 9px;border-radius:9px;background:var(--soft,#EEF3FA);color:var(--ink,#0B2347)}.rsp-i b{font-size:13px}.rsp-i.w b{color:#B7861A}.rsp-i.c b{color:#64748B}.rsp-i:hover{box-shadow:inset 0 0 0 1.5px var(--tone,#2F6FC0)}.hk:has(.rsp){padding-bottom:28px}.er-k small .rsp{margin-top:6px}
 .hk-bar{height:5px;border-radius:5px;background:var(--soft);overflow:hidden;margin-top:4px}.hk-bar i{display:block;height:100%;background:var(--tone);border-radius:5px}
 .hq-donut{display:flex;align-items:center;gap:18px;flex-wrap:wrap}.hq-donut svg{width:210px;height:210px;flex:none}
 .hq-donut circle{transition:opacity .15s}.hq-donut circle:hover{opacity:.8}
@@ -2025,13 +2037,127 @@ function hqSecDetail(A,s){const o=A.S[s];if(!o)return "";HQ_CTX={s};try{const rg
   <div class="c-6"><h4>أعلى المخالفات المرسلة للهيئة</h4>${hqBars(A.STY[s]||{},6,null,k=>({s,c:"sent",it:k}))}
     <h4>أبرز مدراء الرقابة</h4>${mg.length?`<div class="tbl-wrap"><table class="tbl"><thead><tr><th>مدير الرقابة</th><th>المدقق</th><th>المرسل</th><th>القرارات</th><th>المسترجع</th></tr></thead><tbody>${mg.map(([k,v])=>`<tr><td${erA("m",k)}><span class="er-n">${esc(k)}</span></td><td${rdA({s,m:k,rev:1})}><b>${hqF(v.rev)}</b></td><td${rdA({s,m:k,c:"sent"})}>${hqF(v.sent)}</td><td${rdA({s,m:k,c:"iss"})}>${hqF(v.iss)}</td><td${rdA({s,m:k,c:"ret"})}>${hqF(v.ret)}</td></tr>`).join("")}</tbody></table></div>`:'<div class="empty">تظهر بعد إعادة رفع التقرير الشامل</div>'}</div></div></div>`}finally{HQ_CTX={}}}
 let HQDS="";
+/* ===================== جودة الرصد — عينة شهرية يقيّمها المركز الرئيسي ===================== */
+const RS_C=[["t","الفترة الزمنية لرصد المخالفة",10],["p","جودة الصور",20],["d","وضوح الوصف",20],["b","جودة احتساب المنفعة المفقودة",15],["r","جودة احتساب إصلاح الضرر",15],["a","دقة البيانات المدخلة في المنصة",20]];
+const RS_OK=80;
+let RASD=null,RS_ERR="",RS_LOADING=null,RS_CFG={sample:25,target:50},RSM="",RSF="all",RSQ="",RS_CTX="hq";
+const rsEdit=()=>!!me&&(me.role==="admin"||me.role==="exec"||isHQ(me));
+const rsMk=d=>{const t=new Date(d*864e5);return t.getUTCFullYear()+"-"+String(t.getUTCMonth()+1).padStart(2,"0")};
+const rsMLab=k=>{const [y,m]=String(k).split("-");return (HQ_MON[+m-1]||m)+" "+y};
+const rsKey=x=>x.month+"|"+x.visit_no;
+function rsScore(a){if(!a)return null;let t=0;for(const [k,,w] of RS_C){if(a[k]!==1&&a[k]!==0)return null;if(a[k]===1)t+=w}return t}
+function rsLoad(){if(RASD)return Promise.resolve();if(RS_LOADING)return RS_LOADING;
+  RS_LOADING=(async()=>{try{const out=[];let f=0;while(true){const {data,error}=await sb.from("quality_rasd").select("*").order("visit_no").range(f,f+999);if(error)throw error;out.push(...(data||[]));if(!data||data.length<1000)break;f+=1000}
+    RASD=out;RS_ERR="";try{const {data}=await sb.from("quality_settings").select("value").eq("key","rasd_cfg").maybeSingle();if(data&&data.value)RS_CFG=Object.assign({sample:25,target:50},data.value)}catch(e){}}
+  catch(e){RASD=[];RS_ERR=/quality_rasd|relation|schema cache/i.test(e.message||"")?"setup":(e.message||String(e))}finally{RS_LOADING=null}})();return RS_LOADING}
+const rsSent=r=>{const c=r._hc||(r._hc=hqCls(r));return c==="iss"||c==="ret"||c==="auth"};
+function rsMonths(){const s=new Set();rows.forEach(r=>{if(!rsSent(r))return;const d=dayOfRow(r);if(d!=null)s.add(rsMk(d))});(RASD||[]).forEach(x=>s.add(x.month));return [...s].sort().reverse()}
+function rsShuffle(a){const u=new Uint32Array(a.length);crypto.getRandomValues(u);for(let i=a.length-1;i>0;i--){const j=u[i]%(i+1);[a[i],a[j]]=[a[j],a[i]]}return a}
+function rsPool(month,scf){return rows.filter(r=>{if(!rsSent(r))return false;const d=dayOfRow(r);if(d==null||rsMk(d)!==month)return false;return scf({gov:(r.sector||"").trim(),region:(r.region||"").trim(),sec:secOf(r.region)})})}
+function rsAgg(L){const z=()=>({n:0,done:0,sum:0,ok:0,f:{}});const T=z(),S={},O={},M={};
+  const add=(o,x)=>{o.n++;if(x.score==null)return;o.done++;o.sum+=+x.score;if(+x.score>=RS_OK)o.ok++;RS_C.forEach(([k])=>{if(x.ans&&x.ans[k]===0)o.f[k]=(o.f[k]||0)+1})};
+  L.forEach(x=>{add(T,x);add(S[x.sec||"غير محدد"]=S[x.sec||"غير محدد"]||z(),x);const ok=(x.officer||"").trim();if(ok){const o=O[ok]=O[ok]||Object.assign(z(),{s:x.sec,g:{}});o.g[x.gov]=1;add(o,x)}});
+  return {T,S,O}}
+const rsAvg=o=>o&&o.done?Math.round(o.sum/o.done*10)/10:null;
+const rsWeak=o=>{const e=Object.entries(o.f||{}).sort((a,b)=>b[1]-a[1]);if(!e.length)return "—";const c=RS_C.find(x=>x[0]===e[0][0]);return `${c[1]} <small>(${e[0][1]})</small>`};
+const rsBadge=v=>v==null?'<span class="qb q-na">لم يُقيّم</span>':`<span class="qb ${qCls(v)}">${qTxt(v)} · ${esc(qLab(v))}</span>`;
+function rsScopeHQ(){return x=>(!HQSF||x.sec===HQSF)&&(!HQG.length||HQG.includes((x.gov||"غير محدد").trim()))}
+function rsScopePF(){const all=seesAll();return x=>(all||scopeOK(x.gov,x.region))&&(!PFS||x.sec===PFS)&&(!PFG.length||PFG.includes((x.gov||"غير محدد").trim()))}
+function rsView(ctx){RS_CTX=ctx;
+  if(!RASD){rsLoad().then(()=>ctx==="hq"?renderHQ():renderPerf());return '<div class="hq-card"><div class="empty">جارٍ تحميل جودة الرصد…</div></div>'}
+  if(RS_ERR==="setup")return `<div class="hq-card"><div class="empty">⚙️ ميزة جودة الرصد تحتاج تجهيز قاعدة البيانات مرة وحدة.<br>${me.role==="admin"?"شغّل ملف <b>rasd-setup.sql</b> في Supabase ← SQL Editor ثم حدّث الصفحة.":"تواصل مع مدير النظام."}</div></div>`;
+  if(RS_ERR)return `<div class="hq-card"><div class="empty">تعذر تحميل جودة الرصد: ${esc(RS_ERR)}</div></div>`;
+  const scf=ctx==="hq"?rsScopeHQ():rsScopePF(),ms=rsMonths();if(!RSM||!ms.includes(RSM)){const w=ms.find(m=>(RASD||[]).some(x=>x.month===m));RSM=w||ms[0]||""}
+  if(!RSM)return '<div class="hq-card"><div class="empty">لا توجد مخالفات مرسلة للهيئة لسحب عينة منها</div></div>';
+  const ed=ctx==="hq"&&rsEdit(),all=(RASD||[]).filter(x=>x.month===RSM&&scf(x)),A=rsAgg(all),T=A.T,av=rsAvg(T),pool=rsPool(RSM,scf),tg=+RS_CFG.target||50;
+  const need=(()=>{const by={};pool.forEach(r=>{const s=secOf(r.region);by[s]=(by[s]||0)+1});return Object.values(by).reduce((t,n)=>t+Math.ceil(n*(+RS_CFG.sample||25)/100),0)})();
+  const tl=(l,v,sub,tone,frac)=>`<div class="hk" style="--tone:${tone}"><div class="hk-h"><span class="hk-l">${l}</span></div><b class="hk-v">${v}</b><div class="hk-s">${sub||"&nbsp;"}</div>${frac!=null?`<div class="hk-bar"><i style="width:${Math.max(0,Math.min(100,frac*100))}%"></i></div>`:""}</div>`;
+  const trend=ms.slice(0,12).reverse().map(m=>{const L=(RASD||[]).filter(x=>x.month===m&&scf(x));return [m,rsAgg(L).T]}).filter(([,o])=>o.n);
+  let list=all.slice();if(RSF==="todo")list=list.filter(x=>x.score==null);else if(RSF==="done")list=list.filter(x=>x.score!=null);else if(RSF==="bad")list=list.filter(x=>x.score!=null&&+x.score<RS_OK);
+  if(RSQ){const q=norm(RSQ);list=list.filter(x=>[x.visit,x.visit_no,x.officer,x.gov,x.item,x.mgr].some(v=>norm(v||"").includes(q)))}
+  list.sort((a,b)=>(a.score==null?-1:1)-(b.score==null?-1:1)||(a.sec||"").localeCompare(b.sec||"","ar")||(a.gov||"").localeCompare(b.gov||"","ar"));
+  const secs=Object.entries(A.S).sort((a,b)=>b[1].n-a[1].n),offs=Object.entries(A.O).sort((a,b)=>(rsAvg(a[1])??999)-(rsAvg(b[1])??999)||b[1].done-a[1].done);
+  const txb='<span class="tx-bs"><button type="button" class="btn2 tx-b" data-tx="pdf">📄 PDF</button><button type="button" class="btn2 pri tx-b" data-tx="xls">📊 Excel</button></span>';
+  return `<div class="rs">
+  <div class="hq-card rs-bar"><label class="hq-sel"><span>الشهر</span><select id="rsMon">${ms.map(m=>`<option value="${m}"${m===RSM?" selected":""}>${rsMLab(m)}${(RASD||[]).some(x=>x.month===m)?" ✓":""}</option>`).join("")}</select></label>
+    <span class="rs-info">العينة <b>${hqF(+RS_CFG.sample||25)}%</b> من المرسلة للهيئة، موزعة على القطاعات · المقبولة: ${RS_OK}% فأكثر · المستهدف: <b>${hqF(tg)}%</b>${ed?' <button type="button" class="lnk" id="rsTg">تعديل</button>':""}</span>
+    <span class="sp"></span>${ed?`<button type="button" class="btn2 pri" id="rsDraw"${pool.length?"":" disabled"}>🎲 ${all.length?"استكمال العينة":"سحب عينة الشهر"}</button>`:""}<button type="button" class="btn2" id="rsXls"${all.length?"":" disabled"}>📊 Excel كامل</button></div>
+  ${!all.length?`<div class="hq-card"><div class="empty">${pool.length?`لم تُسحب عينة ${rsMLab(RSM)} بعد — المرسلة للهيئة في هذا الشهر: <b>${hqF(pool.length)}</b>، والعينة المطلوبة: <b>${hqF(need)}</b>.${ed?"<br>اضغط «سحب عينة الشهر».":"<br>بانتظار سحبها من المركز الرئيسي."}`:"لا توجد مخالفات مرسلة للهيئة في هذا الشهر."}</div></div>`:`
+  <div class="hq-kgrid">${tl("حجم العينة",hqF(T.n),`${hqP(T.n,pool.length)} من ${hqF(pool.length)} مرسلة`,"#1F5BB0",pool.length?T.n/pool.length:null)}${tl("تم تقييمها",hqF(T.done),`${hqP(T.done,T.n)} من العينة · متبقي ${hqF(T.n-T.done)}`,"#2F6FC0",T.n?T.done/T.n:null)}
+    <div class="hk pf-qt ${qCls(av)}"><div class="hk-h"><span class="hk-l">متوسط جودة الرصد</span></div><b class="hk-v">${qTxt(av)}</b><div class="hk-s">${av==null?"لم يبدأ التقييم":esc(qLab(av))}</div></div>
+    ${tl("المخالفات المقبولة",hqF(T.ok),`${hqP(T.ok,T.done)} من المقيّمة (${RS_OK}% فأكثر)`,"#3D9B5F",T.done?T.ok/T.done:null)}
+    <div class="hk rs-tg ${av==null?"":av>=tg?"ok":"no"}"><div class="hk-h"><span class="hk-l">المستهدف</span></div><b class="hk-v">${hqF(tg)}%</b><div class="hk-s">${av==null?"—":av>=tg?"✅ محقق":"⚠️ غير محقق — الفرق "+qTxt(Math.round((tg-av)*10)/10)}</div></div></div>
+  <div class="hq-grid">
+    <div class="hq-card c-6"><div class="hq-ch"><h3>نسبة الرسوب حسب المعيار</h3><span class="sub">من ${hqF(T.done)} مقيّمة</span>${txb}</div><div class="tbl-wrap"><table class="tbl" data-tt="جودة الرصد — المعايير — ${rsMLab(RSM)}"><thead><tr><th>المعيار</th><th>الوزن</th><th>لم يتجاوز</th><th style="width:38%">نسبة الرسوب</th></tr></thead><tbody>
+      ${RS_C.map(([k,l,w])=>{const f=T.f[k]||0,r=T.done?f/T.done:0;return `<tr><td>${l}</td><td>${w}%</td><td>${hqF(f)}</td><td><div class="pf-ib"><i class="${r>.4?"q-r":r>.2?"q-y":"q-g"}" style="width:${Math.max(2,r*100)}%"></i><b>${hqP(f,T.done)}</b></div></td></tr>`}).join("")}</tbody></table></div></div>
+    <div class="hq-card c-6"><div class="hq-ch"><h3>الاتجاه الشهري</h3><span class="sub">متوسط جودة الرصد</span></div>${trend.length?`<div class="pf-bars">${trend.map(([m,o])=>{const v=rsAvg(o);return `<div class="pf-br"><span>${rsMLab(m)}</span><div><i class="${qCls(v)}" style="width:${v==null?0:Math.max(2,v)}%"></i></div><b>${qTxt(v)}</b><small>${hqF(o.done)}/${hqF(o.n)}</small></div>`}).join("")}</div>`:'<div class="empty">—</div>'}</div>
+    <div class="hq-card c-12"><div class="hq-ch"><h3>جودة الرصد حسب القطاع</h3>${txb}</div><div class="tbl-wrap"><table class="tbl" data-tt="جودة الرصد حسب القطاع — ${rsMLab(RSM)}"><thead><tr><th>القطاع</th><th>العينة</th><th>المقيّمة</th><th>متوسط جودة الرصد</th><th>المقبولة</th><th>أكثر معيار رسوباً</th><th>المستهدف</th></tr></thead><tbody>
+      ${secs.map(([k,o])=>{const v=rsAvg(o);return `<tr><td><b>${esc(k)}</b></td><td>${hqF(o.n)}</td><td>${hqF(o.done)}</td><td>${rsBadge(v)}</td><td>${hqF(o.ok)} <small>(${hqP(o.ok,o.done)})</small></td><td>${rsWeak(o)}</td><td>${v==null?"—":v>=tg?"✅ محقق":"⚠️ غير محقق"}</td></tr>`}).join("")}</tbody></table></div></div>
+    <div class="hq-card c-12"><div class="hq-ch"><h3>جودة الرصد لمأموري الضبط <span class="sub">${hqF(offs.length)} مأمور ضبط — الأقل أولاً</span></h3>${txb}</div><div class="tbl-wrap"><table class="tbl" data-tt="جودة الرصد لمأموري الضبط — ${rsMLab(RSM)}"><thead><tr><th>#</th><th>مأمور الضبط</th><th>القطاع</th><th>المحافظات</th><th>في العينة</th><th>المقيّمة</th><th>جودة الرصد</th><th>المقبولة</th><th>أكثر معيار رسوباً</th></tr></thead><tbody>
+      ${offs.slice(0,300).map(([k,o],i)=>`<tr><td>${i+1}</td><td><button type="button" class="lnk rs-of" data-rsof="${esc(k)}">${esc(k)}</button></td><td>${esc(o.s||"")}</td><td>${esc(Object.keys(o.g).map(g=>g.replace(/^محافظة\s+|^مدينة\s+/,"")).join("، "))}</td><td>${hqF(o.n)}</td><td>${hqF(o.done)}</td><td>${rsBadge(rsAvg(o))}</td><td>${hqF(o.ok)}</td><td>${rsWeak(o)}</td></tr>`).join("")}</tbody></table></div></div>
+    <div class="hq-card c-12" id="rsList"><div class="hq-ch"><h3>مخالفات العينة <span class="sub">${hqF(list.length)} من ${hqF(all.length)}</span></h3>
+      <div class="srt-w"><div class="hq-chips rs-f">${[["all","الكل"],["todo","لم تُقيّم"],["done","مقيّمة"],["bad","غير مقبولة"]].map(([k,l])=>`<button type="button" class="hq-chip" data-rsf="${k}" aria-pressed="${RSF===k}">${l}</button>`).join("")}</div><input class="in pf-q" id="rsQ" type="search" placeholder="ابحث: رقم الزيارة، مأمور، محافظة" value="${esc(RSQ)}"></div></div>
+      <div class="tbl-wrap"><table class="tbl rs-t"><thead><tr><th>رقم الزيارة</th><th>القطاع</th><th>المحافظة</th><th>مأمور الضبط</th><th>بند المخالفة</th><th>جودة الرصد</th><th></th></tr></thead><tbody>
+      ${list.slice(0,300).map(x=>`<tr><td><span class="rs-vn"><b>${esc(x.visit||x.visit_no)}</b><button type="button" class="rs-cp" data-cp="${esc(x.visit||x.visit_no)}" title="نسخ رقم الزيارة">⧉</button></span></td><td>${esc(x.sec||"")}</td><td>${esc(x.gov||"")}</td><td>${esc(x.officer||"")}</td><td class="rd-it" title="${esc(x.item||"")}">${esc(x.item||"")}</td><td>${rsBadge(x.score==null?null:+x.score)}</td><td><button type="button" class="btn2${x.score==null&&ed?" pri":""}" data-rs="${esc(rsKey(x))}">${ed?(x.score==null?"قيّم":"تعديل"):"عرض"}</button></td></tr>`).join("")||'<tr><td colspan="7"><div class="empty">لا توجد نتائج</div></td></tr>'}</tbody></table></div>
+      ${list.length>300?`<p class="hq-note">يظهر أول 300 — القائمة كاملة في «Excel كامل».</p>`:""}<p class="hq-note">💡 الصور والحسابات في منصة ممتثل: انسخ رقم الزيارة ⧉ وابحث عنه هناك، ثم قيّم هنا.</p></div>
+  </div>`}</div>`}
+function rsRe(){RS_CTX==="hq"?renderHQ():renderPerf()}
+function rsBind(root){const R=document.querySelector(root);if(!R)return;
+  const mon=R.querySelector("#rsMon");if(mon)mon.onchange=e=>{RSM=e.target.value;rsRe()};
+  R.querySelectorAll("[data-rsf]").forEach(b=>b.onclick=()=>{RSF=b.dataset.rsf;rsRe()});
+  const q=R.querySelector("#rsQ");if(q)q.oninput=e=>{RSQ=e.target.value;clearTimeout(window._rst);window._rst=setTimeout(()=>{rsRe();const i=document.querySelector(root+" #rsQ");if(i){i.focus();i.setSelectionRange(i.value.length,i.value.length)}},250)};
+  R.querySelectorAll("[data-rsof]").forEach(b=>b.onclick=()=>{RSQ=b.dataset.rsof;RSF="all";rsRe();setTimeout(()=>{const x=document.querySelector(root+" #rsList");if(x)x.scrollIntoView({behavior:"smooth",block:"start"})},40)});
+  R.querySelectorAll("[data-cp]").forEach(b=>b.onclick=async e=>{e.stopPropagation();try{await navigator.clipboard.writeText(b.dataset.cp);toast("تم نسخ رقم الزيارة")}catch(_){toast(b.dataset.cp)}});
+  R.querySelectorAll("[data-rs]").forEach(b=>b.onclick=()=>rsOpen(b.dataset.rs));
+  const dr=R.querySelector("#rsDraw");if(dr)dr.onclick=()=>rsDraw(RSM,dr);
+  const xl=R.querySelector("#rsXls");if(xl)xl.onclick=()=>rsXls(xl);
+  const tg=R.querySelector("#rsTg");if(tg)tg.onclick=async()=>{const v=prompt("المستهدف لمتوسط جودة الرصد (%)",RS_CFG.target);if(v==null)return;const n=Math.round(+String(v).replace(/[^\d.]/g,""));if(!(n>0&&n<=100)){toast("أدخل رقماً من 1 إلى 100");return}
+    RS_CFG=Object.assign({},RS_CFG,{target:n});const {error}=await sb.from("quality_settings").upsert({key:"rasd_cfg",value:RS_CFG,updated_at:new Date().toISOString()});toast(error?"تعذر الحفظ: "+error.message:"تم حفظ المستهدف");rsRe()}}
+async function rsDraw(month,btn){if(!rsEdit())return;const scf=x=>true,pool=rsPool(month,scf),have=new Set((RASD||[]).filter(x=>x.month===month).map(x=>x.visit_no)),rate=(+RS_CFG.sample||25)/100,by={},add=[];
+  pool.forEach(r=>{const s=secOf(r.region);(by[s]=by[s]||[]).push(r)});
+  Object.entries(by).forEach(([s,L])=>{const need=Math.ceil(L.length*rate)-L.filter(r=>have.has(r.vno)).length;if(need<=0)return;rsShuffle(L.filter(r=>!have.has(r.vno))).slice(0,need).forEach(r=>add.push({month,visit_no:r.vno,visit:r.visit||r.vno,sec:s,gov:(r.sector||"").trim(),region:(r.region||"").trim(),officer:(r.officer||"").trim(),mgr:(r.mgr||"").trim(),item:(r.item||"").trim(),vdate:r.date||"",ans:{},created_by:me.id}))});
+  if(!add.length){toast("عينة هذا الشهر مكتملة");return}
+  if(!confirm(`سيتم سحب ${add.length} مخالفة عشوائياً (${Math.round(rate*100)}% من المرسلة للهيئة في ${rsMLab(month)}، موزعة على القطاعات).\nمتابعة؟`))return;
+  const old=btn.innerHTML;btn.disabled=true;btn.textContent="جارٍ السحب…";
+  try{for(let i=0;i<add.length;i+=400){const {data,error}=await sb.from("quality_rasd").insert(add.slice(i,i+400)).select();if(error)throw error;RASD.push(...(data||[]))}toast(`تم سحب ${add.length} مخالفة`)}
+  catch(e){toast("تعذر السحب: "+(e.message||e))}finally{btn.disabled=false;btn.innerHTML=old;rsRe()}}
+function rsOpen(key){const x=(RASD||[]).find(z=>rsKey(z)===key);if(!x)return;const ed=RS_CTX==="hq"&&rsEdit(),a=Object.assign({},x.ans||{});
+  const draw=()=>{const sc=rsScore(a);
+    $("#sheet").innerHTML=`<div class="rd-h"><div><span class="er-tag">جودة الرصد — ${rsMLab(x.month)}</span><h3><span class="rs-vn">${esc(x.visit||x.visit_no)}<button type="button" class="rs-cp" data-cp="${esc(x.visit||x.visit_no)}" title="نسخ">⧉</button></span></h3>
+      <div class="sub">${esc([x.sec,x.gov,x.vdate].filter(Boolean).join(" — "))}</div></div><div class="rd-b">${ed?'<button type="button" class="btn2 pri" id="rsSave">حفظ التقييم</button>':""}<button type="button" class="btn2" id="rsClose">إغلاق</button></div></div>
+      <div class="rs-meta"><span>مأمور الضبط <b>${esc(x.officer||"—")}</b></span><span>مدير الرقابة <b>${esc(x.mgr||"—")}</b></span><span class="w">البند <b>${esc(x.item||"—")}</b></span></div>
+      <div class="rs-cr">${RS_C.map(([k,l,w])=>`<div class="rs-row"><div><b>${l}</b><small>الوزن ${w}%</small></div><div class="rs-yn" role="group" aria-label="${l}"><button type="button" class="y" data-k="${k}" data-v="1" aria-pressed="${a[k]===1}"${ed?"":" disabled"}>✓ تجاوز</button><button type="button" class="n" data-k="${k}" data-v="0" aria-pressed="${a[k]===0}"${ed?"":" disabled"}>✕ لم يتجاوز</button></div></div>`).join("")}</div>
+      <label class="rs-nt"><span>ملاحظات المقيّم</span><textarea class="in" id="rsNote" rows="3"${ed?"":" readonly"} placeholder="سبب عدم التجاوز أو الإجراء التصحيحي المطلوب">${esc(x.note||"")}</textarea></label>
+      <div class="rs-sum ${qCls(sc)}"><span>درجة جودة الرصد</span><b>${sc==null?"أكمل المعايير الستة":qTxt(sc)}</b>${sc==null?"":`<small>${esc(qLab(sc))} — ${sc>=RS_OK?"مقبولة":"غير مقبولة"}</small>`}</div>
+      ${x.eval_name?`<p class="hq-note">آخر تقييم: ${esc(x.eval_name)} — ${esc(new Date(x.eval_at).toLocaleString("ar-SA-u-nu-latn"))}</p>`:""}`;
+    $("#rsClose").onclick=closeSheet;
+    $$("#sheet [data-cp]").forEach(b=>b.onclick=async()=>{try{await navigator.clipboard.writeText(b.dataset.cp);toast("تم النسخ")}catch(_){}});
+    if(ed){$$("#sheet .rs-yn button").forEach(b=>b.onclick=()=>{const nt=$("#rsNote").value;a[b.dataset.k]=+b.dataset.v;x._nt=nt;draw();$("#rsNote").value=nt});
+      $("#rsSave").onclick=async()=>{const btn=$("#rsSave"),sc2=rsScore(a),note=$("#rsNote").value.trim();if(sc2==null&&!confirm("لم تكتمل المعايير الستة — حفظ مسودة؟"))return;btn.disabled=true;btn.textContent="جارٍ الحفظ…";
+        const up={ans:a,note,score:sc2,eval_by:me.id,eval_name:me.full_name,eval_at:new Date().toISOString()};
+        const {error}=await sb.from("quality_rasd").update(up).eq("month",x.month).eq("visit_no",x.visit_no);
+        if(error){toast("تعذر الحفظ: "+error.message);btn.disabled=false;btn.textContent="حفظ التقييم";return}
+        Object.assign(x,up);toast(sc2==null?"تم حفظ المسودة":`تم الحفظ — ${qTxt(sc2)}`);closeSheet();rsRe()}}};
+  $("#sheet").classList.add("wide");draw();openSheet()}
+async function rsXls(btn){const scf=RS_CTX==="hq"?rsScopeHQ():rsScopePF(),L=(RASD||[]).filter(x=>x.month===RSM&&scf(x)),A=rsAgg(L);const old=btn.innerHTML;btn.disabled=true;btn.textContent="جارٍ التجهيز…";
+  try{const EX=await exceljs();const wb=new EX.Workbook();wb.creator=me.full_name;const HD={type:"pattern",pattern:"solid",fgColor:{argb:"FF1C437E"}},QF={"q-e":"FFCFEBDB","q-g":"FFE8F5EC","q-y":"FFFDF1DC","q-r":"FFFCE9E7"};
+    const sheet=(nm,H,R,qi)=>{const ws=wb.addWorksheet(nm,{views:[{rightToLeft:true,state:"frozen",ySplit:1}]});ws.columns=H.map(h=>({header:h,width:Math.max(14,String(h).length+4)}));ws.getRow(1).eachCell(c=>{c.fill=HD;c.font={bold:true,color:{argb:"FFFFFFFF"}};c.alignment={horizontal:"center",vertical:"middle",wrapText:true}});ws.getRow(1).height=34;
+      R.forEach(r=>{const row=ws.addRow(r);if(qi!=null&&typeof r[qi]==="number"){const c=row.getCell(qi+1);c.numFmt='0.0"%"';c.fill={type:"pattern",pattern:"solid",fgColor:{argb:QF[qCls(r[qi])]}};c.font={bold:true}}});return ws};
+    const yn=v=>v===1?"تجاوز":v===0?"لم يتجاوز":"—";
+    const ws=sheet("العينة",["رقم الزيارة","القطاع","المحافظة","مأمور الضبط","مدير الرقابة","بند المخالفة","تاريخ الزيارة"].concat(RS_C.map(c=>`${c[1]} (${c[2]}%)`),["درجة جودة الرصد %","التقييم","مقبولة","ملاحظات","المقيّم"]),
+      L.map(x=>[x.visit||x.visit_no,x.sec,x.gov,x.officer,x.mgr,x.item,x.vdate].concat(RS_C.map(c=>yn((x.ans||{})[c[0]])),[x.score==null?"":+x.score,x.score==null?"لم يُقيّم":qLab(+x.score),x.score==null?"":+x.score>=RS_OK?"نعم":"لا",x.note||"",x.eval_name||""])),7+RS_C.length);ws.getColumn(6).width=40;
+    sheet("القطاعات",["القطاع","العينة","المقيّمة","متوسط جودة الرصد %","المقبولة","المستهدف %","الحالة"],Object.entries(A.S).map(([k,o])=>{const v=rsAvg(o);return [k,o.n,o.done,v??"",o.ok,+RS_CFG.target||50,v==null?"":v>=(+RS_CFG.target||50)?"محقق":"غير محقق"]}),3);
+    sheet("مأمورو الضبط",["مأمور الضبط","القطاع","في العينة","المقيّمة","جودة الرصد %","المقبولة","التقييم"],Object.entries(A.O).map(([k,o])=>{const v=rsAvg(o);return [k,o.s,o.n,o.done,v??"",o.ok,v==null?"لم يُقيّم":qLab(v)]}),4);
+    sheet("المعايير",["المعيار","الوزن %","لم يتجاوز","نسبة الرسوب %"],RS_C.map(([k,l,w])=>[l,w,A.T.f[k]||0,A.T.done?Math.round((A.T.f[k]||0)/A.T.done*1000)/10:""]));
+    const buf=await wb.xlsx.writeBuffer();deliver(new Blob([buf],{type:"application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"}),`جودة-الرصد-${RSM}.xlsx`)}
+  catch(e){toast("تعذر التصدير: "+(e.message||e))}finally{btn.disabled=false;btn.innerHTML=old}}
 function renderHQ(){
   const el=$("#hqBody");if(!canHQ()){el.innerHTML='<section class="block"><div class="empty">🔒 هذه البوابة خاصة بموظفي المركز الرئيسي.</div></section>';return}
   const L=hqRows(),A=hqAgg(L),T=A.T,sc=hqScope(A),ys=hqYears();RD_BASE=hqRows;RD_SCOPE=`بوابة المركز الرئيسي — ${sc.sec}${sc.per?" — "+sc.per:""}`;HQ_CTX=HQSF?{s:HQSF}:{};
   const secs=HQ_SECS.filter(s=>A.S[s]);
   const allSecs=HQ_SECS;
   const note=(A.noPres||A.noDec)?`<div class="hq-alert">ℹ️ لتظهر أرقام قرارات الهيئة وأسماء مدراء الرقابة وقيم الغرامات بدقة، أعد رفع التقرير الشامل (استبدال).</div>`:"";
-  const V=[["ov","نظرة عامة"],["sec","القطاعات"],["trend","الاتجاه والمقارنات"],["vio","المخالفات"],["mgr","مدراء الرقابة"]];
+  const V=[["ov","نظرة عامة"],["sec","القطاعات"],["trend","الاتجاه والمقارنات"],["vio","المخالفات"],["mgr","مدراء الرقابة"],["rasd","جودة الرصد"]];
   const pk=[["all","كل الفترات"]].concat(ys.map(y=>["y"+y,String(y)]),[["q3","آخر 3 أشهر"],["cu","فترة مخصصة"]]);
   const sl=secs.map(s=>({k:s,o:A.S[s]}));
   let body="";
@@ -2069,6 +2195,7 @@ function renderHQ(){
   }else if(HQV==="vio"){
     body=`<div class="hq-grid"><div class="hq-card c-5"><div class="hq-ch"><h3>أعلى المخالفات المرسلة للهيئة</h3><span class="sub">${hqF(T.sent)} مخالفة</span></div>${hqBars(A.TY,10,null,k=>({c:"sent",it:k,s:HQSF}))}</div>
       <div class="hq-card c-7"><div class="hq-ch"><h3>المخالفات حسب القطاع والبند</h3></div>${hqHeat(A,secs)}</div></div>`;
+  }else if(HQV==="rasd"){body=rsView("hq");
   }else{
     body=`<div class="hq-card"><div class="hq-ch"><h3>أداء مدراء الرقابة (المدققين)</h3><span class="sub">اضغط على عنوان العمود للترتيب</span></div>${hqMgrHtml(A,secs)}</div>`;
   }
@@ -2081,7 +2208,8 @@ function renderHQ(){
       <p class="hq-src">المصدر: التقرير الشامل — منصة مكين للتقارير · آخر تاريخ في البيانات ${(()=>{const m=hqMaxDay();return m!=null?wkDay(m):"—"})()}</p></div>
     ${note}
     <nav class="hq-nav" role="tablist">${V.map(([k,l])=>`<button type="button" role="tab" data-hv="${k}" aria-selected="${HQV===k}">${l}</button>`).join("")}</nav>
-    <div class="hq-body">${L.length?body:'<div class="hq-card"><div class="empty">لا توجد مخالفات في هذه الفترة أو القطاع</div></div>'}</div></div>`;
+    <div class="hq-body">${L.length||HQV==="rasd"?body:'<div class="hq-card"><div class="empty">لا توجد مخالفات في هذه الفترة أو القطاع</div></div>'}</div></div>`;
+  if(HQV==="rasd")rsBind("#hqBody");
   const re=()=>renderHQ();
   $$("#hqBody [data-hv]").forEach(b=>b.onclick=()=>{HQV=b.dataset.hv;re()});
   $$("#hqBody [data-per]").forEach(b=>b.onclick=()=>{HQP.k=b.dataset.per;if(HQP.k==="cu"&&!HQP.d1){const m=hqMaxDay();if(m!=null){HQP.d2=m;HQP.d1=m-29}}re()});
@@ -2433,7 +2561,7 @@ function renderPerf(){const el=$("#perfBody");const L=pfBase(),A=pfAgg(L),T=A.T,
   const ys=hqYears(),pk=[["all","كل الفترات"]].concat(ys.map(y=>["y"+y,String(y)]),[["q3","آخر 3 أشهر"],["cu","فترة مخصصة"]]);
   const govs=Object.keys(A.G).sort();
   const mg=pfPeople(A.P.mgr),of=pfPeople(A.P.off),qT=qRate(T.ret,T.sent);
-  const V=[["mgr","مدراء الرقابة"],["off","مأمورو الضبط"],["sec","القطاعات"],["gov","المحافظات"]];
+  const V=[["mgr","مدراء الرقابة"],["off","مأمورو الضبط"],["sec","القطاعات"],["gov","المحافظات"],["rasd","جودة الرصد"]];
   const legend=`<div class="q-leg"><span><i class="qb q-e">90% فأكثر</i> ممتاز</span><span><i class="qb q-g">80–89%</i> جيد</span><span><i class="qb q-y">60–79%</i> جيد منخفض — يحتاج متابعة</span><span><i class="qb q-r">أقل من 60%</i> ضعيف جداً</span><span><i class="qb q-na q-few">باهت</i> عينة صغيرة (أقل من ${Q_MIN} مرسلة) ${exB("few")}</span></div>`;
   let body="";
   if(PFV==="mgr"||PFV==="off"){const isM=PFV==="mgr";let list=isM?mg:of;const dist=pfDist(list);
@@ -2454,6 +2582,7 @@ function renderPerf(){const el=$("#perfBody");const L=pfBase(),A=pfAgg(L),T=A.T,
       <div class="hq-card c-5"><div class="hq-ch"><h3>نسبة الجودة الإجمالية</h3></div><div class="pf-big ${qCls(qT)}"${rdA({c:"ret"})}><b>${qTxt(qT)}</b><span>${hqF(T.ret)} مسترجعة من ${hqF(T.sent)} مرسلة للهيئة</span></div></div>
       <div class="hq-card c-12"><div class="hq-ch"><h3>تفاصيل القطاعات</h3></div><div class="tbl-wrap"><table class="tbl"><thead><tr><th>القطاع</th><th>المرصود</th><th>المرسل للهيئة</th><th>المسترجع</th><th>نسبة المسترجع</th><th>نسبة الجودة</th><th>القرارات</th><th>مدراء الرقابة</th><th>مأمورو الضبط</th></tr></thead><tbody>
       ${ss.map(x=>{const nm=mg.filter(p=>p.s===x.s).length,no=of.filter(p=>p.s===x.s).length;return `<tr><td${erA("s",x.s)}><b class="er-n">${esc(x.s)}</b></td><td${rdA({s:x.s})}>${hqF(x.o.n)}</td><td${rdA({s:x.s,c:"sent"})}>${hqF(x.o.sent)}</td><td${rdA({s:x.s,c:"ret"})}>${hqF(x.o.ret)}</td><td>${hqP(x.o.ret,x.o.sent)}</td><td>${qBadge(x.o.ret,x.o.sent)}</td><td${rdA({s:x.s,c:"iss"})}>${hqF(x.o.iss)}</td><td>${hqF(nm)}</td><td>${hqF(no)}</td></tr>`}).join("")}</tbody></table></div></div></div>`;
+  }else if(PFV==="rasd"){body=rsView("pf");
   }else{const gl=Object.entries(A.G).map(([g,o])=>({g,o,q:qRate(o.ret,o.sent)})).sort((p,q)=>(q.o.sent?q.o.ret/q.o.sent:0)-(p.o.sent?p.o.ret/p.o.sent:0));const mx=Math.max(.0001,...gl.map(x=>x.o.sent?x.o.ret/x.o.sent:0));
     body=`<div class="hq-card"><div class="hq-ch"><h3>نسبة المسترجع حسب المحافظة <span class="sub">${hqF(gl.length)} محافظة — الأعلى استرجاعاً أولاً</span></h3></div><div class="tbl-wrap"><table class="tbl"><thead><tr><th>المحافظة</th><th>القطاع</th><th>المرصود</th><th>المرسل للهيئة</th><th>المسترجع</th><th style="width:22%">نسبة المسترجع</th><th>نسبة الجودة</th></tr></thead><tbody>
     ${gl.map(x=>`<tr><td${erA("g",x.g)}><b class="er-n">${esc(x.g)}</b></td><td>${esc(x.o.s)}</td><td${rdA({g:x.g})}>${hqF(x.o.n)}</td><td${rdA({g:x.g,c:"sent"})}>${hqF(x.o.sent)}</td><td${rdA({g:x.g,c:"ret"})}>${hqF(x.o.ret)}</td><td><div class="pf-ib"><i class="${qCls(x.q)}" style="width:${x.o.sent?Math.max(2,x.o.ret/x.o.sent/mx*100):0}%"></i><b>${hqP(x.o.ret,x.o.sent)}</b></div></td><td>${qBadge(x.o.ret,x.o.sent)}</td></tr>`).join("")}</tbody></table></div>${legend}</div>`}
@@ -2466,7 +2595,8 @@ function renderPerf(){const el=$("#perfBody");const L=pfBase(),A=pfAgg(L),T=A.T,
     <div class="hq-kgrid">${hqTile("search","مدراء الرقابة",hqF(mg.length),"اضغط لعرض القائمة","#1F5BB0",null,null,' data-pfgo="mgr" role="button" tabindex="0"')}${hqTile("eye","مأمورو الضبط",hqF(of.length),"اضغط لعرض القائمة","#2AA6A0",null,null,' data-pfgo="off" role="button" tabindex="0"')}${hqTile("eye","المرصودة",hqF(T.n),"","#1F5BB0",null,null,rdA({}))}${hqTile("send","المرسلة للهيئة",hqF(T.sent),hqP(T.sent,T.n)+" من المرصود","#2F6FC0",T.sent/(T.n||1),null,rdA({c:"sent"}))}${hqTile("undo","المسترجعة حالياً",hqF(T.ret),hqP(T.ret,T.sent)+" من المرسل"+retSplit(T,{}),HQC.ret,T.ret/(T.sent||1),null,rdA({c:"ret"}))}${hqTile("check","القرارات الصادرة",hqF(T.iss),hqP(T.iss,T.sent)+" من المرسل",HQC.iss,T.iss/(T.sent||1),null,rdA({c:"iss"}))}
       <div class="hk pf-qt ${qCls(qT)}"${rdA({c:"ret"})}><div class="hk-h"><span class="hk-l">نسبة الجودة الإجمالية</span>${exB("q",T.sent+","+T.ret)}</div><b class="hk-v">${qTxt(qT)}</b><div class="hk-s">${qT==null?"لا يوجد مرسل":qLab(qT)}</div></div></div>
     ${insHtml(pfInsights(A,mg,of,PFV!=="off"),"قراءة ذكية — "+(PFV==="off"?"مأمورو الضبط":"مدراء الرقابة"))}<nav class="hq-nav" role="tablist">${V.map(([k,l])=>`<button type="button" role="tab" data-pfv="${k}" aria-selected="${PFV===k}">${l}</button>`).join("")}</nav>
-    <div class="hq-body">${L.length?body:'<div class="hq-card"><div class="empty">لا توجد مخالفات في هذه الفترة</div></div>'}</div></div>`;
+    <div class="hq-body">${L.length||PFV==="rasd"?body:'<div class="hq-card"><div class="empty">لا توجد مخالفات في هذه الفترة</div></div>'}</div></div>`;
+  if(PFV==="rasd")rsBind("#perfBody");
   const re=()=>renderPerf();
   $$("#perfBody [data-pfv]").forEach(b=>b.onclick=()=>{PFV=b.dataset.pfv;PFC="";re()});
   $$("#perfBody [data-pfgo]").forEach(b=>b.onclick=()=>{PFV=b.dataset.pfgo;PFC="";re();setTimeout(()=>{const x=$("#perfBody .hq-nav");if(x)x.scrollIntoView({behavior:"smooth",block:"start"})},40)});
