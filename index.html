@@ -209,6 +209,9 @@ b.q-e{color:#0B4A2A}b.q-g{color:#2E7A4C}i.q-e{background:#0E5A34}i.q-g{backgroun
 .pf-dc.q-e{border-inline-start-color:#0E5A34}.pf-dc.q-g{border-inline-start-color:#5DB37E}.pf-dc span{font-size:13px}
 .pf-big.q-e{background:#CFEBDB;color:#0B4A2A}.pf-big.q-g{background:#EAF6EE;color:#2E7A4C}
 .hk.pf-qt.q-e{--tone:#0E5A34;background:#EEF8F2}.hk.pf-qt.q-g{--tone:#3D9B5F;background:#F4FBF6}
+.srt-w{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-inline-start:auto}.srt{display:flex;align-items:center;gap:6px;font-size:13px;font-weight:600;color:var(--muted)}.srt select{min-height:40px;border-radius:10px;border:1px solid var(--line);background:var(--field);color:var(--ink);font:inherit;font-weight:700;padding:4px 10px}
+.hq-sort i{font-style:normal;opacity:.75;font-size:11px}.hq-sort.on i{opacity:1}
+.hq-mtools .srt-w .in{margin-inline-start:0}
 .tx-bs{display:inline-flex;gap:6px;margin-inline-start:auto}.tx-b{padding:5px 12px!important;font-size:12.5px!important}
 .tbl .pp{display:block;width:max-content;margin-top:3px;font-size:11px;line-height:1.5;color:var(--muted);font-weight:700;background:var(--soft);border-radius:99px;padding:0 7px;text-decoration:none}
 .tbl td[data-rd]{text-decoration:none!important}.tbl td[data-rd]:hover{box-shadow:inset 0 -2px 0 var(--navy)}.tbl .z{color:var(--line)}
@@ -1926,13 +1929,14 @@ function hqSecTable(A,secs){const T=A.T,row=(k,o,cls)=>{const sx=cls?(HQSF||""):
   return `<div class="tbl-wrap"><table class="tbl hqt"><thead><tr><th>القطاع</th><th>المرصود</th><th>المرسل للهيئة</th><th>قيد التدقيق لدى الهيئة</th><th>المسترجع حالياً</th><th>القرارات الصادرة</th><th>بانتظار المراجعة</th><th>غير مكتملة الأركان</th></tr></thead><tbody>${secs.map(s=>row(s,A.S[s])).join("")}${row("الإجمالي",T,"hqtot")}</tbody></table></div>`}
 function hqMgrList(A){const L=[];Object.entries(A.MG).forEach(([s,m])=>Object.entries(m).forEach(([k,v])=>L.push({s,k,v})));return L}
 function hqMgrHtml(A,secs){let L=hqMgrList(A);if(HQMS)L=L.filter(x=>x.s===HQMS);if(HQMQ){const q=norm(HQMQ);L=L.filter(x=>norm(x.k).includes(q))}
-  const sk={rev:x=>x.v.rev,sent:x=>x.v.sent,iss:x=>x.v.iss,ret:x=>x.v.ret,rej:x=>x.v.rej,isr:x=>x.v.sent?x.v.iss/x.v.sent:0};L.sort((a,b)=>sk[HQMK](b)-sk[HQMK](a));const mx=Math.max(1,...L.map(x=>x.v.rev));
-  const th=(k,l)=>`<th><button type="button" class="hq-sort${HQMK===k?" on":""}" data-msort="${k}">${l}${HQMK===k?" ▼":""}</button></th>`;
+  const sk={rev:x=>x.v.rev,sent:x=>x.v.sent,iss:x=>x.v.iss,ret:x=>x.v.ret,rej:x=>x.v.rej,isr:x=>x.v.sent?x.v.iss/x.v.sent:0};L.sort((a,b)=>HQMD*(sk[HQMK](a)-sk[HQMK](b))||(b.v.rev-a.v.rev));
+  const MO=[["rev","الأعلى تدقيقاً","الأقل تدقيقاً"],["rej","الأعلى غير معتمد","الأقل غير معتمد"],["sent","الأعلى إرسالاً للهيئة","الأقل إرسالاً للهيئة"],["ret","الأعلى مسترجعاً","الأقل مسترجعاً"],["iss","الأعلى قرارات","الأقل قرارات"],["isr","الأعلى نسبة قرارات","الأقل نسبة قرارات"]];const mx=Math.max(1,...L.map(x=>x.v.rev));
+  const th=(k,l)=>`<th><button type="button" class="hq-sort${HQMK===k?" on":""}" data-msort="${k}" title="اضغط للترتيب — مرة للأعلى ومرة للأقل">${l} <i>${HQMK===k?(HQMD<0?"▼":"▲"):"⇅"}</i></button></th>`;
   if(!hqMgrList(A).length)return '<div class="empty">تظهر أسماء مدراء الرقابة بعد إعادة رفع التقرير الشامل (استبدال).</div>';
-  return `<div class="hq-mtools"><div class="pill-row">${["",...secs].map(s=>`<button type="button" class="pill" data-msec="${esc(s)}" aria-pressed="${HQMS===s}">${s?esc(s):"كل القطاعات"}</button>`).join("")}</div><input class="in" id="hqMq" type="search" placeholder="ابحث باسم مدير الرقابة" value="${esc(HQMQ)}"></div>
+  return `<div class="hq-mtools"><div class="pill-row">${["",...secs].map(s=>`<button type="button" class="pill" data-msec="${esc(s)}" aria-pressed="${HQMS===s}">${s?esc(s):"كل القطاعات"}</button>`).join("")}</div><div class="srt-w">${SORT_SEL("hqMs",MO,HQMK,HQMD)}<input class="in" id="hqMq" type="search" placeholder="ابحث باسم مدير الرقابة" value="${esc(HQMQ)}"></div></div>
   <div class="tbl-wrap"><table class="tbl hq-mgr"><thead><tr><th>#</th><th>مدير الرقابة</th><th>القطاع</th>${th("rev","المدقق")}${th("rej","غير معتمد")}${th("sent","المرسل للهيئة")}${th("ret","المسترجع")}${th("iss","القرارات")}${th("isr","نسبة القرارات")}</tr></thead><tbody>
   ${L.slice(0,150).map((x,i)=>`<tr><td>${i+1}</td><td><b>${esc(x.k)}</b></td><td>${esc(x.s)}</td><td${rdA({m:x.k,s:x.s,rev:1})}><div class="hq-ib"><i style="width:${x.v.rev/mx*100}%"></i><b>${hqF(x.v.rev)}</b></div></td><td${rdA({m:x.k,s:x.s,rej:1})}>${hqF(x.v.rej)}<span class="pp">${hqP(x.v.rej,x.v.rev)}</span></td><td${rdA({m:x.k,s:x.s,c:"sent"})}>${hqF(x.v.sent)}<span class="pp">${hqP(x.v.sent,x.v.rev)}</span></td><td${rdA({m:x.k,s:x.s,c:"ret"})}>${hqF(x.v.ret)}<span class="pp">${hqP(x.v.ret,x.v.sent)}</span></td><td${rdA({m:x.k,s:x.s,c:"iss"})}>${hqF(x.v.iss)}</td><td><b style="color:${x.v.sent&&x.v.iss/x.v.sent>=.5?"var(--ok)":"inherit"}">${hqP(x.v.iss,x.v.sent)}</b></td></tr>`).join("")}</tbody></table></div>
-  <p class="hq-note">${hqF(L.length)} مدير رقابة${L.length>150?" — يظهر أول 150، والقائمة كاملة في Excel":""}. «المدقق» = المخالفات التي اتخذ فيها مدير الرقابة قراراً.</p>`}
+  <p class="hq-note">مرتّب حسب: <b>${SORT_TXT(MO,HQMK,HQMD)}</b> — ${hqF(L.length)} مدير رقابة${L.length>150?" — يظهر أول 150، والقائمة كاملة في Excel":""}. «المدقق» = المخالفات التي اتخذ فيها مدير الرقابة قراراً.</p>`}
 function hqSecDetail(A,s){const o=A.S[s];if(!o)return "";HQ_CTX={s};try{const rgs=Object.entries(A.RG[s]||{}).sort((a,b)=>b[1].n-a[1].n),mg=Object.entries(A.MG[s]||{}).sort((a,b)=>b[1].rev-a[1].rev).slice(0,8);
   return `<div class="hq-card hq-detail" id="hqDet"><div class="hq-ch"><h3>تفاصيل القطاع ${esc(s)}</h3><button type="button" class="btn2" data-sec="">✕ إغلاق</button></div>
   <div class="hq-kgrid sm">${hqTile("eye","المرصود",hqF(o.n),"","#1F5BB0")}${hqTile("send","المرسل للهيئة",hqF(o.sent),hqP(o.sent,o.n)+" من المرصود","#2F6FC0",o.sent/(o.n||1))}${hqTile("search","قيد التدقيق لدى الهيئة",hqF(o.auth),hqP(o.auth,o.sent)+" من المرسل",HQC.auth,o.auth/(o.sent||1))}${hqTile("undo","المسترجع حالياً",hqF(o.ret),hqP(o.ret,o.sent)+" من المرسل",HQC.ret,o.ret/(o.sent||1))}${hqTile("check","القرارات الصادرة",hqF(o.iss),hqP(o.iss,o.sent)+" من المرسل",HQC.iss,o.iss/(o.sent||1))}${hqTile("clock","بانتظار المراجعة",hqF(o.pend),hqP(o.pend,o.n)+" من المرصود",HQC.pend,o.pend/(o.n||1))}</div>
@@ -2007,7 +2011,8 @@ function renderHQ(){
   $$("#hqBody [data-sec]").forEach(b=>b.onclick=()=>{const s=b.dataset.sec;if(!s){HQDS="";re();return}HQV="sec";HQDS=s;re();setTimeout(()=>{const x=$("#hqDet");if(x)x.scrollIntoView({behavior:"smooth",block:"start"})},40)});
   $$("#hqBody [data-dsec]").forEach(b=>b.onclick=()=>{HQDS=HQDS===b.dataset.dsec?"":b.dataset.dsec;re();setTimeout(()=>{const x=$("#hqDet");if(x)x.scrollIntoView({behavior:"smooth",block:"start"})},40)});
   $$("#hqBody [data-msec]").forEach(b=>b.onclick=()=>{HQMS=b.dataset.msec;re()});
-  $$("#hqBody [data-msort]").forEach(b=>b.onclick=()=>{HQMK=b.dataset.msort;re()});
+  if($("#hqMs"))$("#hqMs").onchange=e=>{const [k,d]=e.target.value.split(":");HQMK=k;HQMD=+d;re()};
+  $$("#hqBody [data-msort]").forEach(b=>b.onclick=()=>{const k=b.dataset.msort;HQMD=HQMK===k?-HQMD:-1;HQMK=k;re()});
   if($("#hqMq")){$("#hqMq").oninput=e=>{HQMQ=e.target.value;clearTimeout(window._hqmt);window._hqmt=setTimeout(()=>{re();const i=$("#hqMq");if(i){i.focus();i.setSelectionRange(i.value.length,i.value.length)}},250)}}
   $("#hqXls").onclick=e=>hqExport(A,secs,Object.keys(A.Y).map(Number).sort(),e.currentTarget);
   $("#hqPdf").onclick=e=>hqPdf(A,secs,sc,e.currentTarget);
@@ -2154,6 +2159,9 @@ async function hqPpt(A,secs,sc,btn){const old=btn.innerHTML;btn.disabled=true;bt
   btn.disabled=false;btn.innerHTML=old}
 
 /* ===================== تقييم الأداء (مدراء الرقابة ومأمورو الضبط) ===================== */
+let PFD=-1,HQMD=-1;
+const SORT_SEL=(id,opts,k,d)=>`<label class="srt"><span>ترتيب حسب</span><select id="${id}">${opts.map(([key,hi,lo])=>`<option value="${key}:-1"${k===key&&d<0?" selected":""}>${hi}</option><option value="${key}:1"${k===key&&d>0?" selected":""}>${lo}</option>`).join("")}</select></label>`;
+const SORT_TXT=(opts,k,d)=>{const o=opts.find(x=>x[0]===k);return o?(d<0?o[1]:o[2]):""};
 let PFV="mgr",PFP={k:"all",d1:0,d2:0},PFS="",PFG="",PFQ="",PFC="",PFK="sent";
 function pfRange(){const o=HQP;HQP=PFP;const r=hqRange();HQP=o;return r}
 function pfBase(){const [a,b]=pfRange(),all=seesAll();return rows.filter(r=>{if(!all&&!scopeOK(r.sector,r.region))return false;if(PFS&&secOf(r.region)!==PFS)return false;if(PFG&&(r.sector||"غير محدد").trim()!==PFG)return false;
@@ -2176,15 +2184,16 @@ function renderPerf(){const el=$("#perfBody");const L=pfBase(),A=pfAgg(L),T=A.T,
   if(PFV==="mgr"||PFV==="off"){const isM=PFV==="mgr";let list=isM?mg:of;const dist=pfDist(list);
     if(PFQ){const q=norm(PFQ);list=list.filter(x=>norm(x.k).includes(q))}
     if(PFC)list=list.filter(x=>x.v.sent>=Q_MIN&&x.q!=null&&qCls(x.q)==="q-"+PFC);
-    const sk={sent:x=>x.v.sent,ret:x=>x.v.ret,n:x=>isM?x.v.rev:x.v.n,qa:x=>x.q==null?999:x.q,qd:x=>x.q==null?-1:x.q,iss:x=>x.v.iss};
-    list.sort((p,q)=>PFK==="qa"?sk.qa(p)-sk.qa(q):sk[PFK](q)-sk[PFK](p));
-    const th=(k,l)=>`<th><button type="button" class="hq-sort${PFK===k?" on":""}" data-pfk="${k}">${l}${PFK===k?" ▼":""}</button></th>`;
+    if(PFK==="qa"||PFK==="qd"){PFD=PFK==="qa"?1:-1;PFK="q"}const sk={sent:x=>x.v.sent,ret:x=>x.v.ret,n:x=>isM?x.v.rev:x.v.n,q:x=>x.q==null?null:x.q,rr:x=>x.v.sent?x.v.ret/x.v.sent:null,iss:x=>x.v.iss};
+    const PO=[["n",isM?"الأعلى تدقيقاً":"الأعلى رصداً",isM?"الأقل تدقيقاً":"الأقل رصداً"],["sent","الأعلى إرسالاً للهيئة","الأقل إرسالاً للهيئة"],["ret","الأعلى مسترجعاً","الأقل مسترجعاً"],["rr","الأعلى نسبة مسترجع","الأقل نسبة مسترجع"],["q","الأعلى نسبة جودة","الأقل نسبة جودة"],["iss","الأعلى قرارات","الأقل قرارات"]];
+    list.sort((p,q)=>{const a=sk[PFK](p),b=sk[PFK](q);if(a==null&&b==null)return 0;if(a==null)return 1;if(b==null)return -1;return PFD*(a-b)||(q.v.sent-p.v.sent)});
+    const th=(k,l)=>`<th><button type="button" class="hq-sort${PFK===k?" on":""}" data-pfk="${k}" title="اضغط للترتيب — مرة للأعلى ومرة للأقل">${l} <i>${PFK===k?(PFD<0?"▼":"▲"):"⇅"}</i></button></th>`;
     const kk=isM?"m":"o";
     body=`<div class="pf-dist">${[["e","ممتاز","q-e"],["g","جيد","q-g"],["y","جيد منخفض — يحتاج متابعة","q-y"],["r","ضعيف جداً","q-r"]].map(([k,l,c])=>`<button type="button" class="pf-dc ${c}${PFC===k?" on":""}" data-pfc="${k}"><b>${hqF(dist[k])}</b><span>${l}</span></button>`).join("")}<div class="pf-dc q-na"><b>${hqF(dist.f)}</b><span>عينة صغيرة</span></div></div>
-    <div class="hq-card"><div class="hq-ch"><h3>${isM?"تقييم مدراء الرقابة":"تقييم مأموري الضبط"} <span class="sub">${hqF(list.length)} ${isM?"مدير رقابة":"مأمور ضبط"}</span></h3><input class="in pf-q" id="pfQ" type="search" placeholder="ابحث بالاسم" value="${esc(PFQ)}"></div>
-    ${(isM?mg:of).length?`<div class="tbl-wrap"><table class="tbl hq-mgr"><thead><tr><th>#</th><th>${isM?"مدير الرقابة":"مأمور الضبط"}</th><th>القطاع</th><th>المحافظات</th>${th("n",isM?"المدقق":"المرصود")}${th("sent","المرسل للهيئة")}${th("ret","المسترجع")}<th>نسبة المسترجع</th>${th(PFK==="qa"?"qd":"qa","نسبة الجودة")}${th("iss","القرارات")}</tr></thead><tbody>
+    <div class="hq-card"><div class="hq-ch"><h3>${isM?"تقييم مدراء الرقابة":"تقييم مأموري الضبط"} <span class="sub">${hqF(list.length)} ${isM?"مدير رقابة":"مأمور ضبط"}</span></h3><div class="srt-w">${SORT_SEL("pfSort",PO,PFK,PFD)}<input class="in pf-q" id="pfQ" type="search" placeholder="ابحث بالاسم" value="${esc(PFQ)}"></div></div>
+    ${(isM?mg:of).length?`<div class="tbl-wrap"><table class="tbl hq-mgr"><thead><tr><th>#</th><th>${isM?"مدير الرقابة":"مأمور الضبط"}</th><th>القطاع</th><th>المحافظات</th>${th("n",isM?"المدقق":"المرصود")}${th("sent","المرسل للهيئة")}${th("ret","المسترجع")}${th("rr","نسبة المسترجع")}${th("q","نسبة الجودة")}${th("iss","القرارات")}</tr></thead><tbody>
     ${list.slice(0,200).map((x,i)=>{const v=x.v,base={[kk]:x.k};return `<tr><td>${i+1}</td><td><b>${esc(x.k)}</b></td><td>${esc(x.s)}</td><td class="pf-gv" title="${esc(x.g.map(z=>z[0]).join("، "))}">${esc(x.g.slice(0,2).map(z=>z[0].replace(/^محافظة\s+|^مدينة\s+/,"")).join("، "))}${x.g.length>2?` <small>+${x.g.length-2}</small>`:""}</td>
-      <td${rdA(isM?Object.assign({rev:1},base):base)}>${hqF(isM?v.rev:v.n)}</td><td${rdA(Object.assign({c:"sent"},base))}>${hqF(v.sent)}</td><td${rdA(Object.assign({c:"ret"},base))}><b style="color:${v.ret?"var(--bad)":"inherit"}">${hqF(v.ret)}</b></td><td>${hqP(v.ret,v.sent)}</td><td>${qBadge(v.ret,v.sent)}</td><td${rdA(Object.assign({c:"iss"},base))}>${hqF(v.iss)}</td></tr>`}).join("")}</tbody></table></div>${list.length>200?`<p class="hq-note">يظهر أول 200 — القائمة كاملة في Excel.</p>`:""}`:`<div class="empty">${isM?"تظهر أسماء مدراء الرقابة بعد إعادة رفع التقرير الشامل (استبدال).":"لا توجد أسماء مأموري ضبط في البيانات"}</div>`}${legend}</div>`;
+      <td${rdA(isM?Object.assign({rev:1},base):base)}>${hqF(isM?v.rev:v.n)}</td><td${rdA(Object.assign({c:"sent"},base))}>${hqF(v.sent)}</td><td${rdA(Object.assign({c:"ret"},base))}><b style="color:${v.ret?"var(--bad)":"inherit"}">${hqF(v.ret)}</b></td><td>${hqP(v.ret,v.sent)}</td><td>${qBadge(v.ret,v.sent)}</td><td${rdA(Object.assign({c:"iss"},base))}>${hqF(v.iss)}</td></tr>`}).join("")}</tbody></table></div><p class="hq-note">مرتّب حسب: <b>${SORT_TXT(PO,PFK,PFD)}</b>${list.length>200?" — يظهر أول 200، والقائمة كاملة في Excel":""}</p>`:`<div class="empty">${isM?"تظهر أسماء مدراء الرقابة بعد إعادة رفع التقرير الشامل (استبدال).":"لا توجد أسماء مأموري ضبط في البيانات"}</div>`}${legend}</div>`;
   }else if(PFV==="sec"){const ss=HQ_SECS.filter(s=>A.S[s]).map(s=>({s,o:A.S[s],q:qRate(A.S[s].ret,A.S[s].sent)}));const mx=Math.max(1,...ss.map(x=>x.o.sent?x.o.ret/x.o.sent:0));
     body=`<div class="hq-grid"><div class="hq-card c-7"><div class="hq-ch"><h3>نسبة المسترجع حسب القطاع</h3><span class="sub">من المرسل للهيئة</span></div><div class="pf-bars">${ss.sort((p,q)=>(q.o.sent?q.o.ret/q.o.sent:0)-(p.o.sent?p.o.ret/p.o.sent:0)).map(x=>`<div class="pf-br"${rdA({s:x.s,c:"ret"})}><span>${esc(x.s)}</span><div><i class="${qCls(x.q)}" style="width:${x.o.sent?Math.max(2,x.o.ret/x.o.sent/mx*100):0}%"></i></div><b>${hqP(x.o.ret,x.o.sent)}</b>${qBadge(x.o.ret,x.o.sent)}</div>`).join("")}</div>${legend}</div>
       <div class="hq-card c-5"><div class="hq-ch"><h3>نسبة الجودة الإجمالية</h3></div><div class="pf-big ${qCls(qT)}"${rdA({c:"ret"})}><b>${qTxt(qT)}</b><span>${hqF(T.ret)} مسترجعة من ${hqF(T.sent)} مرسلة للهيئة</span></div></div>
@@ -2209,8 +2218,9 @@ function renderPerf(){const el=$("#perfBody");const L=pfBase(),A=pfAgg(L),T=A.T,
   const dd=id=>{const v=$("#"+id).value;return v?Math.floor(Date.parse(v+"T00:00:00Z")/864e5):0};
   if($("#pfD1"))$("#pfD1").onchange=()=>{PFP.d1=dd("pfD1");re()};if($("#pfD2"))$("#pfD2").onchange=()=>{PFP.d2=dd("pfD2");re()};
   if($("#pfSec"))$("#pfSec").onchange=e=>{PFS=e.target.value;PFG="";re()};$("#pfGov").onchange=e=>{PFG=e.target.value;re()};
-  $$("#perfBody [data-pfk]").forEach(b=>b.onclick=()=>{PFK=b.dataset.pfk;re()});
+  $$("#perfBody [data-pfk]").forEach(b=>b.onclick=()=>{const k=b.dataset.pfk;PFD=PFK===k?-PFD:-1;PFK=k;re()});
   $$("#perfBody [data-pfc]").forEach(b=>b.onclick=()=>{PFC=PFC===b.dataset.pfc?"":b.dataset.pfc;re()});
+  if($("#pfSort"))$("#pfSort").onchange=e=>{const [k,d]=e.target.value.split(":");PFK=k;PFD=+d;re()};
   if($("#pfQ"))$("#pfQ").oninput=e=>{PFQ=e.target.value;clearTimeout(window._pft);window._pft=setTimeout(()=>{re();const i=$("#pfQ");if(i){i.focus();i.setSelectionRange(i.value.length,i.value.length)}},250)};
   $("#pfXls").onclick=e=>pfExport(A,mg,of,e.currentTarget);$("#pfPdf").onclick=e=>pfPdf(A,mg,of,{sec:scope+(PFG?" — "+PFG:""),per},e.currentTarget)}
 async function pfExport(A,mg,of,btn){const old=btn.innerHTML;btn.disabled=true;btn.textContent="جارٍ التجهيز…";
