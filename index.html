@@ -277,6 +277,9 @@ button.in.fms{width:100%;border:1px solid var(--line);border-radius:10px;color:v
 .hqfine{margin-top:10px;border-radius:12px;padding:10px 12px;background:var(--ok-bg);color:var(--ok);font-size:14px}
 .hqhead h2 .btn2{font-size:13px;padding:6px 12px}
 @media (max-width:520px){.hqbar{grid-template-columns:1fr auto}.hqbar div{grid-column:1/-1;order:3}}
+.tab[data-go="hq"]{background:#1C437E;color:#fff;border:2px solid #1C437E}
+.tab[data-go="hq"][aria-current="true"]{background:#1C437E;color:#fff;border-color:#fff;box-shadow:0 0 0 2px #1C437E}
+.tab[data-go="hq"]:hover{background:#163663}
 .nwcfoot{text-align:center;color:var(--muted);font-size:12.5px;padding:18px 14px 6px}
 @media (max-width:520px){header.top{padding:16px 16px 18px;align-items:flex-start}header.top .lg{height:38px;padding:8px 12px}header.top h1{font-size:17px}}
 @media (prefers-reduced-motion: reduce){*{transition:none!important}}
@@ -351,7 +354,7 @@ button.in.fms{width:100%;border:1px solid var(--line);border-radius:10px;color:v
   <div class="fbar" id="fbar"><label><span>المنطقة</span><select class="in" id="fReg"></select></label><div class="fgovw" data-ms="govs"><span id="fGovL">المدن والمحافظات</span><button type="button" class="in fms" id="fGov" aria-haspopup="true" aria-expanded="false" aria-labelledby="fGovL fGov">كل المحافظات</button><div class="fpop" id="fGovPop" hidden role="dialog" aria-label="اختيار المدن والمحافظات"></div></div><label><span>الوحدة</span><select class="in" id="fUnit"></select></label><div class="fgovw" data-ms="vsts"><span id="fVstL">حالة الزيارة</span><button type="button" class="in fms" id="fVst" aria-haspopup="true" aria-expanded="false" aria-labelledby="fVstL fVst">كل الحالات</button><div class="fpop" id="fVstPop" hidden role="dialog" aria-label="اختيار حالة الزيارة"></div></div><div class="fgovw" data-ms="pks"><span id="fPkL">الحالة التفصيلية</span><button type="button" class="in fms" id="fPk" aria-haspopup="true" aria-expanded="false" aria-labelledby="fPkL fPk">كل الحالات</button><div class="fpop" id="fPkPop" hidden role="dialog" aria-label="اختيار الحالة التفصيلية"></div></div><div class="fdate" dir="ltr"><div class="fdh" dir="rtl"><span>الفترة <small>(تاريخ بدء الزيارة)</small> <b id="fDTxt" dir="rtl"></b></span><button type="button" class="linkbtn" id="fDClr" hidden>كل الفترات</button></div>
   <div class="fdrow"><input type="date" class="in" id="fD1" aria-label="من تاريخ"><input type="date" class="in" id="fD2" aria-label="إلى تاريخ"></div>
   <div class="fdsl"><div class="fdtrk"><i id="fDFill"></i></div><input type="range" id="fS1" aria-label="بداية الفترة"><input type="range" id="fS2" aria-label="نهاية الفترة"></div></div>
-<button type="button" class="linkbtn" id="fClr" hidden>مسح التصفية</button><div class="fexp"><span id="fxInfo">تنزيل نتائج التصفية</span><button type="button" class="btn2" id="fxWk">📑 التقرير الأسبوعي</button><button type="button" class="btn2" id="fxPdf">📄 PDF</button><button type="button" class="btn2 pri" id="fxXls">📊 Excel</button></div></div>
+<button type="button" class="linkbtn" id="fClr" hidden>مسح التصفية</button><div class="fexp"><span id="fxInfo">تنزيل نتائج التصفية</span><button type="button" class="btn2" id="fxWk">📑 التقرير الشامل للمخالفات</button><button type="button" class="btn2" id="fxPdf">📄 PDF</button><button type="button" class="btn2 pri" id="fxXls">📊 Excel</button></div></div>
   <div class="pg" data-pg="audit">
 
   <section class="block" id="queueBlock">
@@ -1719,7 +1722,7 @@ function openWeekly(){
   const v=wkLoad(),unit=F.unit||(me&&me.sector)||"";
   const by=o=>Object.keys(o).sort((a,b)=>o[b]-o[a]).map(k=>`${esc(k)}: <b>${wkN(o[k])}</b>`).join(" · ")||"—";
   const iv=(id,lab,val,ph,t)=>`<label class="f">${lab}<input class="in" id="${id}" ${t==="n"?'inputmode="decimal" dir="ltr"':""} value="${esc(val??"")}" placeholder="${esc(ph||"")}"></label>`;
-  $("#sheet").innerHTML=`<h3>📑 التقرير الأسبوعي</h3>
+  $("#sheet").innerHTML=`<h3>📑 التقرير الشامل للمخالفات</h3>
   <p class="sub" style="margin:0 0 10px">الأرقام محسوبة من نتائج التصفية الحالية (${esc(fLabel())}). أكمل الخانات اللي ما تتوفر في التقرير الشامل، ثم نزّل الملف.</p>
   <div class="kpis" style="margin-bottom:6px">
     <div class="kpi k-navy"><b>${wkN(s.n)}</b><span>المخالفات المرصودة</span></div>
@@ -1735,40 +1738,26 @@ function openWeekly(){
     ${s.oth?`<div><b>غير محددة:</b> ${by(s.by.oth)} — أعد رفع التقرير الشامل لتتحدد حالتها.</div>`:""}
   </details>
   <div class="grid">
-    <div class="full">${iv("wkTitle","عنوان التقرير",v.title||"التقرير الأسبوعي لإدارة المخالفات والتفتيش")}</div>
+    <div class="full">${iv("wkTitle","عنوان التقرير",(v.title&&!/^التقرير الأسبوعي/.test(v.title)?v.title:"")||"التقرير الشامل للمخالفات")}</div>
     ${iv("wkOrg","الجهة",v.org||((unit?unit+" – ":"")+"إدارة المخالفات والتفتيش"))}
     ${iv("wkVisits","إجمالي الزيارات",v.visits??"","مثال: 76 (اتركه فاضي لإخفائه)","n")}
   </div>
-  <h3 class="sec">مبادرة خفض الفاقد <span>اختياري — اترك الاسم فاضي لإخفائها</span></h3>
+  <h3 class="sec">المنفعة المفقودة وتكاليف الإصلاح <span>اختياري — اتركها فاضية لإخفائها</span></h3>
   <div class="grid">
-    <div class="full">${iv("wkIni","اسم المبادرة",v.ini||"","مثال: مبادرة خفض الفاقد بمدينة القيصومة")}</div>
-    ${iv("wkTgt","المواقع المستهدفة",v.tgt,"مثال: 612","n")}${iv("wkSrv","المواقع الممسوحة",v.srv,"مثال: 574","n")}
-    ${iv("wkEnc","التعديات المرصودة",v.enc,"مثال: 67","n")}
-    <label class="f">المواقع المتبقية (لم يستدل عليها)<input class="in" id="wkRem" disabled dir="ltr"></label>
-  </div>
-  <h3 class="sec">المسترجع التراكمي <span>اختياري</span></h3>
-  <div class="grid">
-    ${iv("wkM3","المياه المسترجعة (م³)",v.m3,"مثال: 174","n")}${iv("wkSar","القيمة التقديرية (ريال)",v.sar,"مثال: 1044","n")}
+    ${iv("wkLost","المنفعة المفقودة (ريال)",v.lost,"مثال: 1044","n")}${iv("wkRep","تكاليف الإصلاح (ريال)",v.rep,"مثال: 2500","n")}
     ${iv("wkUntil","حتى تاريخ",v.until||(s.d2?wkDay(s.d2):""),"مثال: 15/10/2026")}
   </div>
-  <h3 class="sec">نماذج من المخالفات المكتشفة <span>اختياري — حتى 4 صور</span></h3>
-  <div class="grid" id="wkImgs">${["قبل الإزالة (1)","بعد الإزالة (1)","قبل الإزالة (2)","بعد الإزالة (2)"].map((l,i)=>`<label class="f">${l}<input type="file" accept="image/*" class="in" data-wki="${i}"><small class="sub" id="wkIs${i}">${WK_IMG[i]?"✓ مرفقة":""}</small></label>`).join("")}</div>
   <div class="msg" id="wkMsg" style="color:var(--bad);font-size:13px;min-height:18px;margin-top:8px"></div>
   <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:6px">
     <button type="button" class="btnp" id="wkPdf" style="flex:1 1 180px">📄 تنزيل PDF</button>
     <button type="button" class="btn2" id="wkPng" style="flex:1 1 140px">🖼️ تنزيل صورة</button>
     <button type="button" class="btn2" id="wkClose">إغلاق</button>
   </div>`;
-  const rem=()=>{const t=+$("#wkTgt").value||0,sv=+$("#wkSrv").value||0;$("#wkRem").value=t?Math.max(0,t-sv):""};rem();
-  ["wkTgt","wkSrv"].forEach(id=>$("#"+id).addEventListener("input",rem));
-  $("#sheet").querySelectorAll("[data-wki]").forEach(inp=>inp.onchange=async()=>{const i=+inp.dataset.wki,f=inp.files[0];if(!f)return;
-    try{const im=await loadImg(f);const sc=Math.min(1,1000/Math.max(im.width,im.height)),c=document.createElement("canvas");c.width=Math.round(im.width*sc);c.height=Math.round(im.height*sc);c.getContext("2d").drawImage(im,0,0,c.width,c.height);WK_IMG[i]=await loadI(c.toDataURL("image/jpeg",.85));$("#wkIs"+i).textContent="✓ مرفقة"}catch(e){$("#wkIs"+i).textContent="تعذر قراءة الصورة"}});
-  const read=()=>{const g=id=>$("#"+id).value.trim();const o={title:g("wkTitle"),org:g("wkOrg"),visits:g("wkVisits"),ini:g("wkIni"),tgt:g("wkTgt"),srv:g("wkSrv"),enc:g("wkEnc"),m3:g("wkM3"),sar:g("wkSar"),until:g("wkUntil")};wkSave(o);return o};
-  const run=async(btn,kind)=>{const o=read();const n=["visits","tgt","srv","enc","m3","sar"].find(k=>o[k]&&isNaN(+o[k].replace(/,/g,"")));if(n){$("#wkMsg").textContent="اكتب الأرقام بدون حروف";return}
-    ["visits","tgt","srv","enc","m3","sar"].forEach(k=>o[k]=o[k]?String(+o[k].replace(/,/g,"")):"");
-    if(o.ini&&(!+o.tgt||+o.srv>+o.tgt)){$("#wkMsg").textContent="للمبادرة: اكتب المواقع المستهدفة، والممسوحة لا تزيد عنها";return}
+  const read=()=>{const g=id=>$("#"+id).value.trim();const o={title:g("wkTitle"),org:g("wkOrg"),visits:g("wkVisits"),lost:g("wkLost"),rep:g("wkRep"),until:g("wkUntil")};wkSave(o);return o};
+  const run=async(btn,kind)=>{const o=read();const n=["visits","lost","rep"].find(k=>o[k]&&isNaN(+o[k].replace(/,/g,"")));if(n){$("#wkMsg").textContent="اكتب الأرقام بدون حروف";return}
+    ["visits","lost","rep"].forEach(k=>o[k]=o[k]?String(+o[k].replace(/,/g,"")):"");
     $("#wkMsg").textContent="";const old=btn.textContent;btn.disabled=true;btn.textContent="جارٍ التجهيز…";
-    try{try{await document.fonts.ready}catch(e){}const c=await wkDraw(wkStats(),o);const nm=`التقرير-الأسبوعي-${(F.unit||"").replace(/\s+/g,"-")||"النتائج"}-${s.d2?wkDay(s.d2).replace(/\//g,"-"):stamp().replace(/\//g,"-")}`;
+    try{try{await document.fonts.ready}catch(e){}const c=await wkDraw(wkStats(),o);const nm=`التقرير-الشامل-للمخالفات-${(F.unit||"").replace(/\s+/g,"-")||"النتائج"}-${s.d2?wkDay(s.d2).replace(/\//g,"-"):stamp().replace(/\//g,"-")}`;
       if(kind==="png"){const b=await new Promise(r=>c.toBlob(r,"image/png"));await deliver(b,nm+".png","image/png")}
       else{const JsPDF=await jspdfLib();const doc=new JsPDF({unit:"mm",format:[190.5,338.67],orientation:"landscape",compress:true});doc.addImage(c.toDataURL("image/jpeg",.92),"JPEG",0,0,338.67,190.5);await deliver(doc.output("blob"),nm+".pdf","application/pdf")}
     }catch(e){$("#wkMsg").textContent="تعذر إنشاء الملف: "+(e.message||"")}
@@ -1798,11 +1787,11 @@ async function wkDraw(s,o){
     x.save();rr(px,ky,kw,kh,16);x.clip();x.fillStyle=k[2];x.fillRect(px,ky,kw,14);x.restore();
     font(64,700);T(wkN(k[0]),px+kw/2,ky+68,k[2],"center");font(25,600);T(k[1],px+kw/2,ky+120,"#10284A","center")});
   // الصف الأوسط
-  let y=ky+kh+32;const hasIni=!!o.ini,hasRec=!!(o.m3||o.sar);
+  let y=ky+kh+32;const hasIni=false,hasRec=!!(o.lost||o.rep);
   if(hasIni||hasRec){const mh=230;let right=W-M,left=M;
-    if(hasRec){const rw=hasIni?440:W-2*M,px=right-rw;rr(px,y,rw,mh,18,"#fff",LN);font(28,700);T(`المسترجع التراكمي${o.until?" حتى "+o.until:""}`,px+rw/2,y+36,NV,"center");
-      const tiles=[[o.m3?wkN(o.m3)+" م³":"—","المياه المسترجعة","#DCEAF8",BL],[o.sar?wkN(o.sar)+" ريال":"—","القيمة التقديرية","#FDEBD9","#C2600B"]];
-      const tw=(rw-60)/2;tiles.forEach((t,i)=>{const tx=px+rw-20-(i+1)*tw-i*20;rr(tx,y+68,tw,mh-88,14,t[2]);font(40,700);T(t[0],tx+tw/2,y+120,t[3],"center");font(23,600);T(t[1],tx+tw/2,y+176,"#10284A","center")});
+    if(hasRec){const rw=hasIni?440:W-2*M,px=right-rw;rr(px,y,rw,mh,18,"#fff",LN);font(28,700);T(`المنفعة المفقودة وتكاليف الإصلاح${o.until?" حتى "+o.until:""}`,px+rw/2,y+36,NV,"center");
+      const tiles=[[o.lost?wkN(o.lost)+" ريال":"—","المنفعة المفقودة","#FDEBD9","#C2600B"],[o.rep?wkN(o.rep)+" ريال":"—","تكاليف الإصلاح","#DCEAF8",BL]];if(o.lost&&o.rep)tiles.push([wkN(+o.lost+ +o.rep)+" ريال","الإجمالي","#E3F3EA","#1C7A4B"]);
+      const tw=(rw-40-(tiles.length-1)*20)/tiles.length;tiles.forEach((t,i)=>{const tx=px+rw-20-(i+1)*tw-i*20;rr(tx,y+68,tw,mh-88,14,t[2]);font(40,700);T(t[0],tx+tw/2,y+120,t[3],"center");font(23,600);T(t[1],tx+tw/2,y+176,"#10284A","center")});
       right=px-G}
     if(hasIni){const iw=right-left;rr(left,y,iw,mh,18,"#fff",LN);font(30,700);T(o.ini,left+iw-28,y+38,NV);
       const tg=+o.tgt||0,sv=+o.srv||0,rm=Math.max(0,tg-sv),en=+o.enc||0,pc=(a,b)=>b?Math.round(a/b*1000)/10:0;
@@ -1813,7 +1802,7 @@ async function wkDraw(s,o){
         font(22,700);T(q[2]+"%",bx+70,by+8,q[3])})}
     y+=mh+28}
   // الصف السفلي: أنواع المخالفات + النماذج
-  const bh=H-70-y,imgs=WK_IMG.filter(Boolean).length,cwid=imgs?(W-2*M-G)*0.5:W-2*M;
+  const bh=H-70-y,imgs=0,cwid=imgs?(W-2*M-G)*0.5:W-2*M;
   {const px=M,pw=cwid;rr(px,y,pw,bh,18,"#fff",LN);font(30,700);T("أنواع المخالفات",px+pw-28,y+38,NV);
     const ts=Object.entries(s.types).sort((a,b)=>b[1]-a[1]);const top=ts.slice(0,6);if(ts.length>6)top.push(["أخرى",ts.slice(6).reduce((t,q)=>t+q[1],0)]);
     const mxv=Math.max(1,...top.map(q=>q[1])),rows_=top.length,rh=Math.min(70,(bh-80)/Math.max(1,rows_)),lw=pw*0.46;
