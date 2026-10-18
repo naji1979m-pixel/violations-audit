@@ -226,6 +226,17 @@ b.q-e{color:#0B4A2A}b.q-g{color:#2E7A4C}i.q-e{background:#0E5A34}i.q-g{backgroun
 .ins-l li i{flex:none;width:9px;height:9px;border-radius:50%;margin-top:9px;background:#2F6FC0}
 .ins-l li.ins-g i{background:#1C7A4B}.ins-l li.ins-w i{background:#C98A1B}
 @media (max-width:900px){.ins-l{grid-template-columns:1fr}}
+.gms{display:flex;align-items:center;gap:8px;font-size:13px;font-weight:600}
+.gms-b{display:inline-flex;align-items:center;justify-content:space-between;gap:10px;min-width:170px;min-height:38px;border-radius:10px;border:1px solid rgba(255,255,255,.4);background:#fff;color:#10284A;padding:4px 10px;font:inherit;font-weight:700;cursor:pointer}
+.gms-b.on{box-shadow:0 0 0 2px #4D8FE6}
+.gms-pop{position:absolute;z-index:75;background:var(--paper);color:var(--ink);border:1px solid var(--line);border-radius:16px;box-shadow:0 18px 40px rgba(11,35,71,.25);padding:12px;display:flex;flex-direction:column;gap:8px}
+.gms-q{min-height:38px}.gms-a{display:flex;align-items:center;gap:10px;font-size:12.5px}.gms-a button{border:0;background:none;color:var(--navy);font:inherit;font-weight:700;cursor:pointer;padding:0}.gms-a .sp{flex:1}.gms-a small{color:var(--muted);font-weight:700}
+.gms-ls{max-height:300px;overflow:auto;border:1px solid var(--line);border-radius:10px;padding:4px}
+.gms-i{display:flex;align-items:center;gap:10px;padding:7px 8px;border-radius:8px;cursor:pointer;font-size:14px}.gms-i:hover{background:var(--soft)}.gms-i[hidden]{display:none}
+.gms-i input{position:absolute;opacity:0;width:1px;height:1px}.gms-i i{flex:none;width:18px;height:18px;border-radius:50%;border:2px solid #2F6FC0;box-sizing:border-box}
+.gms-i input:checked+i{background:#2F6FC0;box-shadow:inset 0 0 0 3px var(--paper)}.gms-i input:focus-visible+i{outline:2px solid #4D8FE6;outline-offset:2px}
+.gms-i span{flex:1}.gms-i small{color:var(--muted);font-weight:700}
+.gms-f{display:flex;gap:8px;justify-content:flex-start}.gms-f .btn2{flex:1}
 .tx-bs{display:inline-flex;gap:6px;margin-inline-start:auto}.tx-b{padding:5px 12px!important;font-size:12.5px!important}
 .tbl .pp{display:block;width:max-content;margin-top:3px;font-size:11px;line-height:1.5;color:var(--muted);font-weight:700;background:var(--soft);border-radius:99px;padding:0 7px;text-decoration:none}
 .tbl td[data-rd]{text-decoration:none!important}.tbl td[data-rd]:hover{box-shadow:inset 0 -2px 0 var(--navy)}.tbl .z{color:var(--line)}
@@ -1890,6 +1901,7 @@ const HQC={pend:"#0B2347",iss:"#1C437E",auth:"#2F6FC0",ret:"#6FA3E0",arch:"#BFD7
 const HQL={pend:"بانتظار المراجعة والاعتماد",iss:"القرارات الصادرة",auth:"قيد التدقيق لدى الهيئة",ret:"المسترجعة حالياً",arch:"غير مكتملة الأركان",oth:"أخرى"};
 const HQ_ORD=["pend","iss","auth","ret","arch"];
 const HQT={n:"#0B2347",sent:"#2F6FC0",iss:"#6FA3E0"},HQTL={n:"المرصود",sent:"المرسل للهيئة",iss:"القرارات الصادرة"};
+let HQG=[];
 let HQV="ov",HQP={k:"all",d1:0,d2:0},HQSF="",HQMS="",HQMQ="",HQMK="rev";
 const HQ_IC={
   eye:'<path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/>',
@@ -1908,8 +1920,8 @@ function hqMaxDay(){let m=null;rows.forEach(r=>{const d=dayOfRow(r);if(d!=null&&
 function hqRange(){const k=HQP.k;if(k==="all")return [0,0];if(/^y\d{4}$/.test(k)){const y=+k.slice(1);return [Math.floor(Date.UTC(y,0,1)/864e5),Math.floor(Date.UTC(y,11,31)/864e5)]}
   if(k==="q3"){const m=hqMaxDay();if(m==null)return [0,0];const t=new Date(m*864e5);return [Math.floor(Date.UTC(t.getUTCFullYear(),t.getUTCMonth()-2,1)/864e5),m]}
   return [HQP.d1||0,HQP.d2||0]}
-function hqRows(){const [a,b]=hqRange();return rows.filter(r=>{if(HQSF&&secOf(r.region)!==HQSF)return false;if(!a&&!b)return true;const d=dayOfRow(r);if(d==null)return false;return (!a||d>=a)&&(!b||d<=b)})}
-function hqScope(A){const [a,b]=hqRange();const p=a||b?`${wkDay(a||A.d1)} – ${wkDay(b||A.d2)}`:(A.d1!=null?`${wkDay(A.d1)} – ${wkDay(A.d2)}`:"");return {sec:HQSF||"جميع القطاعات",per:p}}
+function hqRows(noG){const [a,b]=hqRange();return rows.filter(r=>{if(HQSF&&secOf(r.region)!==HQSF)return false;if(!noG&&HQG.length&&!HQG.includes((r.sector||"غير محدد").trim()))return false;if(!a&&!b)return true;const d=dayOfRow(r);if(d==null)return false;return (!a||d>=a)&&(!b||d<=b)})}
+function hqScope(A){const [a,b]=hqRange();const p=a||b?`${wkDay(a||A.d1)} – ${wkDay(b||A.d2)}`:(A.d1!=null?`${wkDay(A.d1)} – ${wkDay(A.d2)}`:"");return {sec:(HQSF||"جميع القطاعات")+(HQG.length?" — "+gmsShort(HQG):""),per:p}}
 const HQ_L2C={"إجمالي المخالفات المرصودة":"n","المرصود":"n","المرصودة":"n","المرسلة للهيئة":"sent","المرسل للهيئة":"sent","القرارات الصادرة":"iss","قيد التدقيق لدى الهيئة":"auth","المسترجعة حالياً":"ret","المسترجع حالياً":"ret","بانتظار المراجعة والاعتماد":"pend","بانتظار المراجعة":"pend","غير مكتملة الأركان":"arch"};let HQ_CTX={};
 function hqTile(ic,label,val,sub,tone,frac,tip,rd){const c=HQ_L2C[label];const ra=rd||(c?rdA(Object.assign({c},HQ_CTX)):"");return `<div class="hk${ra?" rdk":""}" style="--tone:${tone}"${tip?` data-tip="${esc(tip)}"`:""}${ra}><div class="hk-h"><span class="hk-i">${hqIc(ic)}</span><span class="hk-l">${esc(label)}</span>${c&&EX[c]?exB(c):""}</div><b class="hk-v">${val}</b><div class="hk-s">${sub||"&nbsp;"}</div>${frac!=null?`<div class="hk-bar"><i style="width:${Math.max(0,Math.min(100,frac*100))}%"></i></div>`:""}</div>`}
 function hqDonut(parts,total,cap){const R=78,W=26,C=2*Math.PI*R;let off=0;const segs=parts.filter(p=>p.v>0).map(p=>{const f=p.v/(total||1),len=Math.max(0,f*C-2);const s=`<circle cx="100" cy="100" r="${R}" fill="none" stroke="${p.c}" stroke-width="${W}" stroke-dasharray="${len} ${C-len}" stroke-dashoffset="${-off}"${p.k?rdA({c:p.k}):""} data-tip="${esc(p.l)}: ${hqF(p.v)} (${Math.round(f*100)}%)"/>`;off+=f*C;return s}).join("");
@@ -2011,7 +2023,7 @@ function renderHQ(){
       <div class="hq-ex"><button type="button" class="hq-xb" id="hqPdf">${hqIc("pdf",18)} PDF</button><button type="button" class="hq-xb" id="hqPpt">${hqIc("ppt",18)} PowerPoint</button><button type="button" class="hq-xb" id="hqXls">${hqIc("xls",18)} Excel</button></div></div>
       <div class="hq-f"><div class="hq-chips">${pk.map(([k,l])=>`<button type="button" class="hq-chip" data-per="${k}" aria-pressed="${HQP.k===k}">${l}</button>`).join("")}</div>
         ${HQP.k==="cu"?`<div class="hq-cu"><input type="date" class="in" id="hqD1" value="${HQP.d1?new Date(HQP.d1*864e5).toISOString().slice(0,10):""}" aria-label="من"><span>إلى</span><input type="date" class="in" id="hqD2" value="${HQP.d2?new Date(HQP.d2*864e5).toISOString().slice(0,10):""}" aria-label="إلى"></div>`:""}
-        <label class="hq-sel"><span>القطاع</span><select id="hqSec"><option value="">جميع القطاعات</option>${HQ_SECS.map(s=>`<option${HQSF===s?" selected":""}>${s}</option>`).join("")}</select></label></div>
+        <label class="hq-sel"><span>القطاع</span><select id="hqSec"><option value="">جميع القطاعات</option>${HQ_SECS.map(s=>`<option${HQSF===s?" selected":""}>${s}</option>`).join("")}</select></label>${gmsHtml("hqGms",HQG)}</div>
       <p class="hq-src">المصدر: التقرير الشامل — منصة مكين للتقارير · آخر تاريخ في البيانات ${(()=>{const m=hqMaxDay();return m!=null?wkDay(m):"—"})()}</p></div>
     ${note}
     <nav class="hq-nav" role="tablist">${V.map(([k,l])=>`<button type="button" role="tab" data-hv="${k}" aria-selected="${HQV===k}">${l}</button>`).join("")}</nav>
@@ -2021,7 +2033,8 @@ function renderHQ(){
   $$("#hqBody [data-per]").forEach(b=>b.onclick=()=>{HQP.k=b.dataset.per;if(HQP.k==="cu"&&!HQP.d1){const m=hqMaxDay();if(m!=null){HQP.d2=m;HQP.d1=m-29}}re()});
   const dd=id=>{const v=$("#"+id).value;return v?Math.floor(Date.parse(v+"T00:00:00Z")/864e5):0};
   if($("#hqD1"))$("#hqD1").onchange=()=>{HQP.d1=dd("hqD1");re()};if($("#hqD2"))$("#hqD2").onchange=()=>{HQP.d2=dd("hqD2");re()};
-  $("#hqSec").onchange=e=>{HQSF=e.target.value;HQDS="";re()};
+  gmsBind("hqGms",gmsCount(hqRows(true)),HQG,v=>{HQG=v;HQDS="";re()});
+  $("#hqSec").onchange=e=>{HQSF=e.target.value;HQG=[];HQDS="";re()};
   $$("#hqBody [data-sec]").forEach(b=>b.onclick=()=>{const s=b.dataset.sec;if(!s){HQDS="";re();return}HQV="sec";HQDS=s;re();setTimeout(()=>{const x=$("#hqDet");if(x)x.scrollIntoView({behavior:"smooth",block:"start"})},40)});
   $$("#hqBody [data-dsec]").forEach(b=>b.onclick=()=>{HQDS=HQDS===b.dataset.dsec?"":b.dataset.dsec;re();setTimeout(()=>{const x=$("#hqDet");if(x)x.scrollIntoView({behavior:"smooth",block:"start"})},40)});
   $$("#hqBody [data-msec]").forEach(b=>b.onclick=()=>{HQMS=b.dataset.msec;re()});
@@ -2100,6 +2113,28 @@ function pfInsights(A,mg,of,isM){const T=A.T,o=[],qT=qRate(T.ret,T.sent),L=(isM?
   const few=(isM?mg:of).filter(x=>x.v.sent<Q_MIN).length;if(few)o.push(["i",`<b>${hqF(few)}</b> ${who} عينتهم صغيرة (أقل من 5 مرسلة) ولم يُصنَّفوا ${exB("few")}`]);
   const G=Object.entries(A.G).filter(([g,v])=>v.sent>=20).sort((a,b)=>b[1].ret/b[1].sent-a[1].ret/a[1].sent)[0];if(G)o.push(["w",`أعلى محافظة في نسبة المسترجع: <b>${esc(G[0])}</b> (${bP(G[1].ret,G[1].sent)} من ${hqF(G[1].sent)} مرسلة).`]);
   return o.slice(0,6)}
+
+/* ===================== اختيار متعدد للمحافظات (مكوّن موحّد) ===================== */
+const gmsLab=sel=>!sel.length?"كل المحافظات":sel.length===1?sel[0]:`${sel.length} محافظات`;
+const gmsShort=sel=>!sel.length?"":sel.length<=3?sel.join("، "):sel.slice(0,2).join("، ")+` +${sel.length-2}`;
+function gmsHtml(id,sel){return `<div class="gms" id="${id}"><span class="gms-l">المحافظات</span><button type="button" class="gms-b${sel.length?" on":""}" aria-haspopup="true" aria-expanded="false"><span>${esc(gmsLab(sel))}</span><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.4"><path d="m6 9 6 6 6-6"/></svg></button></div>`}
+function gmsBind(id,cnt,sel,apply){const w=document.getElementById(id);if(!w)return;const btn=w.querySelector(".gms-b");
+  btn.onclick=e=>{e.stopPropagation();let pop=document.querySelector(".gms-pop");if(pop){pop.remove();if(pop.dataset.for===id)return}
+    const all=Object.keys(cnt).sort((a,b)=>a.localeCompare(b,"ar"));const tmp=new Set(sel);
+    pop=document.createElement("div");pop.className="gms-pop";pop.dataset.for=id;pop.setAttribute("role","dialog");
+    pop.innerHTML=`<input type="search" class="in gms-q" placeholder="ابحث عن محافظة"><div class="gms-a"><button type="button" data-a="all">تحديد الكل</button><button type="button" data-a="none">إلغاء الكل</button><span class="sp"></span><small class="gms-n"></small></div><div class="gms-ls">${all.map(g=>`<label class="gms-i" data-g="${esc(g)}"><input type="checkbox" value="${esc(g)}"${tmp.has(g)?" checked":""}><i></i><span>${esc(g)}</span><small>${hqF(cnt[g])}</small></label>`).join("")||'<div class="empty">لا توجد محافظات</div>'}</div><div class="gms-f"><button type="button" class="btn2" data-a="cancel">إلغاء</button><button type="button" class="btn2 pri" data-a="ok">تطبيق</button></div>`;
+    document.body.appendChild(pop);const r=btn.getBoundingClientRect(),W=Math.min(340,innerWidth-24);pop.style.width=W+"px";let x=r.right-W;x=Math.max(12,Math.min(innerWidth-W-12,x));pop.style.left=x+scrollX+"px";pop.style.top=r.bottom+6+scrollY+"px";btn.setAttribute("aria-expanded","true");
+    const n=()=>{pop.querySelector(".gms-n").textContent=tmp.size?`${tmp.size} محددة`:"الكل"};n();
+    pop.querySelectorAll(".gms-i input").forEach(c=>c.onchange=()=>{c.checked?tmp.add(c.value):tmp.delete(c.value);n()});
+    pop.querySelector(".gms-q").oninput=e=>{const q=norm(e.target.value);pop.querySelectorAll(".gms-i").forEach(l=>l.hidden=!!q&&!norm(l.dataset.g).includes(q))};
+    const done=ok=>{pop.remove();btn.setAttribute("aria-expanded","false");document.removeEventListener("click",out,true);if(ok)apply([...tmp])};
+    const out=e=>{if(!pop.contains(e.target)&&!btn.contains(e.target))done(true)};setTimeout(()=>document.addEventListener("click",out,true),0);
+    pop.onclick=e=>{const a=e.target.closest("[data-a]");if(!a)return;const k=a.dataset.a;
+      if(k==="all"){pop.querySelectorAll(".gms-i").forEach(l=>{if(!l.hidden){const c=l.querySelector("input");c.checked=true;tmp.add(c.value)}});n()}
+      else if(k==="none"){pop.querySelectorAll(".gms-i input").forEach(c=>{c.checked=false});tmp.clear();n()}
+      else done(k==="ok")};
+    pop.addEventListener("keydown",e=>{if(e.key==="Escape")done(false);if(e.key==="Enter"&&e.target.classList.contains("gms-q"))done(true)});pop.querySelector(".gms-q").focus()}}
+const gmsCount=L=>{const c={};L.forEach(r=>{const g=(r.sector||"غير محدد").trim();c[g]=(c[g]||0)+1});return c};
 /* تلميح عائم */
 (function(){const tip=document.createElement("div");tip.className="hq-tip";tip.hidden=true;document.body.appendChild(tip);
   document.addEventListener("mouseover",e=>{const t=e.target.closest&&e.target.closest("#hqBody [data-tip]");if(!t){tip.hidden=true;return}tip.textContent=t.getAttribute("data-tip");tip.hidden=false});
@@ -2225,9 +2260,10 @@ async function hqPpt(A,secs,sc,btn){const old=btn.innerHTML;btn.disabled=true;bt
 let PFD=-1,HQMD=-1;
 const SORT_SEL=(id,opts,k,d)=>`<label class="srt"><span>ترتيب حسب</span><select id="${id}">${opts.map(([key,hi,lo])=>`<option value="${key}:-1"${k===key&&d<0?" selected":""}>${hi}</option><option value="${key}:1"${k===key&&d>0?" selected":""}>${lo}</option>`).join("")}</select></label>`;
 const SORT_TXT=(opts,k,d)=>{const o=opts.find(x=>x[0]===k);return o?(d<0?o[1]:o[2]):""};
-let PFV="mgr",PFP={k:"all",d1:0,d2:0},PFS="",PFG="",PFQ="",PFC="",PFK="sent";
+let PFV="mgr",PFP={k:"all",d1:0,d2:0},PFS="",PFG=[],PFQ="",PFC="",PFK="sent";
 function pfRange(){const o=HQP;HQP=PFP;const r=hqRange();HQP=o;return r}
-function pfBase(){const [a,b]=pfRange(),all=seesAll();return rows.filter(r=>{if(!all&&!scopeOK(r.sector,r.region))return false;if(PFS&&secOf(r.region)!==PFS)return false;if(PFG&&(r.sector||"غير محدد").trim()!==PFG)return false;
+function pfBase(noG){const G0=PFG;if(noG)PFG=[];try{return pfBase0()}finally{PFG=G0}}
+function pfBase0(){const [a,b]=pfRange(),all=seesAll();return rows.filter(r=>{if(!all&&!scopeOK(r.sector,r.region))return false;if(PFS&&secOf(r.region)!==PFS)return false;if(PFG.length&&!PFG.includes((r.sector||"غير محدد").trim()))return false;
   if(a||b){const d=dayOfRow(r);if(d==null)return false;if(a&&d<a)return false;if(b&&d>b)return false}return true})}
 function pfAgg(L){const P={mgr:{},off:{}},S={},G={},T=hqZ();
   const add=(M,k,r,c)=>{if(!k)return;const o=M[k]||(M[k]=Object.assign(hqZ(),{sec:{},gov:{}}));hqAdd(o,c,r);const s=secOf(r.region),g=(r.sector||"غير محدد").trim();o.sec[s]=(o.sec[s]||0)+1;o.gov[g]=(o.gov[g]||0)+1};
@@ -2237,7 +2273,7 @@ const pfTop=o=>Object.entries(o).sort((a,b)=>b[1]-a[1]);
 function pfPeople(M){return Object.entries(M).map(([k,v])=>({k,v,q:qRate(v.ret,v.sent),s:pfTop(v.sec)[0][0],g:pfTop(v.gov)}))}
 function pfDist(list){const d={e:0,g:0,y:0,r:0,f:0};list.forEach(x=>{if(x.q==null||x.v.sent<Q_MIN){d.f++;return}d[qCls(x.q).slice(2)]++});return d}
 function renderPerf(){const el=$("#perfBody");const L=pfBase(),A=pfAgg(L),T=A.T,all=seesAll();
-  RD_BASE=pfBase;const [a,b]=pfRange();const per=a||b?`${wkDay(a)} – ${wkDay(b)}`:"كل الفترات";const scope=all?(PFS||"جميع القطاعات"):(myUnit()?myUnit().name:(me.sector||""));RD_SCOPE=`تقييم الأداء — ${scope}${PFG?" — "+PFG:""} — ${per}`;
+  RD_BASE=pfBase;const [a,b]=pfRange();const per=a||b?`${wkDay(a)} – ${wkDay(b)}`:"كل الفترات";const scope=all?(PFS||"جميع القطاعات"):(myUnit()?myUnit().name:(me.sector||""));RD_SCOPE=`تقييم الأداء — ${scope}${PFG.length?" — "+gmsShort(PFG):""} — ${per}`;
   const ys=hqYears(),pk=[["all","كل الفترات"]].concat(ys.map(y=>["y"+y,String(y)]),[["q3","آخر 3 أشهر"],["cu","فترة مخصصة"]]);
   const govs=Object.keys(A.G).sort();
   const mg=pfPeople(A.P.mgr),of=pfPeople(A.P.off),qT=qRate(T.ret,T.sent);
@@ -2265,12 +2301,12 @@ function renderPerf(){const el=$("#perfBody");const L=pfBase(),A=pfAgg(L),T=A.T,
   }else{const gl=Object.entries(A.G).map(([g,o])=>({g,o,q:qRate(o.ret,o.sent)})).sort((p,q)=>(q.o.sent?q.o.ret/q.o.sent:0)-(p.o.sent?p.o.ret/p.o.sent:0));const mx=Math.max(.0001,...gl.map(x=>x.o.sent?x.o.ret/x.o.sent:0));
     body=`<div class="hq-card"><div class="hq-ch"><h3>نسبة المسترجع حسب المحافظة <span class="sub">${hqF(gl.length)} محافظة — الأعلى استرجاعاً أولاً</span></h3></div><div class="tbl-wrap"><table class="tbl"><thead><tr><th>المحافظة</th><th>القطاع</th><th>المرصود</th><th>المرسل للهيئة</th><th>المسترجع</th><th style="width:22%">نسبة المسترجع</th><th>نسبة الجودة</th></tr></thead><tbody>
     ${gl.map(x=>`<tr><td><b>${esc(x.g)}</b></td><td>${esc(x.o.s)}</td><td${rdA({g:x.g})}>${hqF(x.o.n)}</td><td${rdA({g:x.g,c:"sent"})}>${hqF(x.o.sent)}</td><td${rdA({g:x.g,c:"ret"})}>${hqF(x.o.ret)}</td><td><div class="pf-ib"><i class="${qCls(x.q)}" style="width:${x.o.sent?Math.max(2,x.o.ret/x.o.sent/mx*100):0}%"></i><b>${hqP(x.o.ret,x.o.sent)}</b></div></td><td>${qBadge(x.o.ret,x.o.sent)}</td></tr>`).join("")}</tbody></table></div>${legend}</div>`}
-  el.innerHTML=`<div class="hq pv"><div class="hq-top"><div class="hq-t1"><div><span class="hq-badge">تقييم الأداء</span><h2>جودة مدراء الرقابة ومأموري الضبط</h2><p>${esc(scope)}${PFG?" — "+esc(PFG):""} — ${per} · نسبة الجودة = 100% − نسبة المسترجع من المرسل للهيئة</p></div>
+  el.innerHTML=`<div class="hq pv"><div class="hq-top"><div class="hq-t1"><div><span class="hq-badge">تقييم الأداء</span><h2>جودة مدراء الرقابة ومأموري الضبط</h2><p>${esc(scope)}${PFG.length?" — "+esc(gmsShort(PFG)):""} — ${per} · نسبة الجودة = 100% − نسبة المسترجع من المرسل للهيئة</p></div>
     <div class="hq-ex"><button type="button" class="hq-xb" id="pfPdf">${hqIc("pdf",18)} PDF</button><button type="button" class="hq-xb" id="pfXls">${hqIc("xls",18)} Excel</button></div></div>
     <div class="hq-f"><div class="hq-chips">${pk.map(([k,l])=>`<button type="button" class="hq-chip" data-pfper="${k}" aria-pressed="${PFP.k===k}">${l}</button>`).join("")}</div>
       ${PFP.k==="cu"?`<div class="hq-cu"><input type="date" class="in" id="pfD1" value="${PFP.d1?new Date(PFP.d1*864e5).toISOString().slice(0,10):""}"><span>إلى</span><input type="date" class="in" id="pfD2" value="${PFP.d2?new Date(PFP.d2*864e5).toISOString().slice(0,10):""}"></div>`:""}
       ${all?`<label class="hq-sel"><span>القطاع</span><select id="pfSec"><option value="">جميع القطاعات</option>${HQ_SECS.map(s=>`<option${PFS===s?" selected":""}>${s}</option>`).join("")}</select></label>`:""}
-      <label class="hq-sel"${all?' style="margin-inline-start:0"':""}><span>المحافظة</span><select id="pfGov"><option value="">كل المحافظات</option>${govs.concat(PFG&&!govs.includes(PFG)?[PFG]:[]).map(g=>`<option${PFG===g?" selected":""}>${esc(g)}</option>`).join("")}</select></label></div></div>
+      ${gmsHtml("pfGms",PFG)}</div></div>
     <div class="hq-kgrid">${hqTile("search","مدراء الرقابة",hqF(mg.length),"","#1F5BB0",null,null," ")}${hqTile("eye","مأمورو الضبط",hqF(of.length),"","#2AA6A0",null,null," ")}${hqTile("eye","المرصودة",hqF(T.n),"","#1F5BB0",null,null,rdA({}))}${hqTile("send","المرسلة للهيئة",hqF(T.sent),hqP(T.sent,T.n)+" من المرصود","#2F6FC0",T.sent/(T.n||1),null,rdA({c:"sent"}))}${hqTile("undo","المسترجعة حالياً",hqF(T.ret),hqP(T.ret,T.sent)+" من المرسل",HQC.ret,T.ret/(T.sent||1),null,rdA({c:"ret"}))}${hqTile("check","القرارات الصادرة",hqF(T.iss),hqP(T.iss,T.sent)+" من المرسل",HQC.iss,T.iss/(T.sent||1),null,rdA({c:"iss"}))}
       <div class="hk pf-qt ${qCls(qT)}"><div class="hk-h"><span class="hk-l">نسبة الجودة الإجمالية</span>${exB("q",T.sent+","+T.ret)}</div><b class="hk-v">${qTxt(qT)}</b><div class="hk-s">${qT==null?"لا يوجد مرسل":qLab(qT)}</div></div></div>
     ${insHtml(pfInsights(A,mg,of,PFV!=="off"),"قراءة ذكية — "+(PFV==="off"?"مأمورو الضبط":"مدراء الرقابة"))}<nav class="hq-nav" role="tablist">${V.map(([k,l])=>`<button type="button" role="tab" data-pfv="${k}" aria-selected="${PFV===k}">${l}</button>`).join("")}</nav>
@@ -2280,12 +2316,12 @@ function renderPerf(){const el=$("#perfBody");const L=pfBase(),A=pfAgg(L),T=A.T,
   $$("#perfBody [data-pfper]").forEach(b=>b.onclick=()=>{PFP.k=b.dataset.pfper;if(PFP.k==="cu"&&!PFP.d1){const m=hqMaxDay();if(m!=null){PFP.d2=m;PFP.d1=m-29}}re()});
   const dd=id=>{const v=$("#"+id).value;return v?Math.floor(Date.parse(v+"T00:00:00Z")/864e5):0};
   if($("#pfD1"))$("#pfD1").onchange=()=>{PFP.d1=dd("pfD1");re()};if($("#pfD2"))$("#pfD2").onchange=()=>{PFP.d2=dd("pfD2");re()};
-  if($("#pfSec"))$("#pfSec").onchange=e=>{PFS=e.target.value;PFG="";re()};$("#pfGov").onchange=e=>{PFG=e.target.value;re()};
+  if($("#pfSec"))$("#pfSec").onchange=e=>{PFS=e.target.value;PFG=[];re()};gmsBind("pfGms",gmsCount(pfBase(true)),PFG,v=>{PFG=v;re()});
   $$("#perfBody [data-pfk]").forEach(b=>b.onclick=()=>{const k=b.dataset.pfk;PFD=PFK===k?-PFD:-1;PFK=k;re()});
   $$("#perfBody [data-pfc]").forEach(b=>b.onclick=()=>{PFC=PFC===b.dataset.pfc?"":b.dataset.pfc;re()});
   if($("#pfSort"))$("#pfSort").onchange=e=>{const [k,d]=e.target.value.split(":");PFK=k;PFD=+d;re()};
   if($("#pfQ"))$("#pfQ").oninput=e=>{PFQ=e.target.value;clearTimeout(window._pft);window._pft=setTimeout(()=>{re();const i=$("#pfQ");if(i){i.focus();i.setSelectionRange(i.value.length,i.value.length)}},250)};
-  $("#pfXls").onclick=e=>pfExport(A,mg,of,e.currentTarget);$("#pfPdf").onclick=e=>pfPdf(A,mg,of,{sec:scope+(PFG?" — "+PFG:""),per},e.currentTarget)}
+  $("#pfXls").onclick=e=>pfExport(A,mg,of,e.currentTarget);$("#pfPdf").onclick=e=>pfPdf(A,mg,of,{sec:scope+(PFG.length?" — "+gmsShort(PFG):""),per},e.currentTarget)}
 async function pfExport(A,mg,of,btn){const old=btn.innerHTML;btn.disabled=true;btn.textContent="جارٍ التجهيز…";
   try{const EX=await exceljs();const wb=new EX.Workbook();wb.creator=me.full_name;wb.created=new Date();const HD={type:"pattern",pattern:"solid",fgColor:{argb:"FF1C437E"}};
     const QF={"q-e":"FFCFEBDB","q-g":"FFE8F5EC","q-y":"FFFDF1DC","q-r":"FFFCE9E7"};
