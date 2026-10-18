@@ -270,6 +270,13 @@ section.block{border-radius:18px;box-shadow:0 1px 2px rgba(16,40,74,.04)}
 .auth-card .linkbtn{color:var(--navy);text-decoration:none;font-weight:600;font-size:14px}
 button.in.fms{width:100%;border:1px solid var(--line);border-radius:10px;color:var(--ink);font-weight:600}
 .fbar.on button.in.fms{border-color:var(--line)}
+.hqbars{display:flex;flex-direction:column;gap:7px}.hqbar{display:grid;grid-template-columns:minmax(120px,42%) 1fr auto;gap:10px;align-items:center;font-size:13px}
+.hqbar span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.hqbar div{height:14px;background:var(--soft);border-radius:7px;overflow:hidden}.hqbar i{display:block;height:100%;border-radius:7px}
+.hqbar b{font-size:13px;white-space:nowrap}.hqbar small{color:var(--muted);font-weight:600}
+.tbl tr.hqsel td{background:var(--soft)}.tbl tr.hqtot td{background:var(--field);font-weight:700}.hqt td .pp{display:block}
+.hqfine{margin-top:10px;border-radius:12px;padding:10px 12px;background:var(--ok-bg);color:var(--ok);font-size:14px}
+.hqhead h2 .btn2{font-size:13px;padding:6px 12px}
+@media (max-width:520px){.hqbar{grid-template-columns:1fr auto}.hqbar div{grid-column:1/-1;order:3}}
 .nwcfoot{text-align:center;color:var(--muted);font-size:12.5px;padding:18px 14px 6px}
 @media (max-width:520px){header.top{padding:16px 16px 18px;align-items:flex-start}header.top .lg{height:38px;padding:8px 12px}header.top h1{font-size:17px}}
 @media (prefers-reduced-motion: reduce){*{transition:none!important}}
@@ -406,6 +413,7 @@ button.in.fms{width:100%;border:1px solid var(--line);border-radius:10px;color:v
   <div class="pg" data-pg="report" hidden><div id="reportBody"></div></div>
   <div class="pg" data-pg="team" hidden><div id="teamBody"></div></div>
   <div class="pg" data-pg="users" hidden><div id="usersBody"></div></div>
+  <div class="pg" data-pg="hq" hidden><div id="hqBody"></div></div>
 </div>
 
 <div class="bar" id="auditBar" hidden>
@@ -530,7 +538,7 @@ function pkFrom(e){e=e||{};if(!("amin" in e))return PK_UNK;
     if(hasDec)return vs===P?PK_PREV:PK_BLANK;
     return PK_NEW}
   return lab(vs)||lab(vis)||"غير محدد"}
-const COLS={amin:"حالة الزيارة لدى أمين اللجنة",decDate:"تاريخ اعتماد القرار",decision:"قرار مدير الرقابة",reason:"سبب القرار",region:"المنطقة",vstat:"حالة الزيارة",vno:"معرف المخالفة",visit:"رقم الزيارة",name:"اسم المخالف",nid:"هوية المخالف",coords:"موقع المخالفة",coords2:"الاحداثيات",gov:"المحافظة",date:"تاريخ بدء الزيارة",date2:"تاريخ انشاء الزيارة",officer:"اسم المفتش",explain:"ملاحظات المفتش",item:"وصف بند اللائحة",prop:"نوع العقار",sev:"نوع المخالفة",status:"حالة المخالفة"};
+const COLS={mgr:"اسم مدير الرقابة",pres:"رقم قرار رئيس الهيئة",fine:"قيمة المخالفة",amin:"حالة الزيارة لدى أمين اللجنة",decDate:"تاريخ اعتماد القرار",decision:"قرار مدير الرقابة",reason:"سبب القرار",region:"المنطقة",vstat:"حالة الزيارة",vno:"معرف المخالفة",visit:"رقم الزيارة",name:"اسم المخالف",nid:"هوية المخالف",coords:"موقع المخالفة",coords2:"الاحداثيات",gov:"المحافظة",date:"تاريخ بدء الزيارة",date2:"تاريخ انشاء الزيارة",officer:"اسم المفتش",explain:"ملاحظات المفتش",item:"وصف بند اللائحة",prop:"نوع العقار",sev:"نوع المخالفة",status:"حالة المخالفة"};
 function fmtDate(v){
   if(v instanceof Date&&!isNaN(v))return `${v.getDate()}/${v.getMonth()+1}/${v.getFullYear()}`;
   const s=String(v||"").trim();let m=s.match(/^(\d{1,2})\/(\d{1,2})\/(\d{2,4})/);
@@ -594,7 +602,7 @@ $("#fileIn").onchange=async e=>{
       return {gov:g(r,"gov"),vno:g(r,"vno"),visit:g(r,"visit"),name:g(r,"name"),nid:g(r,"nid"),
         loc:coords,coords,region:g(r,"region"),vstatus:g(r,"status"),visitSt:g(r,"vstat"),
         date:fmtDate(r[COLS.date]||r[COLS.date2]),officer:g(r,"officer"),explain:g(r,"explain"),
-        item:g(r,"item"),prop:g(r,"prop"),sev:g(r,"sev"),decision:g(r,"decision"),reason:g(r,"reason"),amin:g(r,"amin"),decDate:g(r,"decDate")};
+        item:g(r,"item"),prop:g(r,"prop"),sev:g(r,"sev"),decision:g(r,"decision"),reason:g(r,"reason"),amin:g(r,"amin"),decDate:g(r,"decDate"),mgr:g(r,"mgr"),pres:g(r,"pres"),fine:g(r,"fine")};
     }).filter(r=>r.vno||r.visit);out.forEach(r=>{r.raw=rawBy[r.visit||r.vno]||null});
     if(!out.length){toast("لم أجد عمود «معرف المخالفة» في الملف");return}
     importDialog(out,true);
@@ -1064,7 +1072,7 @@ function transferDialog(){const a=A(),g=a.f.gov||a.sector,rg=a.f.region||a.regio
   const cands=users.filter(u=>u.active&&["staff","manager","exec"].includes(u.role)&&u.id!==a._owner&&(me.role!=="manager"||userScopeOK(u,g,rg)));
   if(!cands.length){toast("لا يوجد موظفون متاحون للتحويل");return}
   $("#sheet").innerHTML=`<h3>تحويل المعاملة ${esc(a.f.vno||"")}</h3><div class="sub">المدقق الحالي: ${esc(a.auditor||userName(a._owner))}</div>
-   <label class="f" style="margin-top:12px">تحويل إلى<select class="in" id="trTo">${cands.map(u=>`<option value="${u.id}">${esc(u.full_name)} — ${esc(ROLE[u.role]||u.role)}${u.sector?" — "+esc(u.sector):""}</option>`).join("")}</select></label>
+   <label class="f" style="margin-top:12px">تحويل إلى<select class="in" id="trTo">${cands.map(u=>`<option value="${u.id}">${esc(u.full_name)} — ${esc(roleLabel(u))}${u.sector?" — "+esc(u.sector):""}</option>`).join("")}</select></label>
    <label class="f" style="margin-top:10px">سبب التحويل (اختياري)<textarea class="in" id="trWhy" placeholder="مثال: إجازة الموظف، توزيع العمل"></textarea></label>
    <div class="btns" style="margin-top:12px"><button type="button" class="btn2 pri" id="trGo">تحويل</button><button type="button" class="btn2" id="closeSh">إلغاء</button></div>`;
   openSheet();$("#closeSh").onclick=closeSheet;
@@ -1123,7 +1131,12 @@ const ROLE={admin:"مدير النظام",exec:"مدير الجودة",manager:"
 const isMgrR=()=>!!me&&["admin","exec","manager"].includes(me.role);
 const isHQ=u=>!!u&&!!u.sector&&gcl(u.sector)===gcl(ORG.hq||"");
 const seesAll=()=>!!me&&(["admin","exec","viewer"].includes(me.role)||isHQ(me));
-function roleLabel(u){return u.role==="staff"&&isHQ(u)?"أخصائي جودة":(ROLE[u.role]||u.role)}
+const isHQU=u=>!!u&&(u.role==="exec"||isHQ(u));
+const canHQ=()=>!!me&&(me.role==="admin"||isHQU(me));
+function pageOK(p){if(!me)return false;if(p[0]==="hq")return canHQ();if(p[2].includes(me.role))return true;return isHQU(me)&&p[0]!=="users"}
+const needUsers=()=>!!me&&(["admin","exec","manager","viewer"].includes(me.role)||isHQU(me));
+const TITLE_EXEC="المدير التنفيذي لإدارة المخالفات والجودة";const isAid=u=>!!u&&u.role==="exec"&&/عايض/.test(norm(u.full_name))&&/القحطاني/.test(norm(u.full_name));
+function roleLabel(u){if(isAid(u))return TITLE_EXEC;return u.role==="staff"&&isHQ(u)?"أخصائي جودة":(ROLE[u.role]||u.role)}
 const canEditAudit=()=>!!me&&["admin","exec","manager","staff"].includes(me.role);
 const canUpload=()=>!!me&&["admin","exec","manager","clerk"].includes(me.role);
 /* ----- الهيكل التنظيمي ----- */
@@ -1159,7 +1172,7 @@ async function fetchAll(table,cols,label){
   await Promise.all(Array.from({length:Math.min(6,pages)},worker));return out.flat();
 }
 const QCOLS="visit_no,violation_id,violator_name,sector,region,visit_date,officer,item,property_type,extra";
-async function loadQueue(){const q=await fetchAll("quality_queue",QCOLS,"جارٍ تحميل المخالفات");const MT={};rows=q.map(x=>{const r={vno:x.visit_no,visit:x.visit_no,vid:x.violation_id||"",name:x.violator_name||"",nid:"",loc:"",sector:x.sector||"",region:x.region||"",sev:(x.extra||{}).sev||"",vstat:(x.extra||{}).vstatus||"",pkind:pkFrom(x.extra||{}),reason:(x.extra||{}).reason||"",amin:(x.extra||{}).amin||"",decDate:(x.extra||{}).dec_date||"",vvisit:(x.extra||{}).visit_status||"",dec:("decision" in (x.extra||{}))?x.extra.decision:undefined,date:x.visit_date||"",officer:x.officer||"",explain:"",item:x.item||"",prop:x.property_type||"",type:(x.item||"") in MT?MT[x.item||""]:(MT[x.item||""]=matchType(x.item||""))};r._h=norm([r.vno,r.vid,r.officer,r.item,r.region,r.sector,r.name].join(" "));return r})}
+async function loadQueue(){const q=await fetchAll("quality_queue",QCOLS,"جارٍ تحميل المخالفات");const MT={};rows=q.map(x=>{const r={vno:x.visit_no,visit:x.visit_no,vid:x.violation_id||"",name:x.violator_name||"",nid:"",loc:"",sector:x.sector||"",region:x.region||"",sev:(x.extra||{}).sev||"",vstat:(x.extra||{}).vstatus||"",pkind:pkFrom(x.extra||{}),reason:(x.extra||{}).reason||"",amin:(x.extra||{}).amin||"",decDate:(x.extra||{}).dec_date||"",mgr:(x.extra||{}).mgr||"",pres:("pres" in (x.extra||{}))?x.extra.pres:undefined,fine:(x.extra||{}).fine||"",vvisit:(x.extra||{}).visit_status||"",dec:("decision" in (x.extra||{}))?x.extra.decision:undefined,date:x.visit_date||"",officer:x.officer||"",explain:"",item:x.item||"",prop:x.property_type||"",type:(x.item||"") in MT?MT[x.item||""]:(MT[x.item||""]=matchType(x.item||""))};r._h=norm([r.vno,r.vid,r.officer,r.item,r.region,r.sector,r.name].join(" "));return r})}
 async function loadAudits(){
   const q=await fetchAll("quality_audits","*");const keep=audits.manual;audits={};
   q.forEach(x=>{audits[x.visit_no]={_id:x.id,_owner:x.auditor_id,_ro:!canEditAudit()||(!!x.auditor_id&&x.auditor_id!==me.id),
@@ -1236,9 +1249,9 @@ async function logout(){try{await flush()}catch(e){}await sb.auth.signOut();loca
 $("#blockLogout").onclick=logout;
 async function enterApp(){
   show("appView");$("#whoName").textContent=me.full_name;$("#whoRole").textContent=roleLabel(me);
-  buildTabs();await loadData();if(["admin","exec","manager","viewer"].includes(me.role))await loadUsers();await loadPwReq();await loadSignups();{const msgs=[];if(PWREQ.length)msgs.push(`${PWREQ.length} طلب إعادة كلمة مرور`);if(SIGNUPS.length)msgs.push(`${SIGNUPS.length} طلب تسجيل`);if(msgs.length)setTimeout(()=>toast(`يوجد ${msgs.join(" و")} — في صفحة الإدارة والهيكل`),1200)}
-  current="manual";try{page=localStorage.getItem("vv:page")||"dash"}catch(e){page="dash"}
-  renderAll();go(page);
+  buildTabs();await loadData();if(needUsers())await loadUsers();await loadPwReq();await loadSignups();{const msgs=[];if(PWREQ.length)msgs.push(`${PWREQ.length} طلب إعادة كلمة مرور`);if(SIGNUPS.length)msgs.push(`${SIGNUPS.length} طلب تسجيل`);if(msgs.length)setTimeout(()=>toast(`يوجد ${msgs.join(" و")} — في صفحة الإدارة والهيكل`),1200)}
+  current="manual";try{page=localStorage.getItem("vv:page")||(isHQU(me)?"hq":"dash")}catch(e){page="dash"}
+  buildTabs();renderAll();go(page);
 }
 async function boot(){
   if(!sb){$("#lgMsg").textContent="تعذر الاتصال بالخادم، تحقق من الإنترنت ثم أعد فتح التطبيق";show("authView");return}
@@ -1247,15 +1260,15 @@ async function boot(){
 }
 
 /* ----- التنقل ----- */
-const PAGES=[["dash","الرئيسية",["admin","exec","manager","staff","clerk","viewer"]],["audit","المخالفات والتدقيق",["admin","exec","manager","staff","clerk","viewer"]],["report","تقارير التدقيق",["admin","exec","manager","viewer","clerk"]],["team","أداء الموظفين",["admin","exec","manager","viewer"]],["users","الإدارة والهيكل",["admin"]]];
-function buildTabs(){$("#tabs").innerHTML=PAGES.filter(p=>p[2].includes(me.role)).map(p=>`<button type="button" class="tab" data-go="${p[0]}">${p[1]}</button>`).join("");$$("[data-go]").forEach(b=>b.onclick=()=>go(b.dataset.go))}
-function go(p){if(!PAGES.find(x=>x[0]===p&&x[2].includes(me.role)))p="dash";page=p;try{localStorage.setItem("vv:page",p)}catch(e){}
+const PAGES=[["dash","الرئيسية",["admin","exec","manager","staff","clerk","viewer"]],["hq","المركز الرئيسي",[]],["audit","المخالفات والتدقيق",["admin","exec","manager","staff","clerk","viewer"]],["report","تقارير التدقيق",["admin","exec","manager","viewer","clerk"]],["team","أداء الموظفين",["admin","exec","manager","viewer"]],["users","الإدارة والهيكل",["admin"]]];
+function buildTabs(){$("#tabs").innerHTML=PAGES.filter(pageOK).map(p=>`<button type="button" class="tab" data-go="${p[0]}">${p[1]}</button>`).join("");$$("[data-go]").forEach(b=>b.onclick=()=>go(b.dataset.go))}
+function go(p){if(!PAGES.find(x=>x[0]===p&&pageOK(x)))p="dash";page=p;try{localStorage.setItem("vv:page",p)}catch(e){}
   $$(".pg").forEach(x=>x.hidden=x.dataset.pg!==p);$$("[data-go]").forEach(b=>b.setAttribute("aria-current",String(b.dataset.go===p)));
   $("#auditBar").hidden=p!=="audit";$("#upBtn").hidden=p!=="audit"||!canUpload();
-  if(p==="dash")renderDash();if(p==="report")renderReport();if(p==="team")renderTeam();if(p==="users")renderUsers();window.scrollTo(0,0)}
+  if(p==="dash")renderDash();if(p==="report")renderReport();if(p==="team")renderTeam();if(p==="users")renderUsers();if(p==="hq")renderHQ();window.scrollTo(0,0)}
 $("#logoutBtn").onclick=logout;
 $("#pwBtn").onclick=()=>{$("#pwCancel").hidden=false;$("#pwTitle").textContent="تغيير كلمة المرور";$("#pwMsg").textContent="";show("pwView")};
-$("#refreshBtn").onclick=async()=>{const b=$("#refreshBtn");if(b.disabled)return;b.disabled=true;b.textContent="جارٍ التحديث…";await flush();await loadData();if(["admin","exec","manager","viewer"].includes(me.role))await loadUsers();renderAll();go(page);b.disabled=false;b.textContent="↻ تحديث";toast("تم تحديث البيانات")};
+$("#refreshBtn").onclick=async()=>{const b=$("#refreshBtn");if(b.disabled)return;b.disabled=true;b.textContent="جارٍ التحديث…";await flush();await loadData();if(needUsers())await loadUsers();renderAll();go(page);b.disabled=false;b.textContent="↻ تحديث";toast("تم تحديث البيانات")};
 
 /* ===================== الإحصائيات ===================== */
 function periodStart(p){const d=new Date();if(p==="7")return Date.now()-7*864e5;if(p==="30")return Date.now()-30*864e5;if(p==="month")return new Date(d.getFullYear(),d.getMonth(),1).getTime();return 0}
@@ -1586,6 +1599,104 @@ async function exportRawPdf(btn){
   }catch(e){toast("تعذر إنشاء PDF: "+(e.message||""))}
   btn.disabled=false;btn.textContent=old;
 }
+/* ===================== بوابة المركز الرئيسي ===================== */
+const HQ_SEC=[["الأوسط",["الرياض"]],["الغربي",["مكة المكرمة","مكة"]],["الشرقي",["الشرقية"]],["الشمالي",["القصيم","حائل","الجوف","الحدود الشمالية"]],["الشمالي الغربي",["المدينة المنورة","تبوك"]],["الجنوبي",["جازان","جيزان","عسير","نجران","الباحة"]]];
+const HQ_SECS=HQ_SEC.map(x=>x[0]);
+const hqN=x=>norm(x).replace(/^منطقه\s+/,"").trim();
+let _hqSM=null;function secOf(region){if(!_hqSM){_hqSM={};HQ_SEC.forEach(([s,rs])=>rs.forEach(r=>_hqSM[hqN(r)]=s))}return _hqSM[hqN(region)]||"غير محدد"}
+const HQ_ISS=["إعتماد المخالفة إرسالها","بانتظار الاعتماد النهائي"];
+const HQ_RETVS=["بانتظار المراجعة والاعتماد","","مكتملة","مرسلة الى الأرشيف","مرسلة إلى الأرشيف"];
+function hqCls(r){const vs=(r.vstat||"").trim(),vv=(r.vvisit||"").trim(),dec=(r.dec||"").trim(),am=(r.amin||"").trim();
+  const iss=r.pres!==undefined?!!String(r.pres).trim():HQ_ISS.includes(am);
+  if(iss)return "iss";
+  if(dec==="معتمدة")return (HQ_RETVS.includes(vs)||PK_RET_AMIN.includes(am))?"ret":"auth";
+  if(/أرشيف/.test(vs)||dec==="غير معتمدة")return "arch";
+  if(vs==="بانتظار المراجعة والاعتماد"||vv==="بانتظار المراجعة والاعتماد")return "pend";
+  return "oth"}
+const hqZ=()=>({n:0,iss:0,ret:0,auth:0,arch:0,pend:0,oth:0,sent:0,rev:0,rej:0,fine:0});
+function hqAdd(o,c,r){o.n++;o[c]++;if(c==="iss"||c==="ret"||c==="auth")o.sent++;const d=(r.dec||"").trim();if(d)o.rev++;if(d==="غير معتمدة")o.rej++;if(c==="iss"){const f=parseFloat(String(r.fine||"").replace(/[^\d.]/g,""));if(f>0)o.fine+=f}}
+const HQ_MON=["يناير","فبراير","مارس","أبريل","مايو","يونيو","يوليو","أغسطس","سبتمبر","أكتوبر","نوفمبر","ديسمبر"];
+let HQS="";
+function hqAgg(L){
+  const A={T:hqZ(),S:{},Y:{},M:{},TY:{},STY:{},RG:{},GV:{},MG:{},noPres:0,noDec:0,noMgr:0,d1:null,d2:null};
+  L.forEach(r=>{const c=hqCls(r),s=secOf(r.region);r._hc=c;
+    hqAdd(A.T,c,r);hqAdd(A.S[s]=A.S[s]||hqZ(),c,r);
+    const d=dayOfRow(r);if(d!=null){if(A.d1==null||d<A.d1)A.d1=d;if(A.d2==null||d>A.d2)A.d2=d;const t=new Date(d*864e5),y=t.getUTCFullYear(),mk=y*100+t.getUTCMonth()+1;
+      hqAdd(A.Y[y]=A.Y[y]||hqZ(),c,r);const ms=A.M[s]=A.M[s]||{};hqAdd(ms[mk]=ms[mk]||hqZ(),c,r);const mt=A.M._all=A.M._all||{};hqAdd(mt[mk]=mt[mk]||hqZ(),c,r)}
+    const gv=(r.sector||"غير محدد").trim(),sg=A.GV[s]=A.GV[s]||{};sg[gv]=(sg[gv]||0)+1;const rg=(r.region||"غير محدد").trim();(A.RG[s]=A.RG[s]||{});hqAdd(A.RG[s][rg]=A.RG[s][rg]||hqZ(),c,r);
+    const m=(r.mgr||"").trim();if(m){(A.MG[s]=A.MG[s]||{});hqAdd(A.MG[s][m]=A.MG[s][m]||hqZ(),c,r)}
+    if(c==="iss"||c==="ret"||c==="auth"){const it=(r.item||"بند غير محدد").trim();A.TY[it]=(A.TY[it]||0)+1;const st=A.STY[s]=A.STY[s]||{};st[it]=(st[it]||0)+1}
+    if(r.pres===undefined)A.noPres++;if(r.dec===undefined)A.noDec++;if(!m&&r.pres===undefined)A.noMgr++});
+  return A}
+const hqP=(a,b)=>b?Math.round(a/b*100)+"%":"—";
+const hqF=v=>(+v||0).toLocaleString("en-US");
+function hqChg(a,b){if(!a&&!b)return '<span class="pp">—</span>';if(!a)return '<span class="pp" style="color:var(--ok)">جديد</span>';const p=Math.round((b-a)/a*100);return `<span class="pp" style="color:${p>=0?"var(--ok)":"var(--bad)"}">${p>=0?"▲":"▼"} ${Math.abs(p)}%</span>`}
+function hqBars(o,lim,col){const e=Object.entries(o).sort((a,b)=>b[1]-a[1]);const top=e.slice(0,lim);const rest=e.slice(lim).reduce((t,x)=>t+x[1],0);if(rest)top.push(["أخرى",rest]);const tot=e.reduce((t,x)=>t+x[1],0)||1,mx=Math.max(1,...top.map(x=>x[1]));
+  return top.length?`<div class="hqbars">${top.map(([k,v])=>`<div class="hqbar"><span title="${esc(k)}">${esc(k)}</span><div><i style="width:${Math.max(2,v/mx*100)}%;background:${k==="أخرى"?"#A7B4C2":(col||"var(--navy)")}"></i></div><b>${hqF(v)} <small>${Math.round(v/tot*100)}%</small></b></div>`).join("")}</div>`:'<div class="empty">لا توجد بيانات</div>'}
+function renderHQ(){
+  const el=$("#hqBody");if(!canHQ()){el.innerHTML='<section class="block"><div class="empty">🔒 هذه البوابة خاصة بموظفي المركز الرئيسي.</div></section>';return}
+  const L=vrows(),A=hqAgg(L),T=A.T;
+  const per=A.d1!=null?`${wkDay(A.d1)} – ${wkDay(A.d2)}`:"";
+  const note=(A.noPres||A.noDec)?`<div class="alert">ℹ️ ${A.noDec?"بعض المخالفات رُفعت قبل إضافة «قرار مدير الرقابة»؛ ":""}لتظهر أرقام قرارات الهيئة وأسماء مدراء الرقابة وقيم الغرامات بدقة، أعد رفع التقرير الشامل (استبدال). حتى ذلك الحين تُحتسب القرارات الصادرة من «حالة الزيارة لدى أمين اللجنة».</div>`:"";
+  const secs=HQ_SECS.filter(s=>A.S[s]).concat(A.S["غير محدد"]?["غير محدد"]:[]);
+  if(HQS&&!A.S[HQS])HQS="";
+  // السنوات
+  const ys=Object.keys(A.Y).map(Number).sort();
+  const YR=[["المخالفات المرصودة","n"],["المرسلة للهيئة","sent"],["قيد التدقيق لدى الهيئة","auth"],["المسترجعة حالياً","ret"],["القرارات الصادرة","iss"],["بانتظار المراجعة والاعتماد","pend"],["غير مكتملة الأركان","arch"]];
+  // الشهرين الأخيرين
+  const mks=Object.keys(A.M._all||{}).map(Number).sort();const inc=A.d2!=null&&mks.length&&(()=>{const t=new Date(A.d2*864e5),last=new Date(Date.UTC(t.getUTCFullYear(),t.getUTCMonth()+1,0)).getUTCDate();return t.getUTCDate()<last-2})();const sk=inc&&mks.length>=3?1:0;const m2=mks[mks.length-1-sk],m1=mks[mks.length-2-sk];
+  const mlab=k=>k?`${HQ_MON[k%100-1]} ${Math.floor(k/100)}`:"";
+  el.innerHTML=`
+  <section class="block hqhead"><h2><span>🏛️ بوابة المركز الرئيسي — أداء المخالفات</span><button type="button" class="btn2 pri" id="hqXls">📊 تصدير Excel</button></h2>
+    <p class="sub" style="margin:-6px 0 0">${esc(fLabel())}${per?` — الفترة (تاريخ بدء الزيارة): ${per}`:""} — المصدر: التقرير الشامل (منصة مكين للتقارير)</p>${note}</section>
+  <section class="block"><h2>المؤشرات العامة <span class="sub">${hqF(T.n)} مخالفة</span></h2>
+    <h3 class="sec">شركة المياه الوطنية</h3>
+    <div class="kpis">${kpi("إجمالي المخالفات المرصودة",hqF(T.n),"k-navy")}${kpi("بانتظار المراجعة والاعتماد",hqF(T.pend),"k-warn",hqP(T.pend,T.n)+" من المرصودة")}${kpi("غير مكتملة الأركان",hqF(T.arch),"k-gray",hqP(T.arch,T.n)+" من المرصودة")}</div>
+    <h3 class="sec">الهيئة السعودية للمياه</h3>
+    <div class="kpis">${kpi("المرسلة للهيئة",hqF(T.sent),"k-navy",hqP(T.sent,T.n)+" من المرصودة")}${kpi("قيد التدقيق لدى الهيئة",hqF(T.auth),"k-warn",hqP(T.auth,T.sent)+" من المرسلة")}${kpi("المسترجعة حالياً",hqF(T.ret),"k-bad",hqP(T.ret,T.sent)+" من المرسلة")}${kpi("القرارات الصادرة",hqF(T.iss),"k-ok",hqP(T.iss,T.sent)+" من المرسلة")}</div>
+    ${T.fine?`<div class="hqfine">💰 إجمالي قيمة المخالفات التي صدر لها قرار: <b>${hqF(Math.round(T.fine))} ريال</b> <span class="sub">(${hqF(T.iss)} قرار)</span></div>`:""}
+    <p class="sub" style="font-size:12px;margin:8px 0 0">«المسترجعة حالياً» هي المعادة من الهيئة ولم يُعد إرسالها بعد، حسب حالتها في آخر تقرير شامل؛ أما ما استُرجع ثم أُعيد إرساله فيظهر في حالته الحالية.</p></section>
+  <section class="block"><h2>مقارنة القطاعات <span class="sub">اضغط على القطاع لعرض تفاصيله</span></h2>
+    <div class="tbl-wrap"><table class="tbl hqt"><thead><tr><th>القطاع</th><th>المرصود</th><th>المرسل للهيئة</th><th>قيد التدقيق لدى الهيئة</th><th>المسترجع حالياً</th><th>القرارات الصادرة</th><th>بانتظار المراجعة</th><th>غير مكتملة الأركان</th></tr></thead><tbody>
+    ${secs.map(s=>{const o=A.S[s];return `<tr class="clk${HQS===s?" hqsel":""}" data-hqs="${esc(s)}"><td><b>${esc(s)}</b></td><td>${hqF(o.n)}</td><td>${hqF(o.sent)}<span class="pp">${hqP(o.sent,o.n)}</span></td><td>${hqF(o.auth)}<span class="pp">${hqP(o.auth,o.sent)}</span></td><td>${hqF(o.ret)}<span class="pp">${hqP(o.ret,o.sent)}</span></td><td>${hqF(o.iss)}<span class="pp">${hqP(o.iss,o.sent)}</span></td><td>${hqF(o.pend)}<span class="pp">${hqP(o.pend,o.n)}</span></td><td>${hqF(o.arch)}<span class="pp">${hqP(o.arch,o.n)}</span></td></tr>`}).join("")}
+    <tr class="hqtot"><td><b>الإجمالي</b></td><td>${hqF(T.n)}</td><td>${hqF(T.sent)}<span class="pp">${hqP(T.sent,T.n)}</span></td><td>${hqF(T.auth)}<span class="pp">${hqP(T.auth,T.sent)}</span></td><td>${hqF(T.ret)}<span class="pp">${hqP(T.ret,T.sent)}</span></td><td>${hqF(T.iss)}<span class="pp">${hqP(T.iss,T.sent)}</span></td><td>${hqF(T.pend)}<span class="pp">${hqP(T.pend,T.n)}</span></td><td>${hqF(T.arch)}<span class="pp">${hqP(T.arch,T.n)}</span></td></tr>
+    </tbody></table></div><p class="sub" style="font-size:12px;margin:6px 0 0">نسب «قيد التدقيق» و«المسترجع» و«القرارات» من المرسل للهيئة، وبقية النسب من المرصود.</p></section>
+  ${ys.length>1?`<section class="block"><h2>المقارنة السنوية <span class="sub">حسب تاريخ بدء الزيارة</span></h2><div class="tbl-wrap"><table class="tbl mtx"><thead><tr><th>المؤشر</th>${ys.map(y=>`<th>${y}</th>`).join("")}<th>التغير (${ys[ys.length-2]}←${ys[ys.length-1]})</th></tr></thead><tbody>
+    ${YR.map(([l,k])=>`<tr><td>${l}</td>${ys.map(y=>`<td>${hqF(A.Y[y][k])}${k!=="n"?`<span class="pp">${hqP(A.Y[y][k],["auth","ret","iss"].includes(k)?A.Y[y].sent:A.Y[y].n)}</span>`:""}</td>`).join("")}<td>${hqChg(A.Y[ys[ys.length-2]][k],A.Y[ys[ys.length-1]][k])}</td></tr>`).join("")}
+    </tbody></table></div><p class="sub" style="font-size:12px;margin:6px 0 0">${ys.map(y=>{const ds=L.filter(r=>{const d=dayOfRow(r);return d!=null&&new Date(d*864e5).getUTCFullYear()===y}).map(dayOfRow);return `${y}: من ${wkDay(ds.reduce((a,b)=>a<b?a:b))} إلى ${wkDay(ds.reduce((a,b)=>a>b?a:b))}`}).join(" — ")}</p></section>`:""}
+  ${m1?`<section class="block"><h2>مقارنة الشهرين الأخيرين <span class="sub">${mlab(m1)} ← ${mlab(m2)}</span></h2><div class="tbl-wrap"><table class="tbl mtx"><thead><tr><th>القطاع</th><th>المرصود ${HQ_MON[m1%100-1]}</th><th>المرصود ${HQ_MON[m2%100-1]}</th><th>التغير</th><th>المرسل ${HQ_MON[m1%100-1]}</th><th>المرسل ${HQ_MON[m2%100-1]}</th><th>التغير</th><th>القرارات ${HQ_MON[m1%100-1]}</th><th>القرارات ${HQ_MON[m2%100-1]}</th><th>التغير</th></tr></thead><tbody>
+    ${secs.concat(["_all"]).map(s=>{const o=A.M[s]||{},a=o[m1]||hqZ(),b=o[m2]||hqZ();return `<tr${s==="_all"?' class="hqtot"':""}><td>${s==="_all"?"<b>الإجمالي</b>":esc(s)}</td><td>${hqF(a.n)}</td><td>${hqF(b.n)}</td><td>${hqChg(a.n,b.n)}</td><td>${hqF(a.sent)}</td><td>${hqF(b.sent)}</td><td>${hqChg(a.sent,b.sent)}</td><td>${hqF(a.iss)}</td><td>${hqF(b.iss)}</td><td>${hqChg(a.iss,b.iss)}</td></tr>`}).join("")}
+    </tbody></table></div>${sk?`<p class="sub" style="font-size:12px;margin:6px 0 0">استُبعد ${mlab(mks[mks.length-1])} لأنه لم يكتمل بعد (آخر تاريخ في البيانات ${wkDay(A.d2)}).</p>`:(inc?`<p class="sub" style="font-size:12px;margin:6px 0 0">⚠️ ${mlab(m2)} لم يكتمل بعد في البيانات.</p>`:"")}</section>`:""}
+  <section class="block"><h2>أعلى المخالفات المرسلة للهيئة <span class="sub">${hqF(T.sent)} مخالفة</span></h2>${hqBars(A.TY,8)}</section>
+  <section class="block" id="hqSecBlock"><h2>تفاصيل القطاع</h2>
+    <div class="pill-row" style="margin-bottom:12px">${secs.map(s=>`<button type="button" class="pill" data-hqs="${esc(s)}" aria-pressed="${HQS===s}">${esc(s)}</button>`).join("")}</div>
+    ${HQS?hqSecHtml(A,HQS):'<div class="empty">اختر قطاعاً لعرض مؤشراته ومناطقه وأعلى مخالفاته وأداء مدراء الرقابة فيه.</div>'}</section>`;
+  $$("#hqBody [data-hqs]").forEach(b=>b.onclick=()=>{HQS=HQS===b.dataset.hqs&&b.tagName==="BUTTON"?"":b.dataset.hqs;renderHQ();setTimeout(()=>{const x=$("#hqSecBlock");if(x&&HQS)x.scrollIntoView({behavior:"smooth",block:"start"})},30)});
+  $("#hqXls").onclick=e=>hqExport(A,secs,ys,e.currentTarget);
+}
+function hqSecHtml(A,s){const o=A.S[s],rg=A.RG[s]||{},mg=A.MG[s]||{};
+  const rgs=Object.entries(rg).sort((a,b)=>b[1].n-a[1].n),mgs=Object.entries(mg).sort((a,b)=>b[1].rev-a[1].rev);
+  return `<div class="kpis">${kpi("المرصودة",hqF(o.n),"k-navy")}${kpi("بانتظار المراجعة والاعتماد",hqF(o.pend),"k-warn",hqP(o.pend,o.n))}${kpi("غير مكتملة الأركان",hqF(o.arch),"k-gray",hqP(o.arch,o.n))}${kpi("المرسلة للهيئة",hqF(o.sent),"k-navy",hqP(o.sent,o.n))}${kpi("قيد التدقيق لدى الهيئة",hqF(o.auth),"k-warn",hqP(o.auth,o.sent))}${kpi("المسترجعة حالياً",hqF(o.ret),"k-bad",hqP(o.ret,o.sent))}${kpi("القرارات الصادرة",hqF(o.iss),"k-ok",hqP(o.iss,o.sent))}</div>
+  <h3 class="sec">حسب المنطقة <span>${rgs.length} منطقة</span></h3>
+  <div class="tbl-wrap"><table class="tbl"><thead><tr><th>المنطقة</th><th>المرصود</th><th>المرسل للهيئة</th><th>قيد التدقيق</th><th>المسترجع</th><th>القرارات</th><th>بانتظار المراجعة</th><th>غير مكتملة</th></tr></thead><tbody>${rgs.map(([k,v])=>`<tr><td>${esc(k)}</td><td>${hqF(v.n)}</td><td>${hqF(v.sent)}</td><td>${hqF(v.auth)}</td><td>${hqF(v.ret)}</td><td>${hqF(v.iss)}</td><td>${hqF(v.pend)}</td><td>${hqF(v.arch)}</td></tr>`).join("")}</tbody></table></div>
+  <h3 class="sec">أعلى المحافظات (المرصود) <span>${Object.keys(A.GV[s]||{}).length} محافظة</span></h3>${hqBars(A.GV[s]||{},10,"#2AA6A0")}
+  <h3 class="sec">أعلى 5 مخالفات مرسلة للهيئة</h3>${hqBars(A.STY[s]||{},5)}
+  <h3 class="sec">أداء مدراء الرقابة (المدققين) <span>${mgs.length?mgs.length+" مدير رقابة":""}</span></h3>
+  ${mgs.length?`<div class="tbl-wrap"><table class="tbl"><thead><tr><th>مدير الرقابة</th><th>المدقق</th><th>غير معتمد</th><th>المرسل للهيئة</th><th>المسترجع</th><th>القرارات</th><th>بانتظار المراجعة</th></tr></thead><tbody>${mgs.map(([k,v])=>`<tr><td>${esc(k)}</td><td><b>${hqF(v.rev)}</b></td><td>${hqF(v.rej)}<span class="pp">${hqP(v.rej,v.rev)}</span></td><td>${hqF(v.sent)}<span class="pp">${hqP(v.sent,v.rev)}</span></td><td>${hqF(v.ret)}<span class="pp">${hqP(v.ret,v.sent)}</span></td><td>${hqF(v.iss)}<span class="pp">${hqP(v.iss,v.sent)}</span></td><td>${hqF(v.pend)}</td></tr>`).join("")}</tbody></table></div><p class="sub" style="font-size:12px;margin:6px 0 0">«المدقق» = المخالفات التي اتخذ فيها مدير الرقابة قراراً (معتمدة أو غير معتمدة).</p>`:'<div class="empty">تظهر أسماء مدراء الرقابة بعد إعادة رفع التقرير الشامل.</div>'}`}
+async function hqExport(A,secs,ys,btn){const old=btn.textContent;btn.disabled=true;btn.textContent="جارٍ التجهيز…";
+  try{const EX=await exceljs();const wb=new EX.Workbook();wb.creator=me.full_name;wb.created=new Date();
+    const HD={type:"pattern",pattern:"solid",fgColor:{argb:"FF1C437E"}};
+    const sheet=(nm,H,R)=>{const ws=wb.addWorksheet(nm,{views:[{rightToLeft:true,state:"frozen",ySplit:1}]});ws.columns=H.map(h=>({header:h,width:Math.max(14,String(h).length+4)}));ws.getRow(1).eachCell(c=>{c.fill=HD;c.font={bold:true,color:{argb:"FFFFFFFF"}};c.alignment={horizontal:"center",vertical:"middle",wrapText:true}});ws.getRow(1).height=30;ws.addRows(R);ws.columns[0].width=Math.max(ws.columns[0].width,28);return ws};
+    const KH=["المرصود","المرسل للهيئة","قيد التدقيق لدى الهيئة","المسترجع حالياً","القرارات الصادرة","بانتظار المراجعة والاعتماد","غير مكتملة الأركان"],KV=o=>[o.n,o.sent,o.auth,o.ret,o.iss,o.pend,o.arch];
+    sheet("القطاعات",["القطاع"].concat(KH),secs.map(s=>[s].concat(KV(A.S[s]))).concat([["الإجمالي"].concat(KV(A.T))]));
+    if(ys.length)sheet("المقارنة السنوية",["السنة"].concat(KH),ys.map(y=>[String(y)].concat(KV(A.Y[y]))));
+    const R=[];secs.forEach(s=>Object.entries(A.RG[s]||{}).sort((a,b)=>b[1].n-a[1].n).forEach(([k,v])=>R.push([s,k].concat(KV(v)))));sheet("المناطق",["القطاع","المنطقة"].concat(KH),R);
+    sheet("أعلى المخالفات",["بند المخالفة","العدد (المرسلة للهيئة)"],Object.entries(A.TY).sort((a,b)=>b[1]-a[1]));
+    const MR=[];secs.forEach(s=>Object.entries(A.MG[s]||{}).sort((a,b)=>b[1].rev-a[1].rev).forEach(([k,v])=>MR.push([s,k,v.rev,v.rej,v.sent,v.ret,v.iss,v.pend])));
+    if(MR.length)sheet("مدراء الرقابة",["القطاع","مدير الرقابة","المدقق","غير معتمد","المرسل للهيئة","المسترجع","القرارات","بانتظار المراجعة"],MR);
+    const buf=await wb.xlsx.writeBuffer();await deliver(new Blob([buf],{type:"application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"}),`أداء-المخالفات-المركز-الرئيسي-${stamp().replace(/\//g,"-")}.xlsx`,"application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
+  }catch(e){toast("تعذر إنشاء ملف Excel: "+(e.message||""))}
+  btn.disabled=false;btn.textContent=old}
 /* ===================== التقرير الأسبوعي ===================== */
 const WK_PEND=[PK_NEW,PK_RET,PK_PREV];
 function wkCls(r){const k=r.pkind||"";if(/أرشيف/.test(k))return "arch";if(WK_PEND.includes(k))return "pend";if(!k||k===PK_UNK||k==="غير محدد")return "oth";return "appr"}
@@ -1927,7 +2038,7 @@ async function doImport(list,replace){
   if(window.lastHeaders&&window.lastHeaders.length){REPORT_COLS=window.lastHeaders;try{await sb.from("quality_settings").upsert({key:"report_cols",value:{cols:window.lastHeaders},updated_at:new Date().toISOString()})}catch(e){}}
   const seen=new Set(),uniq=[];let dup=0;
   list.forEach(r=>{const k=r.visit||r.vno;if(!k)return;if(seen.has(k)){dup++;return}seen.add(k);uniq.push(r)});
-  const up=uniq.map(r=>({raw:r.raw||null,visit_no:r.visit||r.vno,violation_id:r.vno||null,violator_name:r.name,violator_nid:r.nid,sector:r.gov||null,region:r.region||null,location:r.loc,visit_date:r.date,officer:r.officer,explanation:r.explain,item:r.item,property_type:r.prop,extra:(()=>{const e={sev:r.sev||"",vstatus:r.vstatus||"",visit_status:r.visitSt||"",decision:r.decision||"",reason:r.reason||"",amin:r.amin||"",dec_date:r.decDate||""};e.pkind=pkFrom(e);return e})()}));
+  const up=uniq.map(r=>({raw:r.raw||null,visit_no:r.visit||r.vno,violation_id:r.vno||null,violator_name:r.name,violator_nid:r.nid,sector:r.gov||null,region:r.region||null,location:r.loc,visit_date:r.date,officer:r.officer,explanation:r.explain,item:r.item,property_type:r.prop,extra:(()=>{const e={sev:r.sev||"",vstatus:r.vstatus||"",visit_status:r.visitSt||"",decision:r.decision||"",reason:r.reason||"",amin:r.amin||"",dec_date:r.decDate||"",mgr:r.mgr||"",pres:r.pres||"",fine:r.fine||""};e.pkind=pkFrom(e);return e})()}));
   if(replace){toast("جارٍ إزالة الملف السابق…");const {error}=await sb.from("quality_queue").delete().neq("visit_no","__none__");if(error){toast("تعذر إزالة الملف السابق: "+error.message);return}}
   for(let i=0;i<up.length;i+=400){toast(`جارٍ الرفع… ${Math.min(i+400,up.length)} من ${up.length}`);
     const {error}=await sb.from("quality_queue").upsert(up.slice(i,i+400),{onConflict:"visit_no"});if(error){toast("تعذر الرفع: "+error.message);return}}
