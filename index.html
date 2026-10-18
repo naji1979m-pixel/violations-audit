@@ -204,6 +204,7 @@ button.attbtn{background:none;font:inherit}
 .slegend b{display:inline-block;width:10px;height:10px;border-radius:3px;margin-inline-end:5px;vertical-align:middle}
 .tbl.mtx td,.tbl.mtx th{text-align:center;white-space:nowrap}.tbl.mtx td:first-child,.tbl.mtx th:first-child{text-align:right;position:sticky;right:0;background:var(--paper)}
 .tbl.mtx th:first-child{background:var(--navy)}
+.tx-bs{display:inline-flex;gap:6px;margin-inline-start:auto}.tx-b{padding:5px 12px!important;font-size:12.5px!important}
 .tbl .pp{display:block;width:max-content;margin-top:3px;font-size:11px;line-height:1.5;color:var(--muted);font-weight:700;background:var(--soft);border-radius:99px;padding:0 7px;text-decoration:none}
 .tbl td[data-rd]{text-decoration:none!important}.tbl td[data-rd]:hover{box-shadow:inset 0 -2px 0 var(--navy)}.tbl .z{color:var(--line)}
 .minibar{height:8px;background:var(--line);border-radius:99px;overflow:hidden}.minibar i{display:block;height:100%;background:var(--navy)}
@@ -1909,11 +1910,12 @@ function hqRing(f,c){const R=26,C=2*Math.PI*R,l=Math.max(0,Math.min(1,f))*C;retu
 function hqHeat(A,secs){const items=Object.entries(A.TY).sort((a,b)=>b[1]-a[1]).slice(0,8).map(x=>x[0]);let mx=1;secs.forEach(s=>items.forEach(it=>{mx=Math.max(mx,(A.STY[s]||{})[it]||0)}));
   return `<div class="tbl-wrap"><table class="tbl hq-heat"><thead><tr><th>بند المخالفة</th>${secs.map(s=>`<th>${esc(s)}</th>`).join("")}<th>الإجمالي</th></tr></thead><tbody>${items.map(it=>`<tr><td title="${esc(it)}">${esc(it.length>48?it.slice(0,46)+"…":it)}</td>${secs.map(s=>{const v=(A.STY[s]||{})[it]||0,f=v/mx;return `<td${v?rdA({c:"sent",s,it}):""} style="background:rgba(31,91,176,${(0.06+f*0.8).toFixed(2)});color:${f>0.55?"#fff":"inherit"}" data-tip="${esc(s)} — ${esc(it)}: ${hqF(v)}">${hqF(v)}</td>`}).join("")}<td${rdA({c:"sent",it})}><b>${hqF(A.TY[it])}</b></td></tr>`).join("")}</tbody></table></div><p class="hq-note">لون الخلية أغمق كلما زاد العدد. المخالفات المرسلة للهيئة فقط.</p>`}
 function hqYoY(A){const ys=Object.keys(A.Y).map(Number).sort();if(ys.length<2)return "";const YR=[["المرصود","n"],["المرسل للهيئة","sent"],["قيد التدقيق لدى الهيئة","auth"],["المسترجع حالياً","ret"],["القرارات الصادرة","iss"],["بانتظار المراجعة","pend"],["غير مكتملة الأركان","arch"]];
-  return `<div class="tbl-wrap"><table class="tbl mtx"><thead><tr><th>المؤشر</th>${ys.map(y=>`<th>${y}</th>`).join("")}<th>التغير</th></tr></thead><tbody>${YR.map(([l,k])=>`<tr><td>${l}</td>${ys.map(y=>`<td${rdA({y,c:k,s:HQSF})}>${hqF(A.Y[y][k])}</td>`).join("")}<td>${hqChg(A.Y[ys[ys.length-2]][k],A.Y[ys[ys.length-1]][k])}</td></tr>`).join("")}</tbody></table></div>`}
+  const y1=ys[ys.length-2],y2=ys[ys.length-1],df=v=>`<b style="color:${v>0?"var(--ok)":v<0?"var(--bad)":"inherit"}">${v>0?"+":""}${hqF(v)}</b>`;
+  return `<div class="tbl-wrap"><table class="tbl mtx" data-tt="المقارنة السنوية"><thead><tr><th>المؤشر</th>${ys.map(y=>`<th>${y}</th>`).join("")}<th>الإجمالي</th><th>الفرق (${y2}−${y1})</th><th>نسبة التغير</th></tr></thead><tbody>${YR.map(([l,k])=>{const a=A.Y[y1][k],b=A.Y[y2][k],t=ys.reduce((z,y)=>z+A.Y[y][k],0);return `<tr><td>${l}</td>${ys.map(y=>`<td${rdA({y,c:k,s:HQSF})}>${hqF(A.Y[y][k])}</td>`).join("")}<td${rdA({c:k,s:HQSF})}><b>${hqF(t)}</b></td><td>${df(b-a)}</td><td>${hqChg(a,b)}</td></tr>`}).join("")}</tbody></table></div>`}
 function hqLast2(A,secs){const mks=Object.keys(A.M._all||{}).map(Number).sort();if(mks.length<2)return {h:"",lab:""};const inc=A.d2!=null&&(()=>{const t=new Date(A.d2*864e5),last=new Date(Date.UTC(t.getUTCFullYear(),t.getUTCMonth()+1,0)).getUTCDate();return t.getUTCDate()<last-2})();const sk=inc&&mks.length>=3?1:0;const m2=mks[mks.length-1-sk],m1=mks[mks.length-2-sk];
   const ml=k=>HQ_MON[k%100-1];
-  return {m1,m2,lab:`${ml(m1)} ${Math.floor(m1/100)} ← ${ml(m2)} ${Math.floor(m2/100)}`,h:`<div class="tbl-wrap"><table class="tbl mtx"><thead><tr><th>القطاع</th><th>المرصود ${ml(m1)}</th><th>المرصود ${ml(m2)}</th><th>التغير</th><th>المرسل ${ml(m1)}</th><th>المرسل ${ml(m2)}</th><th>التغير</th><th>القرارات ${ml(m1)}</th><th>القرارات ${ml(m2)}</th><th>التغير</th></tr></thead><tbody>
-    ${secs.concat(["_all"]).map(s=>{const o=A.M[s]||{},a=o[m1]||hqZ(),b=o[m2]||hqZ();return `<tr${s==="_all"?' class="hqtot"':""}><td>${s==="_all"?"<b>الإجمالي</b>":esc(s)}</td><td>${hqF(a.n)}</td><td>${hqF(b.n)}</td><td>${hqChg(a.n,b.n)}</td><td>${hqF(a.sent)}</td><td>${hqF(b.sent)}</td><td>${hqChg(a.sent,b.sent)}</td><td>${hqF(a.iss)}</td><td>${hqF(b.iss)}</td><td>${hqChg(a.iss,b.iss)}</td></tr>`}).join("")}</tbody></table></div>${sk?`<p class="hq-note">استُبعد ${ml(mks[mks.length-1])} لأنه لم يكتمل بعد (آخر تاريخ ${wkDay(A.d2)}).</p>`:""}`}}
+  return {m1,m2,lab:`${ml(m1)} ${Math.floor(m1/100)} ← ${ml(m2)} ${Math.floor(m2/100)}`,h:`<div class="tbl-wrap"><table class="tbl mtx" data-tt="مقارنة آخر شهرين — ${ml(m1)} و${ml(m2)} ${Math.floor(m2/100)}"><thead><tr><th>القطاع</th><th>المرصود ${ml(m1)}</th><th>المرصود ${ml(m2)}</th><th>التغير</th><th>المرسل ${ml(m1)}</th><th>المرسل ${ml(m2)}</th><th>التغير</th><th>القرارات ${ml(m1)}</th><th>القرارات ${ml(m2)}</th><th>التغير</th></tr></thead><tbody>
+    ${secs.filter(x=>x!=="غير محدد").concat(["_all"]).map(s=>{const o=A.M[s]||{},a=o[m1]||hqZ(),b=o[m2]||hqZ();return `<tr${s==="_all"?' class="hqtot"':""}><td>${s==="_all"?"<b>الإجمالي</b>":esc(s)}</td><td>${hqF(a.n)}</td><td>${hqF(b.n)}</td><td>${hqChg(a.n,b.n)}</td><td>${hqF(a.sent)}</td><td>${hqF(b.sent)}</td><td>${hqChg(a.sent,b.sent)}</td><td>${hqF(a.iss)}</td><td>${hqF(b.iss)}</td><td>${hqChg(a.iss,b.iss)}</td></tr>`}).join("")}</tbody></table></div>${sk?`<p class="hq-note">استُبعد ${ml(mks[mks.length-1])} لأنه لم يكتمل بعد (آخر تاريخ ${wkDay(A.d2)}).</p>`:""}`}}
 function hqSecTable(A,secs){const T=A.T,row=(k,o,cls)=>{const sx=cls?(HQSF||""):k,d=c=>rdA({c,s:sx});return `<tr class="${cls||""}"${cls?"":` data-sec="${esc(k)}"`}><td><b>${esc(k)}</b></td><td${d("n")}>${hqF(o.n)}</td><td${d("sent")}>${hqF(o.sent)}<span class="pp">${hqP(o.sent,o.n)}</span></td><td${d("auth")}>${hqF(o.auth)}<span class="pp">${hqP(o.auth,o.sent)}</span></td><td${d("ret")}>${hqF(o.ret)}<span class="pp">${hqP(o.ret,o.sent)}</span></td><td${d("iss")}>${hqF(o.iss)}<span class="pp">${hqP(o.iss,o.sent)}</span></td><td${d("pend")}>${hqF(o.pend)}<span class="pp">${hqP(o.pend,o.n)}</span></td><td${d("arch")}>${hqF(o.arch)}<span class="pp">${hqP(o.arch,o.n)}</span></td></tr>`};
   return `<div class="tbl-wrap"><table class="tbl hqt"><thead><tr><th>القطاع</th><th>المرصود</th><th>المرسل للهيئة</th><th>قيد التدقيق لدى الهيئة</th><th>المسترجع حالياً</th><th>القرارات الصادرة</th><th>بانتظار المراجعة</th><th>غير مكتملة الأركان</th></tr></thead><tbody>${secs.map(s=>row(s,A.S[s])).join("")}${row("الإجمالي",T,"hqtot")}</tbody></table></div>`}
 function hqMgrList(A){const L=[];Object.entries(A.MG).forEach(([s,m])=>Object.entries(m).forEach(([k,v])=>L.push({s,k,v})));return L}
@@ -1972,8 +1974,8 @@ function renderHQ(){
   }else if(HQV==="trend"){
     const l2=hqLast2(A,secs);
     body=`<div class="hq-grid"><div class="hq-card c-12"><div class="hq-ch"><h3>الاتجاه الشهري${HQSF?" — "+esc(HQSF):""}</h3><span class="sub">آخر 18 شهراً كحد أقصى</span></div>${hqLine(Object.assign(hqMonths(A),{_drop:A._mdrop}))}</div>
-      <div class="hq-card c-5"><div class="hq-ch"><h3>المقارنة السنوية</h3></div>${hqYoY(A)||'<div class="empty">تحتاج سنتين على الأقل — اختر «كل الفترات»</div>'}</div>
-      <div class="hq-card c-7"><div class="hq-ch"><h3>مقارنة الشهرين الأخيرين</h3><span class="sub">${l2.lab}</span></div>${l2.h||'<div class="empty">—</div>'}</div></div>`;
+      <div class="hq-card c-5"><div class="hq-ch"><h3>المقارنة السنوية</h3><span class="tx-bs"><button type="button" class="btn2 tx-b" data-tx="pdf">📄 PDF</button><button type="button" class="btn2 pri tx-b" data-tx="xls">📊 Excel</button></span></div>${hqYoY(A)||'<div class="empty">تحتاج سنتين على الأقل — اختر «كل الفترات»</div>'}</div>
+      <div class="hq-card c-7"><div class="hq-ch"><h3>مقارنة آخر شهرين</h3><span class="sub">${l2.lab}</span><span class="tx-bs"><button type="button" class="btn2 tx-b" data-tx="pdf">📄 PDF</button><button type="button" class="btn2 pri tx-b" data-tx="xls">📊 Excel</button></span></div>${l2.h||'<div class="empty">—</div>'}</div></div>`;
   }else if(HQV==="vio"){
     body=`<div class="hq-grid"><div class="hq-card c-5"><div class="hq-ch"><h3>أعلى المخالفات المرسلة للهيئة</h3><span class="sub">${hqF(T.sent)} مخالفة</span></div>${hqBars(A.TY,10,null,k=>({c:"sent",it:k,s:HQSF}))}</div>
       <div class="hq-card c-7"><div class="hq-ch"><h3>المخالفات حسب القطاع والبند</h3></div>${hqHeat(A,secs)}</div></div>`;
@@ -2005,6 +2007,25 @@ function renderHQ(){
   $("#hqPdf").onclick=e=>hqPdf(A,secs,sc,e.currentTarget);
   $("#hqPpt").onclick=e=>hqPpt(A,secs,sc,e.currentTarget);
 }
+
+/* ----- تصدير أي جدول (PDF / Excel) ----- */
+function txRead(tb){const cell=c=>{const k=c.cloneNode(true),pp=[...k.querySelectorAll(".pp")];const rest=(()=>{const z=k.cloneNode(true);z.querySelectorAll(".pp").forEach(p=>p.remove());return z.textContent.trim()})();pp.forEach(p=>p.textContent=rest?" ("+p.textContent.trim()+")":p.textContent.trim());return k.textContent.replace(/\s+/g," ").trim()};
+  const H=[...tb.querySelectorAll("thead th")].map(cell),R=[...tb.querySelectorAll("tbody tr")].map(tr=>[...tr.children].map(cell));return {H,R}}
+async function txExport(btn,kind){const card=btn.closest(".hq-card");const tb=card&&card.querySelector("table");if(!tb){toast("لا يوجد جدول");return}
+  const {H,R}=txRead(tb),ttl=tb.dataset.tt||(card.querySelector("h3")||{}).textContent||"جدول",sc=hqScope(hqAgg(hqRows()));const old=btn.innerHTML;btn.disabled=true;btn.textContent="…";
+  const fn=`${ttl.replace(/[\\/:*?"<>|]/g,"-").replace(/\s+/g,"-")}-${stamp().replace(/\//g,"-")}`;
+  try{if(kind==="xls"){const EX=await exceljs();const wb=new EX.Workbook();wb.creator=me.full_name;const ws=wb.addWorksheet(ttl.slice(0,30).replace(/[\\/:*?\[\]]/g," "),{views:[{rightToLeft:true,state:"frozen",ySplit:3}]});
+      ws.addRow([ttl]).font={bold:true,size:14,color:{argb:"FF1C437E"}};ws.addRow([`${sc.sec}${sc.per?" — "+sc.per:""} — المصدر: التقرير الشامل — ${stamp()}`]).font={color:{argb:"FF58708F"}};
+      const hr=ws.addRow(H);hr.eachCell(c=>{c.fill={type:"pattern",pattern:"solid",fgColor:{argb:"FF1C437E"}};c.font={bold:true,color:{argb:"FFFFFFFF"}};c.alignment={horizontal:"center",vertical:"middle",wrapText:true}});hr.height=30;
+      R.forEach(r=>{const row=ws.addRow(r.map(v=>{const n=/^[\d,]+$/.test(v)?+v.replace(/,/g,""):v;return n}));if(/الإجمالي/.test(r[0]))row.font={bold:true}});
+      ws.columns.forEach((c,i)=>c.width=i===0?26:Math.max(14,String(H[i]||"").length+4));
+      const buf=await wb.xlsx.writeBuffer();await deliver(new Blob([buf],{type:"application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"}),fn+".xlsx","application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")}
+    else{try{await document.fonts.ready}catch(e){}const g=hqCv();await hqHead(g,ttl,sc,1);const rh=Math.min(64,Math.max(40,(g.H-56-220)/(R.length+1)));
+      hqCvTable(g,g.M,190,g.W-2*g.M,H,R,{tot:/الإجمالي/.test((R[R.length-1]||[])[0]||""),rh,ws:H.map((_,i)=>i===0?1.6:1)});
+      const JsPDF=await jspdfLib();const doc=new JsPDF({unit:"mm",format:"a4",orientation:"landscape",compress:true});doc.addImage(g.c.toDataURL("image/jpeg",.92),"JPEG",0,0,297,210);window._txPage=g;
+      await deliver(doc.output("blob"),fn+".pdf","application/pdf")}}
+  catch(e){toast("تعذر التصدير: "+(e.message||""))}btn.disabled=false;btn.innerHTML=old}
+document.addEventListener("click",e=>{const b=e.target.closest&&e.target.closest(".tx-b");if(!b)return;e.preventDefault();txExport(b,b.dataset.tx)});
 /* تلميح عائم */
 (function(){const tip=document.createElement("div");tip.className="hq-tip";tip.hidden=true;document.body.appendChild(tip);
   document.addEventListener("mouseover",e=>{const t=e.target.closest&&e.target.closest("#hqBody [data-tip]");if(!t){tip.hidden=true;return}tip.textContent=t.getAttribute("data-tip");tip.hidden=false});
