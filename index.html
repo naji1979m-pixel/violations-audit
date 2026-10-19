@@ -839,11 +839,13 @@ $("#upBtn").onclick=()=>{
    ${window.lastOut?`<button type="button" class="btn2 pri" id="upSame">اختيار مخالفات أخرى من نفس الملف (${lastOut.length.toLocaleString("en-US")})</button>`:""}
    <button type="button" class="btn2 ${window.lastOut?"":"pri"}" id="upNew">رفع ملف جديد (استبدال أو إضافة)</button>
    ${canDel&&rows.length?`<button type="button" class="btn2" id="upDel" style="color:var(--bad);border-color:var(--bad)">🗑 حذف المخالفات المرفوعة</button>`:""}
+   ${canDel&&rows.length?`<button type="button" class="btn2" id="upSnap">⚡ تجهيز النسخة السريعة الآن</button>`:""}
    <button type="button" class="btn2" id="closeSh">إلغاء</button></div>`;
   openSheet();$("#closeSh").onclick=closeSheet;
   if($("#upSame"))$("#upSame").onclick=()=>{closeSheet();setTimeout(()=>importDialog(lastOut),150)};
   $("#upNew").onclick=()=>{closeSheet();$("#fileIn").click()};
   if($("#upDel"))$("#upDel").onclick=deleteDialog;
+  if($("#upSnap"))$("#upSnap").onclick=async()=>{const b=$("#upSnap");b.disabled=true;b.textContent="جارٍ التجهيز…";await snapBuild();b.textContent="✓ تم تجهيز النسخة السريعة";toast("تم — التحميل صار أسرع لكل الموظفين")};
 };
 function deleteDialog(){
   const fr=vrows(),on=fAny();
@@ -866,7 +868,7 @@ async function doDelete(keys,label){if(!canUpload()){toast("غير مصرح لك
   try{
     if(!keys){toast("جارٍ الحذف…");const {error}=await sb.from("quality_queue").delete().neq("visit_no","__none__");if(error)throw error;await bumpVer()}
     else for(let i=0;i<keys.length;i+=300){toast(`جارٍ الحذف… ${Math.min(i+300,keys.length)} من ${keys.length}`);const {error}=await sb.from("quality_queue").delete().in("visit_no",keys.slice(i,i+300));if(error)throw error}
-  }catch(e){await bumpVer();toast("تعذر الحذف: "+(e.message||""));return}if(keys)await bumpVer();
+  }catch(e){await bumpVer();toast("تعذر الحذف: "+(e.message||""));return}if(keys)await bumpVer();await snapBuild();
   await loadData();if(current!=="manual"&&!audits[current]&&!rows.find(r=>r.vno===current))current="manual";renderAll();go(page);toast(`تم حذف ${n.toLocaleString("en-US")} مخالفة`);
 }
 
@@ -1479,7 +1481,26 @@ async function dataVer(){try{const {data}=await sb.from("quality_settings").sele
 async function bumpVer(){try{await sb.from("quality_settings").upsert({key:"data_ver",value:{v:new Date().toISOString()+"-"+Math.random().toString(36).slice(2,7)},updated_at:new Date().toISOString()})}catch(e){}}
 let DATA_VER=null;
 const QCOLS="visit_no,violation_id,violator_name,sector,region,visit_date,officer,item,property_type,extra";
+/* ===== النسخة السريعة: ملف مضغوط واحد للمخالفات بدل عشرات الطلبات ===== */
+const SNAP_DIR="snap/",snapPath=v=>SNAP_DIR+"queue-"+String(v).replace(/[^\w-]/g,"_")+".json.gz";
+async function gzBlob(o){const st=new Blob([JSON.stringify(o)]).stream().pipeThrough(new CompressionStream("gzip"));return await new Response(st).blob()}
+async function gunz(b){const st=b.stream().pipeThrough(new DecompressionStream("gzip"));return JSON.parse(await new Response(st).text())}
+function snapEnc(q){const K=[],seen=new Set();q.forEach(r=>{for(const k in r){if(k==="extra")continue;if(!seen.has(k)){seen.add(k);K.push(k)}}for(const k in (r.extra||{})){const x="x."+k;if(!seen.has(x)){seen.add(x);K.push(x)}}});
+  const D={},C={},M={};K.forEach(k=>{D[k]=[];C[k]=[];M[k]=new Map()});
+  q.forEach(r=>K.forEach(k=>{const v=k.startsWith("x.")?(r.extra||{})[k.slice(2)]:r[k];if(v==null){C[k].push(-1);return}const s=typeof v==="string"?v:"\u0001"+JSON.stringify(v);let i=M[k].get(s);if(i==null){i=D[k].length;D[k].push(s);M[k].set(s,i)}C[k].push(i)}));
+  return {n:q.length,K,D,C}}
+function snapDec(o){const out=new Array(o.n);const dv=s=>s.charCodeAt(0)===1?JSON.parse(s.slice(1)):s;
+  for(let j=0;j<o.n;j++){const r={},x={};let hx=false;for(const k of o.K){const i=o.C[k][j];if(i<0)continue;const v=dv(o.D[k][i]);if(k.startsWith("x.")){x[k.slice(2)]=v;hx=true}else r[k]=v}r.extra=hx?x:null;out[j]=r}return out}
+const supGz=()=>typeof CompressionStream!=="undefined"&&typeof DecompressionStream!=="undefined";
+async function snapGet(v){if(!v||!supGz())return null;try{const {data,error}=await sb.storage.from("quality-files").download(snapPath(v));if(error||!data)return null;const o=await gunz(data);if(o.v!==v||o.cols!==QCOLS)return null;return snapDec(o)}catch(e){return null}}
+async function snapBuild(){if(!canUpload()||!supGz())return;try{const v=await dataVer();if(!v)return;const q=await fetchAll("quality_queue",QCOLS,"جارٍ تجهيز النسخة السريعة");
+    toast("جارٍ حفظ النسخة السريعة…");const blob=await gzBlob(Object.assign({v,cols:QCOLS,at:Date.now()},snapEnc(q)));
+    const {error}=await sb.storage.from("quality-files").upload(snapPath(v),blob,{upsert:true,contentType:"application/gzip",cacheControl:"31536000"});if(error)throw error;
+    QDB.set("queue",{v,cols:QCOLS,rows:q,at:Date.now()});
+    try{const {data:ls}=await sb.storage.from("quality-files").list("snap",{limit:100});const old=(ls||[]).map(f=>SNAP_DIR+f.name).filter(n=>n!==snapPath(v));if(old.length)await sb.storage.from("quality-files").remove(old)}catch(e){}}
+  catch(e){console.warn("snap",e);toast("تعذر حفظ النسخة السريعة — ستعمل المنصة بالطريقة العادية")}}
 async function loadQueue(){const v=await dataVer();DATA_VER=v;let q=null;if(v){const c=await QDB.get("queue");if(c&&c.v===v&&c.cols===QCOLS&&Array.isArray(c.rows))q=c.rows}
+  if(!q&&v){toast("جارٍ تحميل المخالفات…");q=await snapGet(v);if(q)QDB.set("queue",{v,cols:QCOLS,rows:q,at:Date.now()})}
   if(!q){q=await fetchAll("quality_queue",QCOLS,"جارٍ تحميل المخالفات");if(v)QDB.set("queue",{v,cols:QCOLS,rows:q,at:Date.now()})}const MT={};rows=q.map(x=>{const r={vno:x.visit_no,visit:x.visit_no,vid:x.violation_id||"",name:x.violator_name||"",nid:"",loc:"",sector:x.sector||"",region:x.region||"",sev:(x.extra||{}).sev||"",vstat:(x.extra||{}).vstatus||"",pkind:pkFrom(x.extra||{}),reason:(x.extra||{}).reason||"",amin:(x.extra||{}).amin||"",decDate:(x.extra||{}).dec_date||"",mgr:(x.extra||{}).mgr||"",pres:("pres" in (x.extra||{}))?x.extra.pres:undefined,fine:(x.extra||{}).fine||"",vvisit:(x.extra||{}).visit_status||"",dec:("decision" in (x.extra||{}))?x.extra.decision:undefined,date:x.visit_date||"",officer:x.officer||"",explain:"",item:x.item||"",prop:x.property_type||"",type:(x.item||"") in MT?MT[x.item||""]:(MT[x.item||""]=matchType(x.item||""))};r._h=norm([r.vno,r.vid,r.officer,r.item,r.region,r.sector,r.name].join(" "));return r})}
 async function loadAudits(){
   const q=await fetchAll("quality_audits","*");const keep=audits.manual;audits={};
@@ -3173,7 +3194,7 @@ async function doImport(list,replace){if(!canUpload()){toast("غير مصرح ل
   if(replace){toast("جارٍ إزالة الملف السابق…");const {error}=await sb.from("quality_queue").delete().neq("visit_no","__none__");if(error){toast("تعذر إزالة الملف السابق: "+error.message);return}}
   for(let i=0;i<up.length;i+=400){toast(`جارٍ الرفع… ${Math.min(i+400,up.length)} من ${up.length}`);
     const {error}=await sb.from("quality_queue").upsert(up.slice(i,i+400),{onConflict:"visit_no"});if(error){await bumpVer();toast("تعذر الرفع: "+error.message);return}}
-  await bumpVer();await loadData();renderQueue();toast(`تم رفع ${up.length} مخالفة. للاختيار مرة ثانية اضغط «ملف المخالفات»`+(dup?` (تجاهل ${dup} مكررة)`:""));
+  await bumpVer();await snapBuild();await loadData();renderQueue();toast(`تم رفع ${up.length} مخالفة. للاختيار مرة ثانية اضغط «ملف المخالفات»`+(dup?` (تجاهل ${dup} مكررة)`:""));
 }
 
 /* ===================== نسيت كلمة المرور ===================== */
