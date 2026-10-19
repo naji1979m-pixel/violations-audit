@@ -1518,17 +1518,19 @@ async function snapBuild(){if(!canUpload()||!supGz())return;try{const v=await da
   catch(e){console.warn("snap",e);toast("تعذر حفظ النسخة السريعة — ستعمل المنصة بالطريقة العادية")}}
 async function loadQueue(){const v=await dataVer();DATA_VER=v;let q=null;if(v){const c=await QDB.get("queue");if(c&&c.v===v&&c.cols===QCOLS&&Array.isArray(c.rows))q=c.rows}
   if(!q&&v){toast("جارٍ تحميل المخالفات…");q=await snapGet(v);if(q)QDB.set("queue",{v,cols:QCOLS,rows:q,at:Date.now()})}
-  if(!q){q=await fetchAll("quality_queue",QCOLS,"جارٍ تحميل المخالفات");if(v)QDB.set("queue",{v,cols:QCOLS,rows:q,at:Date.now()})}const MT={};rows=q.map(x=>{const r={vno:x.visit_no,visit:x.visit_no,vid:x.violation_id||"",name:x.violator_name||"",nid:"",loc:x.location||"",sector:x.sector||"",region:x.region||"",sev:(x.extra||{}).sev||"",vstat:(x.extra||{}).vstatus||"",pkind:pkFrom(x.extra||{}),reason:(x.extra||{}).reason||"",amin:(x.extra||{}).amin||"",decDate:(x.extra||{}).dec_date||"",mgr:(x.extra||{}).mgr||"",pres:("pres" in (x.extra||{}))?x.extra.pres:undefined,fine:(x.extra||{}).fine||"",vvisit:(x.extra||{}).visit_status||"",dec:("decision" in (x.extra||{}))?x.extra.decision:undefined,date:x.visit_date||"",officer:x.officer||"",explain:"",item:x.item||"",prop:x.property_type||"",type:(x.item||"") in MT?MT[x.item||""]:(MT[x.item||""]=matchType(x.item||""))};r._h=norm([r.vno,r.vid,r.officer,r.item,r.region,r.sector,r.name].join(" "));return r})}
-async function loadAudits(){
-  const q=await fetchAll("quality_audits","*");const keep=audits.manual;audits={};
+  if(!q){q=await fetchAll("quality_queue",QCOLS,"جارٍ تحميل المخالفات");if(v)QDB.set("queue",{v,cols:QCOLS,rows:q,at:Date.now()})}mapQueue(q)}
+function mapQueue(q){const MT={};rows=q.map(x=>{const r={vno:x.visit_no,visit:x.visit_no,vid:x.violation_id||"",name:x.violator_name||"",nid:"",loc:x.location||"",sector:x.sector||"",region:x.region||"",sev:(x.extra||{}).sev||"",vstat:(x.extra||{}).vstatus||"",pkind:pkFrom(x.extra||{}),reason:(x.extra||{}).reason||"",amin:(x.extra||{}).amin||"",decDate:(x.extra||{}).dec_date||"",mgr:(x.extra||{}).mgr||"",pres:("pres" in (x.extra||{}))?x.extra.pres:undefined,fine:(x.extra||{}).fine||"",vvisit:(x.extra||{}).visit_status||"",dec:("decision" in (x.extra||{}))?x.extra.decision:undefined,date:x.visit_date||"",officer:x.officer||"",explain:"",item:x.item||"",prop:x.property_type||"",type:(x.item||"") in MT?MT[x.item||""]:(MT[x.item||""]=matchType(x.item||""))};r._h=norm([r.vno,r.vid,r.officer,r.item,r.region,r.sector,r.name].join(" "));return r})}
+let AUD_RAW=[];
+async function loadAudits(){const q=await fetchAll("quality_audits","*");AUD_RAW=q;mapAudits(q)}
+function mapAudits(q,ro){const keep=audits.manual;audits={};
   q.forEach(x=>{audits[x.visit_no]={_id:x.id,_owner:x.auditor_id,_ro:!canEditAudit()||(!!x.auditor_id&&x.auditor_id!==me.id),
     type:x.violation_type==null?-1:x.violation_type,cas:x.case_name,ans:x.answers||{},f:x.fields||{},sector:x.sector||"",region:x.region||"",vid:x.violation_id||"",
     status:x.status==="completed"?"ok":x.status==="returned"?"ret":x.status==="pending_approval"?"pend":null,doneAt:x.completed_at?Date.parse(x.completed_at):null,
-    retAt:x.returned_at?Date.parse(x.returned_at):null,auditor:x.auditor_name||"",created:Date.parse(x.created_at),updated:Date.parse(x.updated_at),stage:"مدقق الشركة"}});
+    retAt:x.returned_at?Date.parse(x.returned_at):null,auditor:x.auditor_name||"",created:Date.parse(x.created_at),updated:Date.parse(x.updated_at),stage:"مدقق الشركة"};if(ro)audits[x.visit_no]._ro=true});
   if(keep)audits.manual=keep;
 }
 async function loadUsers(){const {data}=await sb.from("quality_users").select("*").order("created_at");users=data||[]}
-async function loadData(){try{await loadOrg();loadReportCols();await Promise.all([loadSouthCfg(),loadQueue(),loadAudits(),loadRefs(),loadApprovers(),loadAttIdx()])}catch(e){toast("تعذر تحميل البيانات: "+(e.message||""))}try{buildFilters()}catch(e){}}
+async function loadData(){try{await Promise.all([loadOrg(),loadSouthCfg(),loadQueue(),loadAudits(),loadRefs(),loadApprovers(),loadAttIdx()]);loadReportCols()}catch(e){toast("تعذر تحميل البيانات: "+(e.message||""))}try{buildFilters()}catch(e){}}
 
 /* ----- الحفظ ----- */
 let saveT=null;const dirty=new Set();
@@ -1538,7 +1540,7 @@ function secOf(k,a){const r=rows.find(x=>x.vno===k);return a.f.gov||a.sector||(r
 function regOf(k,a){const r=rows.find(x=>x.vno===k);return a.f.region||a.region||(r&&r.region)||""}
 let warnedRO=false;
 async function pushAudit(k){
-  if(!sb||!me)return;let a=audits[k];if(!a)return;
+  if(!sb||!me)return;if(BOOT_STALE){toast("لحظات… جارٍ تحديث البيانات، أعد المحاولة بعد ثوانٍ");return}let a=audits[k];if(!a)return;
   if(!a._id&&!a._force&&!reserved(a))return;
   if(k==="manual"){const v=String(a.f.vno||"").trim();if(!v)return;
     if(audits[v]&&audits[v]!==a){toast("رقم الزيارة "+v+" موجود مسبقاً، افتحه من القوائم");return}
@@ -1591,13 +1593,26 @@ $("#pwForm").addEventListener("submit",async e=>{e.preventDefault();
   await sb.rpc("q_password_changed");const first=me.must_change_password;me.must_change_password=false;$("#pw1").value=$("#pw2").value="";
   toast("تم تغيير كلمة المرور");if(first)await enterApp();else{show("appView");go(page)}});
 $("#pwCancel").onclick=()=>{show("appView");go(page)};
-async function logout(){try{await flush()}catch(e){}await sb.auth.signOut();location.reload()}
+async function logout(){try{await flush()}catch(e){}try{await QDB.set(BOOT_K(),null)}catch(e){}await sb.auth.signOut();location.reload()}
 $("#blockLogout").onclick=logout;
+/* ===== الفتح الفوري: عرض آخر نسخة محفوظة في الجهاز ثم التحديث في الخلفية ===== */
+let BOOT_STALE=false;const BOOT_K=()=>"boot:"+(me&&me.id);
+function bootSave(){try{if(!me)return;QDB.set(BOOT_K(),{v:1,at:Date.now(),role:me.role,ORG,aud:AUD_RAW,users:users||[],sg:SOUTH_GR||[],refs:[...REFS],appr:APPR||[],att:Object.fromEntries(Object.entries(ATT_IDX||{}).map(([k,v])=>[k,[...v]]))})}catch(e){}}
+async function bootLoad(){try{const c=await QDB.get(BOOT_K()),q=await QDB.get("queue");if(!c||c.v!==1||c.role!==me.role||!q||!Array.isArray(q.rows)||q.cols!==QCOLS)return false;
+    ORG=c.ORG||ORG;if(!ORG.pending)ORG.pending=JSON.parse(JSON.stringify(ORG_DEFAULT.pending));_um=null;SOUTH_GR=c.sg||[];mapQueue(q.rows);AUD_RAW=c.aud||[];mapAudits(AUD_RAW,true);users=c.users||[];REFS=new Set(c.refs||[]);APPR=c.appr||[];
+    ATT_IDX={};Object.entries(c.att||{}).forEach(([k,v])=>ATT_IDX[k]=new Set(v));loadReportCols();try{buildFilters()}catch(e){}return true}catch(e){return false}}
+async function bootLoadAll(){await Promise.all([loadData(),needUsers()?loadUsers():null,loadPwReq(),loadSignups()]);bootSave()}
+function bootBadge(on){const b=$("#refreshBtn");if(!b)return;b.disabled=on;b.textContent=on?"⏳ جارٍ التحديث…":"↻ تحديث"}
 async function enterApp(){
   show("appView");$("#whoName").textContent=me.full_name;$("#whoRole").textContent=roleLabel(me);
   if(isTrainee(me)&&!acadOK()){blockMsg("أكاديمية إدارة المخالفات قيد التجهيز، وسيتم إشعارك عند افتتاحها.");return}
   if(isTrainee(me)){buildTabs();page="acad";go("acad");{const f=$("#aiFab");if(f)f.hidden=true}["#upBtn","#auditBar"].forEach(q=>{const x=$(q);if(x)x.hidden=true});return}
-  buildTabs();await loadData();if(needUsers())await loadUsers();await loadPwReq();await loadSignups();{const msgs=[];if(PWREQ.length)msgs.push(`${PWREQ.length} طلب إعادة كلمة مرور`);if(SIGNUPS.length)msgs.push(`${SIGNUPS.length} طلب تسجيل`);if(msgs.length)setTimeout(()=>toast(`يوجد ${msgs.join(" و")} — في صفحة الإدارة والهيكل`),1200)}
+  buildTabs();
+  if(await bootLoad()){BOOT_STALE=true;bootBadge(true);current="manual";try{page=localStorage.getItem("vv:page")||(isHQU(me)?"hq":"dash")}catch(e){page="dash"}
+    buildTabs();try{renderAll();go(page)}catch(e){}{const f=$("#aiFab");if(f)f.hidden=me.role==="clerk"}
+    try{await bootLoadAll()}catch(e){}BOOT_STALE=false;bootBadge(false);const y=window.scrollY,cur=current;buildTabs();renderAll();go(page);window.scrollTo(0,y);
+    {const msgs=[];if(PWREQ.length)msgs.push(`${PWREQ.length} طلب إعادة كلمة مرور`);if(SIGNUPS.length)msgs.push(`${SIGNUPS.length} طلب تسجيل`);if(msgs.length)setTimeout(()=>toast(`يوجد ${msgs.join(" و")} — في صفحة الإدارة والهيكل`),600)}return}
+  await bootLoadAll();{const msgs=[];if(PWREQ.length)msgs.push(`${PWREQ.length} طلب إعادة كلمة مرور`);if(SIGNUPS.length)msgs.push(`${SIGNUPS.length} طلب تسجيل`);if(msgs.length)setTimeout(()=>toast(`يوجد ${msgs.join(" و")} — في صفحة الإدارة والهيكل`),1200)}
   current="manual";try{page=localStorage.getItem("vv:page")||(isHQU(me)?"hq":"dash")}catch(e){page="dash"}
   buildTabs();renderAll();go(page);{const f=$("#aiFab");if(f)f.hidden=me.role==="clerk"}
 }
@@ -1619,7 +1634,7 @@ function go(p){if(!PAGES.find(x=>x[0]===p&&pageOK(x)))p=isTrainee(me)?"acad":"da
   if(p==="dash")renderDash();if(p==="report")renderReport();if(p==="team")renderTeam();if(p==="users")renderUsers();document.body.classList.toggle("hqwide",p==="hq"||p==="perf"||p==="acad"||p==="south");RD_BASE=null;RD_SCOPE="";pgHero(p);if(p==="hq")renderHQ();if(p==="perf")renderPerf();if(p==="acad")renderAcad();if(p==="south"){renderSouth();if(STV==="reg")stLoadReg()}window.scrollTo(0,0)}
 $("#logoutBtn").onclick=logout;
 $("#pwBtn").onclick=()=>{$("#pwCancel").hidden=false;$("#pwTitle").textContent="تغيير كلمة المرور";$("#pwMsg").textContent="";show("pwView")};
-$("#refreshBtn").onclick=async()=>{const b=$("#refreshBtn");if(b.disabled)return;if(isTrainee(me)){AC.courses=null;renderAcad();return}AC.courses=null;b.disabled=true;b.textContent="جارٍ التحديث…";await flush();await loadData();if(needUsers())await loadUsers();renderAll();go(page);b.disabled=false;b.textContent="↻ تحديث";toast("تم تحديث البيانات")};
+$("#refreshBtn").onclick=async()=>{const b=$("#refreshBtn");if(b.disabled)return;if(isTrainee(me)){AC.courses=null;renderAcad();return}AC.courses=null;b.disabled=true;b.textContent="جارٍ التحديث…";await flush();await loadData();if(needUsers())await loadUsers();bootSave();renderAll();go(page);b.disabled=false;b.textContent="↻ تحديث";toast("تم تحديث البيانات")};
 
 /* ===================== الإحصائيات ===================== */
 function periodStart(p){const d=new Date();if(p==="7")return Date.now()-7*864e5;if(p==="30")return Date.now()-30*864e5;if(p==="month")return new Date(d.getFullYear(),d.getMonth(),1).getTime();return 0}
