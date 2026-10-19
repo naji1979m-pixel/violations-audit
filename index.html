@@ -2561,7 +2561,7 @@ function aiContext(){const {L,scope}=aiBase();const A=hqAgg(L),T=A.T,r1=x=>Math.
     return Object.entries(P).sort((a,b)=>b[1].sent-a[1].sent||b[1].n-a[1].n).slice(0,60).map(([k,v])=>[k,Object.entries(v.sec).sort((a,b)=>b[1]-a[1])[0][0],v.rev].concat(mk(v)))};
   const G={};L.forEach(r=>{const g=(r.sector||"غير محدد").trim();(G[g]=G[g]||Object.assign(hqZ(),{s:secOf(r.region)}));hqAdd(G[g],r._hc,r)});
   const mo=A.M._all||{};const days=L.map(dayOfRow).filter(d=>d!=null);
-  return {شرح_الأعمدة:"كل صف أرقام بالترتيب "+COLS_AI+"؛ صفوف الأشخاص: [الاسم، القطاع، عدد ما دققه]+الأعمدة؛ من مرسله أقل من 5 عينة صغيرة",النطاق:scope,المستخدم:{الدور:roleLabel(me),الجهة:me.sector||"الكل"},الفترة:days.length?`${wkDay(days.reduce((a,b)=>a<b?a:b))} – ${wkDay(days.reduce((a,b)=>a>b?a:b))}`:"",
+  const out={شرح_الأعمدة:"كل صف أرقام بالترتيب "+COLS_AI+"؛ صفوف الأشخاص: [الاسم، القطاع، عدد ما دققه]+الأعمدة؛ من مرسله أقل من 5 عينة صغيرة",النطاق:scope,المستخدم:{الدور:roleLabel(me),الجهة:me.sector||"الكل"},الفترة:days.length?`${wkDay(days.reduce((a,b)=>a<b?a:b))} – ${wkDay(days.reduce((a,b)=>a>b?a:b))}`:"",
     الإجمالي:mk(T),قيمة_المخالفات_الصادر_لها_قرار_ريال:Math.round(T.fine),
     القطاعات:HQ_SECS.filter(s=>A.S[s]).map(s=>[s].concat(mk(A.S[s]))),
     المحافظات_مع_القطاع:Object.entries(G).sort((a,b)=>b[1].n-a[1].n).slice(0,50).map(([g,o])=>[g,o.s].concat(mk(o))),
@@ -2569,7 +2569,24 @@ function aiContext(){const {L,scope}=aiBase();const A=hqAgg(L),T=A.T,r1=x=>Math.
     سنوياً:Object.keys(A.Y).map(Number).sort().map(y=>[y].concat(mk(A.Y[y]))),
     أعلى_المخالفات_المرسلة:Object.entries(A.TY).sort((a,b)=>b[1]-a[1]).slice(0,15),
     مدراء_الرقابة:ppl(r=>(r.mgr||"").trim()),مأمورو_الضبط:ppl(r=>(r.officer||"").trim()),
-    ملاحظة:"آخر شهر قد لا يكون مكتملاً. البيانات من التقرير الشامل."}}
+    ملاحظة:"آخر شهر قد لا يكون مكتملاً. البيانات من التقرير الشامل."};
+  /* الفلتر الفعلي المطبّق على الشاشة */
+  const F={الصفحة:({hq:"بوابة المركز الرئيسي",perf:"تقييم الأداء"})[page]||"الرئيسية/المخالفات"};
+  try{if(page==="hq"){const sc=hqScope(A);F.الفترة=sc.per||"كل الفترات";F.القطاع=HQSF||"جميع القطاعات";F.المحافظات_المختارة=HQG.length?HQG:"كل المحافظات"}
+    else if(page==="perf"){const [a,b]=pfRange();F.الفترة=a||b?`${wkDay(a)} – ${wkDay(b)}`:"كل الفترات";F.القطاع=PFS||(seesAll()?"جميع القطاعات":(me.sector||""));F.المحافظات_المختارة=PFG.length?PFG:"كل المحافظات"}
+    else F.التصفية=fLabel()}catch(e){}
+  out.الفلتر_الفعلي=F;
+  /* شهري لكل قطاع ولكل محافظة (آخر 12 شهراً) */
+  const MK=Object.keys(mo).map(Number).sort().slice(-12),mkl=k=>`${Math.floor(k/100)}-${String(k%100).padStart(2,"0")}`,inM=new Set(MK);
+  out.القطاعات_شهرياً=[];HQ_SECS.forEach(sc=>{const m=A.M[sc]||{};MK.forEach(k=>{if(m[k]&&m[k].n)out.القطاعات_شهرياً.push([sc,mkl(k)].concat(mk(m[k])))})});
+  const GM={};L.forEach(r=>{const d=dayOfRow(r);if(d==null)return;const t=new Date(d*864e5),k=t.getUTCFullYear()*100+t.getUTCMonth()+1;if(!inM.has(k))return;const g=(r.sector||"غير محدد").trim();if(g==="غير محدد")return;
+    const o=GM[g]=GM[g]||{s:secOf(r.region),n:0,m:{}};o.n++;hqAdd(o.m[k]=o.m[k]||hqZ(),r._hc||(r._hc=hqCls(r)),r)});
+  let gl=Object.entries(GM).sort((a,b)=>b[1].n-a[1].n),rowsGM=[],cut=0;
+  const build=list=>{const R=[];list.forEach(([g,o])=>MK.forEach(k=>{if(o.m[k])R.push([g,o.s,mkl(k)].concat(mk(o.m[k])))}));return R};
+  rowsGM=build(gl);while(JSON.stringify(out).length+JSON.stringify(rowsGM).length>105000&&gl.length>5){gl=gl.slice(0,Math.floor(gl.length*0.8));cut=Object.keys(GM).length-gl.length;rowsGM=build(gl)}
+  out.المحافظات_شهرياً=rowsGM;
+  out.شرح_الأعمدة+="؛ القطاعات_شهرياً: [القطاع، الشهر YYYY-MM]+الأعمدة؛ المحافظات_شهرياً: [المحافظة، القطاع، الشهر YYYY-MM]+الأعمدة (الأشهر بلا مخالفات محذوفة)"+(cut?`؛ المحافظات_شهرياً تشمل أكبر ${gl.length} محافظة فقط — اطلب تضييق الفلتر لبقية المحافظات (${cut})`:"");
+  return out}
 function aiMd(t){const e=esc(String(t||""));const lines=e.split("\n"),out=[];let inT=false,inL=false;
   const fmt=x=>x.replace(/\*\*(.+?)\*\*/g,"<b>$1</b>").replace(/`([^`]+)`/g,"<code>$1</code>");
   for(let i=0;i<lines.length;i++){const l=lines[i];
