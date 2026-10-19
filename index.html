@@ -2530,15 +2530,17 @@ async function hqMapInit(L){const el=document.getElementById("hqMap");if(!el)ret
   catch(e){el.innerHTML='<div class="empty">تعذر تحميل الخريطة — تحقق من الاتصال</div>';return}
   const Lf=window.L;if(HQMAP){try{HQMAP.remove()}catch(e){}}HQMAP=Lf.map(el,{zoomControl:true,attributionControl:true,preferCanvas:true}).setView([24.2,45.1],5);
   Lf.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",{maxZoom:18,subdomains:"abc",attribution:'&copy; OpenStreetMap'}).addTo(HQMAP);
-  const draw=()=>{if(HQMLAY)HQMLAY.remove();const z=HQMAP.getZoom(),step=z<=6?0.25:z<=8?0.08:z<=10?0.02:z<=12?0.006:0.002;const C=hqCells(L,step);const mx=Math.max(1,...C.map(o=>o.n));
+  /* رسم المربعات الظاهرة فقط وبحد أعلى للعلامات حتى لا تتجمد الصفحة */
+  const draw=()=>{if(HQMLAY)HQMLAY.remove();const z=HQMAP.getZoom(),bd=HQMAP.getBounds().pad(0.25),V=L.filter(r=>{const ll=rowLL(r);return ll&&bd.contains(ll)});
+    let step=z<=6?0.25:z<=8?0.08:z<=10?0.02:z<=12?0.006:0.002,C=hqCells(V,step);while(C.length>700&&step<2){step*=2;C=hqCells(V,step)}const mx=Math.max(1,...C.map(o=>o.n));
     HQMLAY=Lf.layerGroup();C.forEach(o=>{const f=Math.sqrt(o.n/mx),col=f>.75?"#C0392B":f>.5?"#E0A11B":f>.25?"#2F6FC0":"#9CC1F2";
       const d=Math.round(18+f*34),m=Lf.marker([o.la,o.lo],{icon:Lf.divIcon({className:"hq-mk",html:`<span style="width:${d}px;height:${d}px;background:${col};font-size:${d<26?10:d<40?11.5:13}px">${o.n>=1000?(o.n/1000).toFixed(o.n>=10000?0:1)+"k":o.n}</span>`,iconSize:[d,d],iconAnchor:[d/2,d/2]})});
       m.bindPopup(`<div dir="rtl" style="font-family:inherit;min-width:180px"><b>${esc(o.gv||"")}</b><br>${hqF(o.n)} مخالفة${o.top?`<br><small>أكثر بند: ${esc(o.top)}</small>`:""}<br><button type="button" class="btn2 pri" style="margin-top:6px" data-rd="${esc(rdS(Object.assign(HQMM==="n"?{}:{c:HQMM},{cell:`${o.a.toFixed(4)},${o.b.toFixed(4)},${step}`})))}">عرض المخالفات</button></div>`);m.addTo(HQMLAY)});HQMLAY.addTo(HQMAP)};
   const pts=L.filter(mmOK).map(rowLL).filter(Boolean);if(pts.length){const q=(a,p)=>{const b=a.slice().sort((x,y)=>x-y);return b[Math.min(b.length-1,Math.max(0,Math.floor(b.length*p)))]};const la=pts.map(x=>x[0]),lo=pts.map(x=>x[1]);HQMAP.fitBounds([[q(la,.01),q(lo,.01)],[q(la,.99),q(lo,.99)]],{padding:[20,20],maxZoom:12})}
   const vc=()=>{const el2=document.getElementById("hqMView");if(!el2)return;const bd=HQMAP.getBounds(),G={};let n=0;L.forEach(r=>{if(!mmOK(r))return;const ll=rowLL(r);if(!ll||!bd.contains(ll))return;n++;const g=(r.sector||"").trim();G[g]=(G[g]||0)+1});
     const t=Object.entries(G).sort((a,b)=>b[1]-a[1]).slice(0,6);el2.innerHTML=`<b>في الجزء الظاهر من الخريطة: ${hqF(n)} مخالفة</b>${t.length?" — "+t.map(([g,v])=>`${esc(g.replace(/^محافظة\s+|^مدينة\s+/,""))} <bdi>${hqF(v)}</bdi>`).join(" · "):""}`};
-  HQMAP.on("moveend",vc);
-  draw();vc();HQMAP.on("zoomend",draw);HQMAP.on("popupopen",e=>{const b=e.popup.getElement().querySelector("[data-rd]");if(b)b.onclick=ev=>{ev.stopPropagation();openRD(b.dataset.rd)}});
+  let _mt=null;HQMAP.on("moveend",()=>{clearTimeout(_mt);_mt=setTimeout(()=>{vc();const pp=HQMAP._popup;if(!(pp&&pp.isOpen&&pp.isOpen()))draw()},120)});
+  draw();vc();HQMAP.on("popupopen",e=>{const b=e.popup.getElement().querySelector("[data-rd]");if(b)b.onclick=ev=>{ev.stopPropagation();openRD(b.dataset.rd)}});
   $$("#hqBody [data-fly]").forEach(bt=>bt.onclick=()=>{const [x,y,z]=bt.dataset.fly.split(",").map(Number);HQMAP.flyTo([x,y],z||14);el.scrollIntoView({behavior:"smooth",block:"center"})})}
 /* ===================== بوابة الوحدة الجنوبية – القطاع الشرقي ===================== */
 const SOUTH_U="الوحدة الجنوبية",SOUTH_T="الوحدة الجنوبية – القطاع الشرقي";
