@@ -389,7 +389,7 @@ body.hqwide #fbar{display:none}
 .hk-h{display:flex;align-items:center;gap:8px}.hk-i{flex:none;width:34px;height:34px;border-radius:10px;display:grid;place-items:center;color:color-mix(in srgb,var(--tone) 65%,#0B2347);background:color-mix(in srgb,var(--tone) 13%,transparent)}
 .hk-l{font-size:12.5px;font-weight:600;color:var(--muted);line-height:1.35}
 .hk-v{font-size:28px;font-weight:700;line-height:1.15;color:var(--ink);margin-top:4px}
-.hk-s{font-size:12px;font-weight:700;color:var(--muted)}.ac-bar{display:flex;flex-wrap:wrap;align-items:center;gap:10px 14px;padding:12px 16px!important}.ac-bar .sp{flex:1}
+.hk-s{font-size:12px;font-weight:700;color:var(--muted)}.hq-map{height:560px;border-radius:14px;overflow:hidden;border:1px solid var(--line);z-index:0}.hq-map .leaflet-popup-content{font-family:inherit}.hq-mleg{display:flex;flex-wrap:wrap;align-items:center;gap:6px;margin-top:8px;font-size:12px;color:var(--muted);font-weight:600}.hq-mleg i{width:22px;height:10px;border-radius:5px;display:inline-block}.hq-mleg small{margin-inline-start:10px}@media(max-width:640px){.hq-map{height:420px}}.ac-bar{display:flex;flex-wrap:wrap;align-items:center;gap:10px 14px;padding:12px 16px!important}.ac-bar .sp{flex:1}
 .ac-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:14px}
 .ac-card{display:flex;flex-direction:column;gap:8px;text-align:start;background:var(--paper);border:1px solid var(--line);border-radius:16px;padding:16px;cursor:pointer;font:inherit;color:inherit;box-shadow:0 2px 10px rgba(16,40,74,.05);transition:transform .15s,border-color .15s;min-width:0}
 .ac-card:hover{transform:translateY(-2px);border-color:#4D8FE6}.ac-card h4{margin:0;font-size:16px;line-height:1.5}.ac-card p{margin:0;color:var(--muted);font-size:13px;line-height:1.7;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;min-height:2.6em}
@@ -1485,7 +1485,7 @@ const QDB={open(){return new Promise((ok,no)=>{try{const r=indexedDB.open("vv-ca
 async function dataVer(){try{const {data}=await sb.from("quality_settings").select("value").eq("key","data_ver").maybeSingle();return data&&data.value&&data.value.v||null}catch(e){return null}}
 async function bumpVer(){try{await sb.from("quality_settings").upsert({key:"data_ver",value:{v:new Date().toISOString()+"-"+Math.random().toString(36).slice(2,7)},updated_at:new Date().toISOString()})}catch(e){}}
 let DATA_VER=null;
-const QCOLS="visit_no,violation_id,violator_name,sector,region,visit_date,officer,item,property_type,extra";
+const QCOLS="visit_no,violation_id,violator_name,sector,region,visit_date,officer,item,property_type,location,extra";
 /* ===== النسخة السريعة: ملف مضغوط واحد للمخالفات بدل عشرات الطلبات ===== */
 const SNAP_DIR="snap/",snapPath=v=>SNAP_DIR+"queue-"+String(v).replace(/[^\w-]/g,"_")+".json.gz";
 async function gzBlob(o){const st=new Blob([JSON.stringify(o)]).stream().pipeThrough(new CompressionStream("gzip"));return await new Response(st).blob()}
@@ -1499,14 +1499,14 @@ function snapDec(o){const out=new Array(o.n);const dv=s=>s.charCodeAt(0)===1?JSO
 const supGz=()=>typeof CompressionStream!=="undefined"&&typeof DecompressionStream!=="undefined";
 async function snapGet(v){if(!v||!supGz())return null;try{const {data,error}=await sb.storage.from("quality-files").download(snapPath(v));if(error||!data)return null;const o=await gunz(data);if(o.v!==v||o.cols!==QCOLS)return null;return snapDec(o)}catch(e){return null}}
 async function snapBuild(){if(!canUpload()||!supGz())return;try{const v=await dataVer();if(!v)return;const q=await fetchAll("quality_queue",QCOLS,"جارٍ تجهيز النسخة السريعة");
-    toast("جارٍ حفظ النسخة السريعة…");const blob=await gzBlob(Object.assign({v,cols:QCOLS,at:Date.now()},snapEnc(q)));
+    toast("جارٍ حفظ النسخة السريعة…");const qs=q.map(x=>{const ll=llParse(x.location);return ll?Object.assign({},x,{location:ll[0].toFixed(5)+","+ll[1].toFixed(5)}):x});const blob=await gzBlob(Object.assign({v,cols:QCOLS,at:Date.now()},snapEnc(qs)));
     const {error}=await sb.storage.from("quality-files").upload(snapPath(v),blob,{upsert:true,contentType:"application/gzip",cacheControl:"31536000"});if(error)throw error;
     QDB.set("queue",{v,cols:QCOLS,rows:q,at:Date.now()});
     try{const {data:ls}=await sb.storage.from("quality-files").list("snap",{limit:100});const old=(ls||[]).map(f=>SNAP_DIR+f.name).filter(n=>n!==snapPath(v));if(old.length)await sb.storage.from("quality-files").remove(old)}catch(e){}}
   catch(e){console.warn("snap",e);toast("تعذر حفظ النسخة السريعة — ستعمل المنصة بالطريقة العادية")}}
 async function loadQueue(){const v=await dataVer();DATA_VER=v;let q=null;if(v){const c=await QDB.get("queue");if(c&&c.v===v&&c.cols===QCOLS&&Array.isArray(c.rows))q=c.rows}
   if(!q&&v){toast("جارٍ تحميل المخالفات…");q=await snapGet(v);if(q)QDB.set("queue",{v,cols:QCOLS,rows:q,at:Date.now()})}
-  if(!q){q=await fetchAll("quality_queue",QCOLS,"جارٍ تحميل المخالفات");if(v)QDB.set("queue",{v,cols:QCOLS,rows:q,at:Date.now()})}const MT={};rows=q.map(x=>{const r={vno:x.visit_no,visit:x.visit_no,vid:x.violation_id||"",name:x.violator_name||"",nid:"",loc:"",sector:x.sector||"",region:x.region||"",sev:(x.extra||{}).sev||"",vstat:(x.extra||{}).vstatus||"",pkind:pkFrom(x.extra||{}),reason:(x.extra||{}).reason||"",amin:(x.extra||{}).amin||"",decDate:(x.extra||{}).dec_date||"",mgr:(x.extra||{}).mgr||"",pres:("pres" in (x.extra||{}))?x.extra.pres:undefined,fine:(x.extra||{}).fine||"",vvisit:(x.extra||{}).visit_status||"",dec:("decision" in (x.extra||{}))?x.extra.decision:undefined,date:x.visit_date||"",officer:x.officer||"",explain:"",item:x.item||"",prop:x.property_type||"",type:(x.item||"") in MT?MT[x.item||""]:(MT[x.item||""]=matchType(x.item||""))};r._h=norm([r.vno,r.vid,r.officer,r.item,r.region,r.sector,r.name].join(" "));return r})}
+  if(!q){q=await fetchAll("quality_queue",QCOLS,"جارٍ تحميل المخالفات");if(v)QDB.set("queue",{v,cols:QCOLS,rows:q,at:Date.now()})}const MT={};rows=q.map(x=>{const r={vno:x.visit_no,visit:x.visit_no,vid:x.violation_id||"",name:x.violator_name||"",nid:"",loc:x.location||"",sector:x.sector||"",region:x.region||"",sev:(x.extra||{}).sev||"",vstat:(x.extra||{}).vstatus||"",pkind:pkFrom(x.extra||{}),reason:(x.extra||{}).reason||"",amin:(x.extra||{}).amin||"",decDate:(x.extra||{}).dec_date||"",mgr:(x.extra||{}).mgr||"",pres:("pres" in (x.extra||{}))?x.extra.pres:undefined,fine:(x.extra||{}).fine||"",vvisit:(x.extra||{}).visit_status||"",dec:("decision" in (x.extra||{}))?x.extra.decision:undefined,date:x.visit_date||"",officer:x.officer||"",explain:"",item:x.item||"",prop:x.property_type||"",type:(x.item||"") in MT?MT[x.item||""]:(MT[x.item||""]=matchType(x.item||""))};r._h=norm([r.vno,r.vid,r.officer,r.item,r.region,r.sector,r.name].join(" "));return r})}
 async function loadAudits(){
   const q=await fetchAll("quality_audits","*");const keep=audits.manual;audits={};
   q.forEach(x=>{audits[x.visit_no]={_id:x.id,_owner:x.auditor_id,_ro:!canEditAudit()||(!!x.auditor_id&&x.auditor_id!==me.id),
@@ -1985,11 +1985,12 @@ function rdParse(spec){const o={};String(spec||"").split("|").forEach(p=>{const 
 function rdFilter(L,o){return L.filter(r=>{const c=r._hc||(r._hc=hqCls(r));
   if(o.c&&o.c!=="n"){if(o.c==="sent"){if(!(c==="iss"||c==="ret"||c==="auth"))return false}else if(o.c==="retW"||o.c==="retC"){if(c!=="ret"||retSub(r)!==o.c)return false}else if(c!==o.c)return false}
   if(o.s&&secOf(r.region)!==o.s)return false;if(o.pk&&(r.pkind||"")!==o.pk)return false;if(o.u&&unitLab(r.sector)!==o.u)return false;if(o.g&&(r.sector||"غير محدد").trim()!==o.g)return false;if(o.rg&&(r.region||"غير محدد").trim()!==o.rg)return false;
+  if(o.cell){const [ca,cb,cs]=o.cell.split(",").map(Number),ll=rowLL(r);if(!ll||ll[0]<ca||ll[0]>=ca+cs||ll[1]<cb||ll[1]>=cb+cs)return false}
   if(o.m&&(r.mgr||"").trim()!==o.m)return false;if(o.o&&(r.officer||"").trim()!==o.o)return false;if(o.it&&(r.item||"بند غير محدد").trim()!==o.it)return false;
   if(o.rev&&!(r.dec||"").trim())return false;if(o.rej&&(r.dec||"").trim()!=="غير معتمدة")return false;
   if(o.mk||o.y){const d=dayOfRow(r);if(d==null)return false;const t=new Date(d*864e5);if(o.y&&t.getUTCFullYear()!==+o.y)return false;if(o.mk&&t.getUTCFullYear()*100+t.getUTCMonth()+1!==+o.mk)return false}
   return true})}
-function rdTitle(o){const p=[];if(o.pk){p.push(o.pk)}else p.push(o.rej?"غير المعتمدة":o.rev?"المدققة":(RD_K[o.c||"n"]||"المخالفات"));if(o.u)p.push(o.u);if(o.m)p.push("مدير الرقابة: "+o.m);if(o.o)p.push("مأمور الضبط: "+o.o);if(o.s)p.push("القطاع "+o.s);if(o.rg)p.push("منطقة "+o.rg);if(o.g)p.push(o.g);if(o.it)p.push("«"+(o.it.length>50?o.it.slice(0,48)+"…":o.it)+"»");if(o.mk)p.push(HQ_MON[o.mk%100-1]+" "+Math.floor(o.mk/100));if(o.y)p.push("سنة "+o.y);return p.join(" — ")}
+function rdTitle(o){const p=[];if(o.pk){p.push(o.pk)}else p.push(o.rej?"غير المعتمدة":o.rev?"المدققة":(RD_K[o.c||"n"]||"المخالفات"));if(o.u)p.push(o.u);if(o.m)p.push("مدير الرقابة: "+o.m);if(o.o)p.push("مأمور الضبط: "+o.o);if(o.s)p.push("القطاع "+o.s);if(o.rg)p.push("منطقة "+o.rg);if(o.g)p.push(o.g);if(o.it)p.push("«"+(o.it.length>50?o.it.slice(0,48)+"…":o.it)+"»");if(o.mk)p.push(HQ_MON[o.mk%100-1]+" "+Math.floor(o.mk/100));if(o.cell)p.push("موقع محدد على الخريطة");if(o.y)p.push("سنة "+o.y);return p.join(" — ")}
 let RD_BASE=null,RD_SCOPE="";
 function openRD(spec){const o=rdParse(spec);const base=RD_BASE?RD_BASE():vrows();const L=rdFilter(base,o);const ttl=rdTitle(o);
   const cnt={};L.forEach(r=>{const c=r._hc;cnt[c]=(cnt[c]||0)+1});const sent=(cnt.iss||0)+(cnt.ret||0)+(cnt.auth||0);
@@ -2363,13 +2364,42 @@ function acForm(c){if(!acEdit())return;const E=c||{title:"",summary:"",category:
     const d=(r.data||[])[0]||Object.assign({},c,row);if(c){const i=AC.courses.findIndex(x=>x.id===c.id);AC.courses[i]=d}else AC.courses.push(d);AC.courses.sort((a,b)=>(+a.sort||0)-(+b.sort||0));
     closeSheet();toast("تم حفظ الدورة");ACV="man";renderAcad()};
   $("#sheet").classList.add("wide");openSheet()}
+/* ===================== خريطة المخالفات ===================== */
+function llParse(t){const m=String(t||"").match(/-?\d{1,3}\.\d{3,}/g);if(!m||m.length<2)return null;let a=+m[0],b=+m[1];
+  const isLat=x=>x>=15&&x<=33,isLng=x=>x>=34&&x<=57;if(isLat(a)&&isLng(b))return [a,b];if(isLat(b)&&isLng(a))return [b,a];return null}
+const rowLL=r=>r._ll!==undefined?r._ll:(r._ll=llParse(r.loc));
+let HQMM="n",HQMAP=null,HQMLAY=null;
+const HQMM_L={n:"المرصودة",sent:"المرسلة للهيئة",ret:"المسترجعة حالياً",iss:"القرارات الصادرة",arch:"غير مكتملة الأركان",pend:"بانتظار المراجعة"};
+const mmOK=r=>{const c=r._hc||(r._hc=hqCls(r));return HQMM==="n"||(HQMM==="sent"?(c==="iss"||c==="ret"||c==="auth"):c===HQMM)};
+function hqCells(L,step){const C={};L.forEach(r=>{if(!mmOK(r))return;const ll=rowLL(r);if(!ll)return;const a=Math.floor(ll[0]/step)*step,b=Math.floor(ll[1]/step)*step,k=a.toFixed(3)+","+b.toFixed(3);
+  const o=C[k]=C[k]||{a,b,n:0,la:0,lo:0,g:{},it:{}};o.n++;o.la+=ll[0];o.lo+=ll[1];const g=(r.sector||"").trim();o.g[g]=(o.g[g]||0)+1;const it=(r.item||"").trim();if(it)o.it[it]=(o.it[it]||0)+1});
+  return Object.values(C).map(o=>Object.assign(o,{la:o.la/o.n,lo:o.lo/o.n,gv:Object.entries(o.g).sort((x,y)=>y[1]-x[1])[0][0],top:(Object.entries(o.it).sort((x,y)=>y[1]-x[1])[0]||[""])[0]}))}
+function hqMapHtml(L){const withLL=L.filter(r=>rowLL(r)),sel=withLL.filter(mmOK),H=hqCells(L,0.01).sort((a,b)=>b.n-a.n).slice(0,15);
+  return `<div class="hq-grid"><div class="hq-card c-12"><div class="hq-ch"><h3>خريطة المخالفات</h3><span class="sub">${hqF(sel.length)} مخالفة على الخريطة · ${hqF(withLL.length)} من ${hqF(L.length)} لها إحداثيات</span>
+      <div class="srt-w"><label class="hq-sel hq-sel-l"><span>المؤشر</span><select id="hqMM">${Object.entries(HQMM_L).map(([k,l])=>`<option value="${k}"${HQMM===k?" selected":""}>${l}</option>`).join("")}</select></label></div></div>
+    ${withLL.length?`<div id="hqMap" class="hq-map" role="img" aria-label="خريطة المخالفات"></div><div class="hq-mleg"><span>أقل</span><i style="background:#9CC1F2"></i><i style="background:#2F6FC0"></i><i style="background:#E0A11B"></i><i style="background:#C0392B"></i><span>أكثر</span><small>حجم الدائرة ولونها حسب عدد المخالفات · اضغط الدائرة لتفاصيلها</small></div>`:`<div class="empty">لا توجد إحداثيات في البيانات الحالية.<br>أعد رفع التقرير الشامل (استبدال) ليُحمَّل عمود «موقع المخالفة».</div>`}</div>
+    ${H.length?`<div class="hq-card c-12"><div class="hq-ch"><h3>أكثر المواقع تركّزاً <span class="sub">مربعات بحجم 1 كم تقريباً · ${esc(HQMM_L[HQMM])}</span></h3><span class="tx-bs"><button type="button" class="btn2 tx-b" data-tx="pdf">📄 PDF</button><button type="button" class="btn2 pri tx-b" data-tx="xls">📊 Excel</button></span></div>
+      <div class="tbl-wrap"><table class="tbl" data-tt="أكثر المواقع تركّزاً — ${esc(HQMM_L[HQMM])}"><thead><tr><th>#</th><th>المحافظة</th><th>عدد المخالفات</th><th>أكثر بند</th><th>الإحداثيات</th><th></th></tr></thead><tbody>
+      ${H.map((o,i)=>`<tr><td>${i+1}</td><td>${esc(o.gv||"—")}</td><td${rdA(Object.assign(HQMM==="n"?{}:{c:HQMM},{cell:`${o.a.toFixed(3)},${o.b.toFixed(3)},0.01`}))}><b>${hqF(o.n)}</b></td><td class="rd-it" title="${esc(o.top)}">${esc(o.top)}</td><td dir="ltr">${o.la.toFixed(4)}, ${o.lo.toFixed(4)}</td><td><button type="button" class="btn2" data-fly="${o.la},${o.lo}">على الخريطة</button></td></tr>`).join("")}</tbody></table></div></div>`:""}</div>`}
+async function hqMapInit(L){const el=document.getElementById("hqMap");if(!el)return;
+  try{if(!window.L||!window.L.map){if(!document.getElementById("lfCss")){const k=document.createElement("link");k.id="lfCss";k.rel="stylesheet";k.href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css";document.head.appendChild(k)}await loadScript("https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js")}}
+  catch(e){el.innerHTML='<div class="empty">تعذر تحميل الخريطة — تحقق من الاتصال</div>';return}
+  const Lf=window.L;if(HQMAP){try{HQMAP.remove()}catch(e){}}HQMAP=Lf.map(el,{zoomControl:true,attributionControl:true,preferCanvas:true}).setView([24.2,45.1],5);
+  Lf.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",{maxZoom:18,subdomains:"abc",attribution:'&copy; OpenStreetMap'}).addTo(HQMAP);
+  const draw=()=>{if(HQMLAY)HQMLAY.remove();const z=HQMAP.getZoom(),step=z<=6?0.25:z<=8?0.08:z<=10?0.02:z<=12?0.006:0.002;const C=hqCells(L,step);const mx=Math.max(1,...C.map(o=>o.n));
+    HQMLAY=Lf.layerGroup();C.forEach(o=>{const f=Math.sqrt(o.n/mx),col=f>.75?"#C0392B":f>.5?"#E0A11B":f>.25?"#2F6FC0":"#9CC1F2";
+      const m=Lf.circleMarker([o.la,o.lo],{radius:4+f*22,color:"#fff",weight:1,fillColor:col,fillOpacity:.75});
+      m.bindPopup(`<div dir="rtl" style="font-family:inherit;min-width:180px"><b>${esc(o.gv||"")}</b><br>${hqF(o.n)} مخالفة${o.top?`<br><small>أكثر بند: ${esc(o.top)}</small>`:""}<br><button type="button" class="btn2 pri" style="margin-top:6px" data-rd="${esc(rdS(Object.assign(HQMM==="n"?{}:{c:HQMM},{cell:`${o.a.toFixed(4)},${o.b.toFixed(4)},${step}`})))}">عرض المخالفات</button></div>`);m.addTo(HQMLAY)});HQMLAY.addTo(HQMAP)};
+  const pts=L.map(rowLL).filter(Boolean);if(pts.length){let a=90,b=180,c=-90,d=-180;pts.forEach(([x,y])=>{a=Math.min(a,x);b=Math.min(b,y);c=Math.max(c,x);d=Math.max(d,y)});HQMAP.fitBounds([[a,b],[c,d]],{padding:[20,20],maxZoom:12})}
+  draw();HQMAP.on("zoomend",draw);HQMAP.on("popupopen",e=>{const b=e.popup.getElement().querySelector("[data-rd]");if(b)b.onclick=ev=>{ev.stopPropagation();openRD(b.dataset.rd)}});
+  $$("#hqBody [data-fly]").forEach(bt=>bt.onclick=()=>{const [x,y]=bt.dataset.fly.split(",").map(Number);HQMAP.flyTo([x,y],14);el.scrollIntoView({behavior:"smooth",block:"center"})})}
 function renderHQ(){
   const el=$("#hqBody");if(!canHQ()){el.innerHTML='<section class="block"><div class="empty">🔒 هذه البوابة خاصة بموظفي المركز الرئيسي.</div></section>';return}
   const L=hqRows(),A=hqAgg(L),T=A.T,sc=hqScope(A),ys=hqYears();RD_BASE=hqRows;RD_SCOPE=`بوابة المركز الرئيسي — ${sc.sec}${sc.per?" — "+sc.per:""}`;HQ_CTX=HQSF?{s:HQSF}:{};
   const secs=HQ_SECS.filter(s=>A.S[s]);
   const allSecs=HQ_SECS;
   const note=(A.noPres||A.noDec)?`<div class="hq-alert">ℹ️ لتظهر أرقام قرارات الهيئة وأسماء مدراء الرقابة وقيم الغرامات بدقة، أعد رفع التقرير الشامل (استبدال).</div>`:"";
-  const V=[["ov","نظرة عامة"],["sec","القطاعات"],["trend","الاتجاه والمقارنات"],["vio","المخالفات"],["mgr","مدراء الرقابة"],["rasd","جودة الرصد"]];
+  const V=[["ov","نظرة عامة"],["sec","القطاعات"],["trend","الاتجاه والمقارنات"],["vio","المخالفات"],["mgr","مدراء الرقابة"],["map","الخريطة"],["rasd","جودة الرصد"]];
   const pk=[["all","كل الفترات"]].concat(ys.map(y=>["y"+y,String(y)]),[["q3","آخر 3 أشهر"],["cu","فترة مخصصة"]]);
   const sl=secs.map(s=>({k:s,o:A.S[s]}));
   let body="";
@@ -2408,6 +2438,7 @@ function renderHQ(){
   }else if(HQV==="vio"){
     body=`<div class="hq-grid"><div class="hq-card c-5"><div class="hq-ch"><h3>أعلى المخالفات المرسلة للهيئة</h3><span class="sub">${hqF(T.sent)} مخالفة</span></div>${hqBars(A.TY,10,null,k=>({c:"sent",it:k,s:HQSF}))}</div>
       <div class="hq-card c-7"><div class="hq-ch"><h3>المخالفات حسب القطاع والبند</h3></div>${hqHeat(A,secs)}</div></div>`;
+  }else if(HQV==="map"){body=hqMapHtml(L);
   }else if(HQV==="rasd"){body=rsView("hq");
   }else{
     body=`<div class="hq-card"><div class="hq-ch"><h3>أداء مدراء الرقابة (المدققين)</h3><span class="sub">اضغط على عنوان العمود للترتيب</span></div>${hqMgrHtml(A,secs)}</div>`;
@@ -2423,6 +2454,7 @@ function renderHQ(){
     <nav class="hq-nav" role="tablist">${V.map(([k,l])=>`<button type="button" role="tab" data-hv="${k}" aria-selected="${HQV===k}">${l}</button>`).join("")}</nav>
     <div class="hq-body">${L.length||HQV==="rasd"?body:'<div class="hq-card"><div class="empty">لا توجد مخالفات في هذه الفترة أو القطاع</div></div>'}</div></div>`;
   if(HQV==="rasd")rsBind("#hqBody");
+  if(HQV==="map"){hqMapInit(L);const mm=$("#hqMM");if(mm)mm.onchange=e=>{HQMM=e.target.value;renderHQ()}}
   const re=()=>renderHQ();
   $$("#hqBody [data-hv]").forEach(b=>b.onclick=()=>{HQV=b.dataset.hv;re()});
   $$("#hqBody [data-per]").forEach(b=>b.onclick=()=>{HQP.k=b.dataset.per;if(HQP.k==="cu"&&!HQP.d1){const m=hqMaxDay();if(m!=null){HQP.d2=m;HQP.d1=m-29}}re()});
