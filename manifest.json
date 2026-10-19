@@ -1,6 +1,6 @@
 {
-  "name": "نظام الجودة والتحقق من متطلبات والاشتراطات اللازمة للمخالفات",
-  "short_name": "جودة المخالفات",
+  "name": "الجودة والتدقيق — المتطلبات والاشتراطات اللازمة للمخالفات · جودة الرصد",
+  "short_name": "الجودة والتدقيق",
   "description": "تدقيق ملفات المخالفات وفق دليل دراسة المخالفات وآلية ضبطها",
   "lang": "ar",
   "dir": "rtl",
@@ -11,8 +11,23 @@
   "background_color": "#F1F5FB",
   "theme_color": "#1C437E",
   "icons": [
-    {"src": "icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any"},
-    {"src": "icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any"},
-    {"src": "icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable"}
+    {
+      "src": "icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
   ]
 }
