@@ -2132,6 +2132,13 @@ const RS_OK=80;
 let RSEM="",RSEV="",RS_FIRST=true;
 let RASD=null,RS_ERR="",RS_LOADING=null,RS_CFG={sample:25,target:50,evalTarget:30},RSM="",RSF="all",RSQ="",RS_CTX="hq";
 const rsEdit=()=>!!me&&(me.role==="admin"||me.role==="exec"||isHQ(me));
+/* التقييم لمدراء الرقابة بالقطاعات (ومدير النظام) — المستهدف لكل موظف يحدده مدير الجودة */
+const rsIsEv=u=>!!u&&u.active!==false&&u.role!=="trainee"&&!isHQ(u)&&(u.role==="manager"||u.role==="staff"||u.job==="m");
+const rsInMine=x=>{if(!me||!me.sector)return false;const u=myUnit();if(u)return unitOf(x.gov)===u.name;return areaMatch(me.sector,{f:{gov:x.gov,region:x.region}})};
+const rsCanEv=x=>!!me&&!!x&&(me.role==="admin"||(rsIsEv(me)&&rsInMine(x)));
+const rsTgEd=()=>isFeeder(me);
+const rsTgOf=k=>{const t=(RS_CFG.evalT||{})[k];return +t>0?+t:(+RS_CFG.evalTarget||30)};
+let RS_RPC=true;
 const rsMk=d=>{const t=new Date(d*864e5);return t.getUTCFullYear()+"-"+String(t.getUTCMonth()+1).padStart(2,"0")};
 const rsMLab=k=>{const [y,m]=String(k).split("-");return (HQ_MON[+m-1]||m)+" "+y};
 const rsKey=x=>x.month+"|"+x.visit_no;
@@ -2169,7 +2176,7 @@ function rsView(ctx){RS_CTX=ctx;
   const secs=Object.entries(A.S).sort((a,b)=>b[1].n-a[1].n),offs=Object.entries(A.O).sort((a,b)=>(rsAvg(a[1])??999)-(rsAvg(b[1])??999)||b[1].done-a[1].done);
   const txb='<span class="tx-bs"><button type="button" class="btn2 tx-b" data-tx="pdf">📄 PDF</button><button type="button" class="btn2 pri tx-b" data-tx="xls">📊 Excel</button></span>';
   return `<div class="rs">
-  ${rsEvalCard()}
+  ${rsEvalCard(scf)}
   <div class="hq-card rs-bar"><label class="hq-sel"><span>الشهر</span><select id="rsMon">${ms.map(m=>`<option value="${m}"${m===RSM?" selected":""}>${rsMLab(m)}${(RASD||[]).some(x=>x.month===m)?" ✓":""}</option>`).join("")}</select></label>
     <span class="rs-info">العينة <b>${hqF(+RS_CFG.sample||25)}%</b> من المرسلة للهيئة، موزعة على القطاعات · المقبولة: ${RS_OK}% فأكثر · المستهدف: <b>${hqF(tg)}%</b>${ed?' <button type="button" class="lnk" id="rsTg">تعديل</button>':""}</span>
     <span class="sp"></span>${ed?`<button type="button" class="btn2 pri" id="rsDraw"${pool.length?"":" disabled"}>🎲 ${all.length?"استكمال العينة":"سحب عينة الشهر"}</button>`:""}<button type="button" class="btn2" id="rsXls"${all.length?"":" disabled"}>📊 Excel كامل</button></div>
@@ -2189,30 +2196,46 @@ function rsView(ctx){RS_CTX=ctx;
     <div class="hq-card c-12" id="rsList"><div class="hq-ch"><h3>مخالفات العينة <span class="sub">${hqF(list.length)} من ${hqF(all.length)}</span></h3>
       <div class="srt-w"><div class="hq-chips rs-f">${[["all","الكل"],["todo","لم تُقيّم"],["done","مقيّمة"],["bad","غير مقبولة"]].map(([k,l])=>`<button type="button" class="hq-chip" data-rsf="${k}" aria-pressed="${RSF===k}">${l}</button>`).join("")}</div><input class="in pf-q" id="rsQ" type="search" placeholder="ابحث: رقم الزيارة، مأمور، محافظة" value="${esc(RSQ)}"></div></div>
       <div class="tbl-wrap"><table class="tbl rs-t"><thead><tr><th>رقم الزيارة</th><th>القطاع</th><th>المحافظة</th><th>مأمور الضبط</th><th>بند المخالفة</th><th>جودة الرصد</th><th></th></tr></thead><tbody>
-      ${list.slice(0,300).map(x=>`<tr><td><span class="rs-vn"><b>${esc(x.visit||x.visit_no)}</b><button type="button" class="rs-cp" data-cp="${esc(x.visit||x.visit_no)}" title="نسخ رقم الزيارة">⧉</button></span></td><td>${esc(x.sec||"")}</td><td>${esc(x.gov||"")}</td><td>${esc(x.officer||"")}</td><td class="rd-it" title="${esc(x.item||"")}">${esc(x.item||"")}</td><td>${rsBadge(x.score==null?null:+x.score)}</td><td><button type="button" class="btn2${x.score==null&&ed?" pri":""}" data-rs="${esc(rsKey(x))}">${ed?(x.score==null?"قيّم":"تعديل"):"عرض"}</button></td></tr>`).join("")||'<tr><td colspan="7"><div class="empty">لا توجد نتائج</div></td></tr>'}</tbody></table></div>
+      ${list.slice(0,300).map(x=>`<tr><td><span class="rs-vn"><b>${esc(x.visit||x.visit_no)}</b><button type="button" class="rs-cp" data-cp="${esc(x.visit||x.visit_no)}" title="نسخ رقم الزيارة">⧉</button></span></td><td>${esc(x.sec||"")}</td><td>${esc(x.gov||"")}</td><td>${esc(x.officer||"")}</td><td class="rd-it" title="${esc(x.item||"")}">${esc(x.item||"")}</td><td>${rsBadge(x.score==null?null:+x.score)}</td><td>${(ev=>`<button type="button" class="btn2${x.score==null&&ev?" pri":""}" data-rs="${esc(rsKey(x))}">${ev?(x.score==null?"قيّم":"تعديل"):"عرض"}</button>`)(rsCanEv(x))}</td></tr>`).join("")||'<tr><td colspan="7"><div class="empty">لا توجد نتائج</div></td></tr>'}</tbody></table></div>
       ${list.length>300?`<p class="hq-note">يظهر أول 300 — القائمة كاملة في «Excel كامل».</p>`:""}<p class="hq-note">💡 الصور والحسابات في منصة ممتثل: انسخ رقم الزيارة ⧉ وابحث عنه هناك، ثم قيّم هنا.</p></div>
   </div>`}</div>`}
 const rsEvMonth=x=>{const t=x.eval_first_at||x.eval_at;if(!t)return "";const d=new Date(t);return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")};
-function rsEvalCard(){const tg=+RS_CFG.evalTarget||30,ed=rsEdit();const done=(RASD||[]).filter(x=>x.score!=null&&(x.eval_first_at||x.eval_at));
+function rsEvalCard(scf){scf=scf||(()=>true);const dflt=+RS_CFG.evalTarget||30,te=rsTgEd();const done=(RASD||[]).filter(x=>x.score!=null&&(x.eval_first_at||x.eval_at)&&scf(x));
   const now=new Date(),cur=now.getFullYear()+"-"+String(now.getMonth()+1).padStart(2,"0"),ms=[...new Set(done.map(rsEvMonth).concat([cur]))].filter(Boolean).sort().reverse();if(!RSEM||!ms.includes(RSEM))RSEM=cur;
-  const P={};done.filter(x=>rsEvMonth(x)===RSEM).forEach(x=>{const k=x.eval_by||("n:"+(x.eval_name||""));const o=P[k]=P[k]||{k,n:x.eval_name||"—",c:0,sum:0};o.c++;o.sum+=+x.score});
-  (users||[]).filter(u=>u.active&&u.role!=="trainee"&&(isHQ(u)||u.role==="exec")&&!P[u.id]).forEach(u=>P[u.id]={k:u.id,n:u.full_name,c:0,sum:0});
-  let R=Object.values(P).sort((a,b)=>b.c-a.c||a.n.localeCompare(b.n,"ar"));const opts=R.slice();if(RSEV&&!R.some(r=>r.k===RSEV))RSEV="";if(RSEV)R=R.filter(r=>r.k===RSEV);
-  const one=RSEV&&R[0],pc=c=>Math.min(100,Math.round(c/tg*1000)/10),av=o=>o.c?Math.round(o.sum/o.c*10)/10:null;
+  const P={},uOf=k=>(users||[]).find(u=>u.id===k);done.filter(x=>rsEvMonth(x)===RSEM).forEach(x=>{const k=x.eval_by||("n:"+(x.eval_name||""));const u=uOf(k);const o=P[k]=P[k]||{k,n:(u&&u.full_name)||x.eval_name||"—",s:(u&&u.sector)||"",c:0,sum:0};o.c++;o.sum+=+x.score});
+  const mine=RS_CTX!=="hq"&&!rsEdit()&&!rsTgEd()&&me&&me.sector;
+  (users||[]).filter(u=>rsIsEv(u)&&!P[u.id]&&(!mine||gcl(u.sector||"")===gcl(me.sector))).forEach(u=>P[u.id]={k:u.id,n:u.full_name,s:u.sector||"",c:0,sum:0});
+  Object.values(P).forEach(o=>o.tg=rsTgOf(o.k));
+  let R=Object.values(P).sort((a,b)=>b.c/b.tg-a.c/a.tg||b.c-a.c||a.n.localeCompare(b.n,"ar"));const opts=R.slice();if(RSEV&&!R.some(r=>r.k===RSEV))RSEV="";if(RSEV)R=R.filter(r=>r.k===RSEV);
+  const one=RSEV&&R[0],pc=o=>Math.min(100,Math.round(o.c/o.tg*1000)/10),av=o=>o.c?Math.round(o.sum/o.c*10)/10:null,canSee=k=>rsEdit()||te||(me&&k===me.id);
   const tl=(l,v,sub,tone,frac)=>`<div class="hk" style="--tone:${tone}"><div class="hk-h"><span class="hk-l">${l}</span></div><b class="hk-v">${v}</b><div class="hk-s">${sub||"&nbsp;"}</div>${frac!=null?`<div class="hk-bar"><i style="width:${Math.max(0,Math.min(100,frac*100))}%"></i></div>`:""}</div>`;
-  return `<div class="hq-card rs-ev"><div class="hq-ch"><h3>إنجاز المقيّمين <span class="sub">المستهدف ${hqF(tg)} تقييماً شهرياً لكل موظف${ed?' · <button type="button" class="lnk" id="rsETg">تعديل</button>':""}</span></h3>
+  const nm=o=>canSee(o.k)&&o.c?`<button type="button" class="lnk" data-rsev="${esc(o.k)}" title="عرض أعماله">${esc(o.n)}</button>`:`<b>${esc(o.n)}</b>`;
+  return `<div class="hq-card rs-ev"><div class="hq-ch"><h3>إنجاز مدراء الرقابة بالقطاعات <span class="sub">المستهدف الشهري لكل موظف يحدده مدير الجودة${te?` · الافتراضي ${hqF(dflt)} <button type="button" class="lnk" id="rsETg">تعديل</button>`:""}</span></h3>
     <div class="srt-w"><label class="hq-sel hq-sel-l"><span>الشهر</span><select id="rsEM">${ms.map(m=>`<option value="${m}"${m===RSEM?" selected":""}>${rsMLab(m)}</option>`).join("")}</select></label>
-    <label class="hq-sel hq-sel-l"><span>الموظف</span><select id="rsEV"><option value="">كل المقيّمين</option>${opts.map(o=>`<option value="${esc(o.k)}"${RSEV===o.k?" selected":""}>${esc(o.n)}</option>`).join("")}</select></label></div>
+    <label class="hq-sel hq-sel-l"><span>الموظف</span><select id="rsEV"><option value="">كل الموظفين</option>${opts.map(o=>`<option value="${esc(o.k)}"${RSEV===o.k?" selected":""}>${esc(o.n)}</option>`).join("")}</select></label></div>
     <span class="tx-bs"><button type="button" class="btn2 tx-b" data-tx="pdf">📄 PDF</button><button type="button" class="btn2 pri tx-b" data-tx="xls">📊 Excel</button></span></div>
-    ${one?`<div class="hq-kgrid">${tl("التقييمات المنجزة",hqF(one.c),"خلال "+rsMLab(RSEM),"#2F6FC0",null)}${tl("المتبقي للمستهدف",hqF(Math.max(0,tg-one.c)),`من ${hqF(tg)}`,"#B7861A",null)}${tl("نسبة الإنجاز الشهري",qTxt(pc(one.c)),"المنجز ÷ "+hqF(tg)+" × 100","#1F5BB0",pc(one.c)/100)}<div class="hk pf-qt ${qCls(av(one))}"><div class="hk-h"><span class="hk-l">نسبة الجودة الفعلية</span></div><b class="hk-v">${qTxt(av(one))}</b><div class="hk-s">${av(one)==null?"لا توجد تقييمات مكتملة":"متوسط جودة الرصد للمخالفات التي قيّمها"}</div></div></div>`:""}
-    ${R.length?`<div class="tbl-wrap"><table class="tbl" data-tt="إنجاز المقيّمين — ${rsMLab(RSEM)}"><thead><tr><th>المقيّم</th><th>المنجز</th><th>المتبقي</th><th style="width:30%">نسبة الإنجاز</th><th>نسبة الجودة الفعلية</th></tr></thead><tbody>
-    ${R.map(o=>`<tr><td><b>${esc(o.n)}</b></td><td>${hqF(o.c)}</td><td>${hqF(Math.max(0,tg-o.c))}</td><td><div class="pf-ib pf-q100"><span class="pf-tr"><i class="${o.c>=tg?"q-e":"q-na"}" style="width:${Math.max(o.c?2:0,pc(o.c))}%;${o.c>=tg?"":"background:#4D8FE6"}"></i></span><b>${qTxt(pc(o.c))}</b></div></td><td>${av(o)==null?"—":`<span class="qb ${qCls(av(o))}">${qTxt(av(o))}</span>`}</td></tr>`).join("")}</tbody></table></div>`:'<div class="empty">لا يوجد مقيّمون</div>'}
-    <p class="hq-note">يُحتسب التقييم المكتمل (المعايير الستة) مرة واحدة في شهر أول تقييم له، ولا تُحتسب المسودات · عدم اكتمال المستهدف لا يُعدّ رسوباً في الجودة · نسبة الجودة الفعلية = متوسط درجات جودة الرصد للمخالفات التي قيّمها الموظف.</p></div>`}
+    ${one?`<div class="hq-kgrid">${tl("المستهدف الشهري",hqF(one.tg),esc(one.s||""),"#58708F",null)}${tl("التقييمات المنجزة",hqF(one.c),"خلال "+rsMLab(RSEM),"#2F6FC0",null)}${tl("المتبقي للمستهدف",hqF(Math.max(0,one.tg-one.c)),`من ${hqF(one.tg)}`,"#B7861A",null)}${tl("نسبة الإنجاز",qTxt(pc(one)),"المنجز ÷ المستهدف × 100","#1F5BB0",pc(one)/100)}${tl("متوسط درجات تقييماته",av(one)==null?"—":qTxt(av(one)),av(one)==null?"لا توجد تقييمات مكتملة":"معدل درجات المخالفات التي قيّمها","#3D9B5F",null)}</div>`:""}
+    ${R.length?`<div class="tbl-wrap"><table class="tbl" data-tt="إنجاز مدراء الرقابة بالقطاعات — ${rsMLab(RSEM)}"><thead><tr><th>الموظف</th><th>الجهة</th><th>المستهدف</th><th>المنجز</th><th>المتبقي</th><th style="width:26%">نسبة الإنجاز</th><th>متوسط درجات تقييماته</th></tr></thead><tbody>
+    ${R.map(o=>`<tr><td>${nm(o)}</td><td>${esc(o.s||"—")}</td><td>${hqF(o.tg)}${te&&!String(o.k).startsWith("n:")?` <button type="button" class="lnk" data-rstg="${esc(o.k)}" title="تحديد المستهدف">✎</button>`:""}</td><td>${hqF(o.c)}</td><td>${hqF(Math.max(0,o.tg-o.c))}</td><td><div class="pf-ib pf-q100"><span class="pf-tr"><i class="${o.c>=o.tg?"q-e":"q-na"}" style="width:${Math.max(o.c?2:0,pc(o))}%;${o.c>=o.tg?"":"background:#4D8FE6"}"></i></span><b>${qTxt(pc(o))}</b></div></td><td>${av(o)==null?"—":qTxt(av(o))}</td></tr>`).join("")}</tbody></table></div>`:'<div class="empty">لا يوجد موظفون للتقييم</div>'}
+    <p class="hq-note">يُحتسب التقييم المكتمل (المعايير الستة) مرة واحدة في شهر أول تقييم له، ولا تُحتسب المسودات · نسبة الإنجاز = المنجز ÷ المستهدف الخاص بالموظف × 100 · متوسط درجات تقييماته = معدل درجات جميع المخالفات التي قيّمها خلال الشهر${rsEdit()||te?" · اضغط على اسم الموظف لعرض أعماله":""}.</p></div>`}
+function rsEvSheet(k){const L=(RASD||[]).filter(x=>x.score!=null&&(x.eval_by||("n:"+(x.eval_name||"")))===k).sort((a,b)=>String(b.eval_first_at||b.eval_at).localeCompare(String(a.eval_first_at||a.eval_at)));
+  const u=(users||[]).find(z=>z.id===k)||{},n=u.full_name||(L[0]||{}).eval_name||"";let M=RSEM;
+  const draw=()=>{const R=M?L.filter(x=>rsEvMonth(x)===M):L,ms=[...new Set(L.map(rsEvMonth))].sort().reverse(),av=R.length?Math.round(R.reduce((t,x)=>t+(+x.score),0)/R.length*10)/10:null,tg=rsTgOf(k);
+    $("#sheet").innerHTML=`<div class="rd-h"><div><span class="er-tag">أعمال الموظف — جودة الرصد</span><h3>${esc(n)}</h3><div class="sub">${esc(u.sector||"")}</div></div><div class="rd-b"><button type="button" class="btn2" id="rsEvCl">إغلاق</button></div></div>
+    <div class="hq-card"><div class="hq-ch"><label class="hq-sel hq-sel-l"><span>الشهر</span><select id="rsEvM"><option value="">كل الأشهر</option>${ms.map(m=>`<option value="${m}"${m===M?" selected":""}>${rsMLab(m)}</option>`).join("")}</select></label><span class="tx-bs"><button type="button" class="btn2 tx-b" data-tx="pdf">📄 PDF</button><button type="button" class="btn2 pri tx-b" data-tx="xls">📊 Excel</button></span></div>
+    <div class="hq-kgrid"><div class="hk"><div class="hk-h"><span class="hk-l">التقييمات</span></div><b class="hk-v">${hqF(R.length)}</b><div class="hk-s">${M?"المستهدف "+hqF(tg):"كل الأشهر"}</div></div><div class="hk"><div class="hk-h"><span class="hk-l">متوسط درجات تقييماته</span></div><b class="hk-v">${av==null?"—":qTxt(av)}</b><div class="hk-s">&nbsp;</div></div></div>
+    ${R.length?`<div class="tbl-wrap"><table class="tbl" data-tt="أعمال ${esc(n)} — جودة الرصد${M?" — "+rsMLab(M):""}"><thead><tr><th>#</th><th>رقم الزيارة</th><th>القطاع</th><th>المحافظة</th><th>مأمور الضبط</th><th>بند المخالفة</th><th>الدرجة</th><th>تاريخ التقييم</th><th></th></tr></thead><tbody>
+    ${R.map((x,i)=>`<tr><td>${i+1}</td><td><b>${esc(x.visit||x.visit_no)}</b></td><td>${esc(x.sec||"")}</td><td>${esc(x.gov||"")}</td><td>${esc(x.officer||"")}</td><td class="rd-it" title="${esc(x.item||"")}">${esc(x.item||"")}</td><td>${rsBadge(+x.score)}</td><td>${esc(new Date(x.eval_first_at||x.eval_at).toLocaleDateString("ar-SA-u-nu-latn-ca-gregory"))}</td><td><button type="button" class="btn2" data-rso="${esc(rsKey(x))}">عرض</button></td></tr>`).join("")}</tbody></table></div>`:'<div class="empty">لا توجد تقييمات في هذا الشهر</div>'}</div>`;
+    $("#rsEvCl").onclick=closeSheet;$("#rsEvM").onchange=e=>{M=e.target.value;draw()};$$("#sheet [data-rso]").forEach(b=>b.onclick=()=>rsOpen(b.dataset.rso))};
+  $("#sheet").classList.add("wide");draw();openSheet()}
 function rsRe(){RS_CTX==="hq"?renderHQ():renderPerf()}
 function rsBind(root){const R=document.querySelector(root);if(!R)return;
   const mon=R.querySelector("#rsMon");if(mon)mon.onchange=e=>{RSM=e.target.value;rsRe()};
   const em=R.querySelector("#rsEM");if(em)em.onchange=e=>{RSEM=e.target.value;rsRe()};const ev=R.querySelector("#rsEV");if(ev)ev.onchange=e=>{RSEV=e.target.value;rsRe()};
-  const et=R.querySelector("#rsETg");if(et)et.onclick=async()=>{const v=prompt("المستهدف الشهري لعدد التقييمات لكل موظف",RS_CFG.evalTarget||30);if(v==null)return;const n=Math.round(+String(v).replace(/[^\d]/g,""));if(!(n>0&&n<=1000)){toast("أدخل رقماً صحيحاً");return}
+  R.querySelectorAll("[data-rsev]").forEach(b=>b.onclick=()=>rsEvSheet(b.dataset.rsev));
+  R.querySelectorAll("[data-rstg]").forEach(b=>b.onclick=async()=>{if(!rsTgEd())return;const k=b.dataset.rstg,u=(users||[]).find(z=>z.id===k)||{};const v=prompt(`المستهدف الشهري لعدد التقييمات — ${u.full_name||""}\n(اتركه فارغاً للرجوع للافتراضي)`,(RS_CFG.evalT||{})[k]||"");if(v==null)return;const t=String(v).replace(/[^\d]/g,"");const n=t?Math.round(+t):0;if(t&&!(n>0&&n<=1000)){toast("أدخل رقماً صحيحاً");return}
+    const T=Object.assign({},RS_CFG.evalT||{});if(n)T[k]=n;else delete T[k];RS_CFG=Object.assign({},RS_CFG,{evalT:T});const {error}=await sb.from("quality_settings").upsert({key:"rasd_cfg",value:RS_CFG,updated_at:new Date().toISOString()});toast(error?"تعذر الحفظ: "+error.message:"تم حفظ المستهدف");rsRe()});
+  const et=R.querySelector("#rsETg");if(et)et.onclick=async()=>{if(!rsTgEd())return;const v=prompt("المستهدف الشهري الافتراضي لعدد التقييمات (لمن لم يُحدَّد له مستهدف خاص)",RS_CFG.evalTarget||30);if(v==null)return;const n=Math.round(+String(v).replace(/[^\d]/g,""));if(!(n>0&&n<=1000)){toast("أدخل رقماً صحيحاً");return}
     RS_CFG=Object.assign({},RS_CFG,{evalTarget:n});const {error}=await sb.from("quality_settings").upsert({key:"rasd_cfg",value:RS_CFG,updated_at:new Date().toISOString()});toast(error?"تعذر الحفظ: "+error.message:"تم حفظ المستهدف");rsRe()};
   R.querySelectorAll("[data-rsf]").forEach(b=>b.onclick=()=>{RSF=b.dataset.rsf;rsRe()});
   const q=R.querySelector("#rsQ");if(q)q.oninput=e=>{RSQ=e.target.value;clearTimeout(window._rst);window._rst=setTimeout(()=>{rsRe();const i=document.querySelector(root+" #rsQ");if(i){i.focus();i.setSelectionRange(i.value.length,i.value.length)}},250)};
@@ -2232,7 +2255,7 @@ async function rsDraw(month,btn){if(!rsEdit())return;btn.disabled=true;RASD=null
   const old=btn.innerHTML;btn.disabled=true;btn.textContent="جارٍ السحب…";
   try{for(let i=0;i<add.length;i+=400){const {error}=await sb.from("quality_rasd").upsert(add.slice(i,i+400),{onConflict:"month,visit_no",ignoreDuplicates:true});if(error)throw error}toast(`تم سحب ${add.length} مخالفة`)}
   catch(e){toast("تعذر السحب: "+(e.message||e))}finally{RASD=null;await rsLoad();btn.disabled=false;btn.innerHTML=old;rsRe()}}
-function rsOpen(key){const x=(RASD||[]).find(z=>rsKey(z)===key);if(!x)return;const ed=RS_CTX==="hq"&&rsEdit(),a=Object.assign({},x.ans||{});
+function rsOpen(key){const x=(RASD||[]).find(z=>rsKey(z)===key);if(!x)return;const ed=rsCanEv(x),a=Object.assign({},x.ans||{});
   const draw=()=>{const sc=rsScore(a);
     $("#sheet").innerHTML=`<div class="rd-h"><div><span class="er-tag">جودة الرصد — ${rsMLab(x.month)}</span><h3><span class="rs-vn">${esc(x.visit||x.visit_no)}<button type="button" class="rs-cp" data-cp="${esc(x.visit||x.visit_no)}" title="نسخ">⧉</button></span></h3>
       <div class="sub">${esc([x.sec,x.gov,x.vdate].filter(Boolean).join(" — "))}</div></div><div class="rd-b">${ed?'<button type="button" class="btn2 pri" id="rsSave">حفظ التقييم</button>':""}<button type="button" class="btn2" id="rsClose">إغلاق</button></div></div>
@@ -2245,6 +2268,9 @@ function rsOpen(key){const x=(RASD||[]).find(z=>rsKey(z)===key);if(!x)return;con
     $$("#sheet [data-cp]").forEach(b=>b.onclick=async()=>{try{await navigator.clipboard.writeText(b.dataset.cp);toast("تم النسخ")}catch(_){}});
     if(ed){$$("#sheet .rs-yn button").forEach(b=>b.onclick=()=>{const nt=$("#rsNote").value;a[b.dataset.k]=+b.dataset.v;x._nt=nt;draw();$("#rsNote").value=nt});
       $("#rsSave").onclick=async()=>{const btn=$("#rsSave"),sc2=rsScore(a),note=$("#rsNote").value.trim();if(sc2==null&&!confirm("لم تكتمل المعايير الستة — حفظ مسودة؟"))return;btn.disabled=true;btn.textContent="جارٍ الحفظ…";
+        if(RS_RPC){const r=await sb.rpc("q_rasd_eval",{p_month:x.month,p_visit:x.visit_no,p_ans:a,p_note:note});
+          if(!r.error&&r.data){Object.assign(x,Array.isArray(r.data)?r.data[0]:r.data);toast(x.score==null?"تم حفظ المسودة":`تم الحفظ — ${qTxt(+x.score)}`);closeSheet();rsRe();return}
+          if(r.error&&!/q_rasd_eval|Could not find the function|schema cache|PGRST202|does not exist/i.test(r.error.message||"")){toast("تعذر الحفظ: "+r.error.message);btn.disabled=false;btn.textContent="حفظ التقييم";return}RS_RPC=false}
         const up={ans:a,note,score:sc2,eval_by:x.eval_first_at&&x.eval_by?x.eval_by:me.id,eval_name:x.eval_first_at&&x.eval_name?x.eval_name:me.full_name,eval_at:new Date().toISOString()};
         if(sc2!=null&&!x.eval_first_at&&RS_FIRST)up.eval_first_at=up.eval_at;
         let {error}=await sb.from("quality_rasd").update(up).eq("month",x.month).eq("visit_no",x.visit_no);
