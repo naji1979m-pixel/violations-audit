@@ -456,7 +456,7 @@ body.hqwide #fbar{display:none}
 .hq-sc-m{display:flex;flex-direction:column;gap:2px;font-size:12.5px;color:var(--muted)}.hq-sc-m b{color:var(--ink);margin-inline-start:4px}
 .hq-sc-f{font-size:10.5px;color:var(--muted)}
 .hq-detail{border:2px solid #1C437E}
-.tbl.hq-heat td,.tbl.hq-heat th{text-align:center;white-space:nowrap}.tbl.hq-heat td:first-child{text-align:right;max-width:280px;overflow:hidden;text-overflow:ellipsis}
+.tbl.hq-heat td,.tbl.hq-heat th{text-align:center;white-space:nowrap}.hq-mx td:first-child{min-width:140px}.hq-mx-w{max-height:640px;overflow:auto}.hq-mx-w thead th{position:sticky;top:0;z-index:1}.hq-mx .hq-mx-t td{border-top:2px solid var(--line);background:var(--field)}.hq-sel-l span{color:var(--muted)}.hq-sel-l select{border:1px solid var(--line);background:var(--paper);color:inherit}.tbl.hq-heat td:first-child{text-align:right;max-width:280px;overflow:hidden;text-overflow:ellipsis}
 .hq-mtools{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:12px}.hq-mtools .in{max-width:280px;margin-inline-start:auto}
 .hq-sort{border:0;background:none;color:inherit;font:inherit;font-weight:700;cursor:pointer;padding:0}.hq-sort.on{color:var(--gold)}
 .tbl.hq-mgr td{vertical-align:middle}
@@ -2036,6 +2036,25 @@ function hqLine(ms){if(ms.length<2)return '<div class="empty">لا توجد أش
 function hqRing(f,c){const R=26,C=2*Math.PI*R,l=Math.max(0,Math.min(1,f))*C;return `<svg viewBox="0 0 64 64" width="64" height="64"><circle cx="32" cy="32" r="${R}" fill="none" stroke="var(--soft)" stroke-width="8"/><circle cx="32" cy="32" r="${R}" fill="none" stroke="${c}" stroke-width="8" stroke-linecap="round" stroke-dasharray="${l} ${C}" transform="rotate(-90 32 32)"/><text x="32" y="37" text-anchor="middle" class="rg-t">${Math.round(f*100)}%</text></svg>`}
 function hqHeat(A,secs){const items=Object.entries(A.TY).sort((a,b)=>b[1]-a[1]).slice(0,8).map(x=>x[0]);let mx=1;secs.forEach(s=>items.forEach(it=>{mx=Math.max(mx,(A.STY[s]||{})[it]||0)}));
   return `<div class="tbl-wrap"><table class="tbl hq-heat"><thead><tr><th>بند المخالفة</th>${secs.map(s=>`<th>${esc(s)}</th>`).join("")}<th>الإجمالي</th></tr></thead><tbody>${items.map(it=>`<tr><td title="${esc(it)}">${esc(it.length>48?it.slice(0,46)+"…":it)}</td>${secs.map(s=>{const v=(A.STY[s]||{})[it]||0,f=v/mx;return `<td${v?rdA({c:"sent",s,it}):""} style="background:rgba(31,91,176,${(0.06+f*0.8).toFixed(2)});color:${f>0.55?"#fff":"inherit"}" data-tip="${esc(s)} — ${esc(it)}: ${hqF(v)}">${hqF(v)}</td>`}).join("")}<td${rdA({c:"sent",it})}><b>${hqF(A.TY[it])}</b></td></tr>`).join("")}</tbody></table></div><p class="hq-note">لون الخلية أغمق كلما زاد العدد. المخالفات المرسلة للهيئة فقط.</p>`}
+/* التوزيع الشهري: قطاع × شهر أو محافظة × شهر */
+let HQXR="sec",HQXM="n";
+const HQXM_L={n:"المرصودة",sent:"المرسلة للهيئة",iss:"القرارات الصادرة",ret:"المسترجعة حالياً",rr:"نسبة المسترجع",q:"نسبة الجودة"};
+function hqMatrix(L){const isG=HQXR==="gov",G={},T={},MK=new Set();
+  L.forEach(r=>{const d=dayOfRow(r);if(d==null)return;const t=new Date(d*864e5),mk=t.getUTCFullYear()*100+t.getUTCMonth()+1;MK.add(mk);const c=r._hc||(r._hc=hqCls(r)),sc=secOf(r.region),k=isG?(r.sector||"غير محدد").trim():sc;if(k==="غير محدد")return;
+    const g=G[k]=G[k]||{s:sc,m:{},t:hqZ()};hqAdd(g.m[mk]=g.m[mk]||hqZ(),c,r);hqAdd(g.t,c,r);hqAdd(T[mk]=T[mk]||hqZ(),c,r)});
+  const ms=[...MK].sort((a,b)=>a-b).slice(-12);if(!ms.length)return '<div class="empty">لا توجد بيانات</div>';
+  const rate=HQXM==="rr"||HQXM==="q",val=o=>{if(!o)return null;if(HQXM==="rr")return o.sent?Math.round(o.ret/o.sent*1000)/10:null;if(HQXM==="q")return qRate(o.ret,o.sent);return o[HQXM]||0};
+  const fmt=v=>v==null?"—":rate?qTxt(v):hqF(v);const GT=hqZ();ms.forEach(m=>{const o=T[m];if(o)Object.keys(GT).forEach(k=>GT[k]+=o[k]||0)});
+  let R=Object.entries(G).map(([k,g])=>{const t=hqZ();ms.forEach(m=>{const o=g.m[m];if(o)Object.keys(t).forEach(x=>t[x]+=o[x]||0)});return {k,g,t}}).filter(x=>x.t.n);
+  R.sort((a,b)=>isG?(a.g.s||"").localeCompare(b.g.s||"","ar")||b.t.n-a.t.n:HQ_SECS.indexOf(a.k)-HQ_SECS.indexOf(b.k));
+  let mx=0;if(!rate)R.forEach(x=>ms.forEach(m=>{mx=Math.max(mx,val(x.g.m[m])||0)}));
+  const bg=v=>{if(v==null)return "";if(rate){const c=HQXM==="q"?qCls(v):qCls(100-v);const C={"q-e":"rgba(14,90,52,.22)","q-g":"rgba(61,155,95,.18)","q-y":"rgba(214,158,46,.25)","q-r":"rgba(192,57,43,.22)","q-na":"transparent"};return `background:${C[c]}`}const f=mx?v/mx:0;return `background:rgba(31,91,176,${(0.05+f*0.8).toFixed(2)});color:${f>0.55?"#fff":"inherit"}`};
+  const ml=m=>`${HQ_MON[m%100-1]} ${String(Math.floor(m/100)).slice(2)}`,cc=HQXM==="rr"||HQXM==="q"?"ret":HQXM==="n"?null:HQXM;
+  const cell=(o,ctx,m)=>{const v=val(o);return `<td${o&&o.n?rdA(Object.assign(cc?{c:cc}:{},ctx,m?{mk:m}:{})):""} style="${bg(v)}">${fmt(v)}</td>`};
+  return `<div class="tbl-wrap${isG?" hq-mx-w":""}"><table class="tbl hq-heat hq-mx" data-tt="التوزيع الشهري — ${isG?"المحافظات":"القطاعات"} — ${HQXM_L[HQXM]}"><thead><tr><th>${isG?"المحافظة":"القطاع"}</th>${isG?"<th>القطاع</th>":""}${ms.map(m=>`<th>${ml(m)}</th>`).join("")}<th>الإجمالي</th></tr></thead><tbody>
+    ${R.map(x=>{const ctx=isG?{g:x.k}:{s:x.k};return `<tr><td${isG?erA("g",x.k):erA("s",x.k)}><b class="er-n">${esc(x.k)}</b></td>${isG?`<td>${esc(x.g.s||"")}</td>`:""}${ms.map(m=>cell(x.g.m[m],ctx,m)).join("")}<td${rdA(Object.assign(cc?{c:cc}:{},ctx))}><b>${fmt(val(x.t))}</b></td></tr>`}).join("")}
+    <tr class="hq-mx-t"><td><b>الإجمالي</b></td>${isG?"<td></td>":""}${ms.map(m=>`<td${T[m]?rdA(Object.assign(cc?{c:cc}:{},{mk:m})):""}><b>${fmt(val(T[m]))}</b></td>`).join("")}<td><b>${fmt(val(GT))}</b></td></tr></tbody></table></div>
+    <p class="hq-note">${rate?"اللون حسب سلّم التقييم (أخضر جيد ← أحمر ضعيف).":"لون الخلية أغمق كلما زاد العدد."} حسب تاريخ بدء الزيارة · آخر 12 شهراً ضمن الفترة المختارة · اضغط أي رقم لتفاصيله${isG?" · اضغط اسم المحافظة لتقريرها":""}.</p>`}
 function hqYoY(A){const ys=Object.keys(A.Y).map(Number).sort();if(ys.length<2)return "";const YR=[["المرصود","n"],["المرسل للهيئة","sent"],["قيد التدقيق لدى الهيئة","auth"],["المسترجع حالياً","ret"],["القرارات الصادرة","iss"],["بانتظار المراجعة","pend"],["غير مكتملة الأركان","arch"]];
   const y1=ys[ys.length-2],y2=ys[ys.length-1],df=v=>`<b style="color:${v>0?"var(--ok)":v<0?"var(--bad)":"inherit"}">${v>0?"+":""}${hqF(v)}</b>`;
   return `<div class="tbl-wrap"><table class="tbl mtx" data-tt="المقارنة السنوية"><thead><tr><th>المؤشر</th>${ys.map(y=>`<th>${y}</th>`).join("")}<th>الإجمالي</th><th>الفرق (${y2}−${y1})</th><th>نسبة التغير</th></tr></thead><tbody>${YR.map(([l,k])=>{const a=A.Y[y1][k],b=A.Y[y2][k],t=ys.reduce((z,y)=>z+A.Y[y][k],0);return `<tr><td>${l}</td>${ys.map(y=>`<td${rdA({y,c:k,s:HQSF})}>${hqF(A.Y[y][k])}</td>`).join("")}<td${rdA({c:k,s:HQSF})}><b>${hqF(t)}</b></td><td>${df(b-a)}</td><td>${hqChg(a,b)}</td></tr>`}).join("")}</tbody></table></div>`}
@@ -2253,8 +2272,7 @@ function renderAcad(){const el=$("#acadBody");if(!el)return;
   $$("#acadBody [data-ac],#acadBody [data-acv]").forEach(b=>b.onclick=()=>acOpen(b.dataset.ac||b.dataset.acv));
   $$("#acadBody [data-ace]").forEach(b=>b.onclick=()=>acForm((AC.courses||[]).find(c=>c.id===b.dataset.ace)));
   if($("#acNew"))$("#acNew").onclick=()=>acForm(null);
-  $$("#acadBody [data-acp]").forEach(b=>b.onclick=async()=>{const c=(AC.courses||[]).find(x=>x.id===b.dataset.acp);if(!c)return;b.disabled=true;const {error}=await sb.from("quality_courses").update({active:!c.active,updated_at:new Date().toISOString()}).eq("id",c.id);if(error){toast("تعذر الحفظ: "+error.message);b.disabled=false;return}c.active=!c.active;toast(c.active?"تم نشر الدورة":"أصبحت الدورة مسودة");renderAcad()});
-  $$("#acadBody .tx-b").forEach(b=>b.onclick=()=>txExport(b,b.dataset.tx))}
+  $$("#acadBody [data-acp]").forEach(b=>b.onclick=async()=>{const c=(AC.courses||[]).find(x=>x.id===b.dataset.acp);if(!c)return;b.disabled=true;const {error}=await sb.from("quality_courses").update({active:!c.active,updated_at:new Date().toISOString()}).eq("id",c.id);if(error){toast("تعذر الحفظ: "+error.message);b.disabled=false;return}c.active=!c.active;toast(c.active?"تم نشر الدورة":"أصبحت الدورة مسودة");renderAcad()})}
 async function acSave(c,patch){const pr=acMyP(c.id)||{};const row=Object.assign({user_id:me.id,course_id:c.id,full_name:me.full_name,job:me.job||null,sector:me.sector||null,started_at:pr.started_at||new Date().toISOString()},pr,patch,{updated_at:new Date().toISOString()});
   const {error}=await sb.from("quality_course_progress").upsert(row,{onConflict:"user_id,course_id"});if(error){toast("تعذر حفظ التقدم: "+error.message);return false}
   const i=AC.prog.findIndex(x=>x.user_id===me.id&&x.course_id===c.id);if(i>=0)AC.prog[i]=row;else AC.prog.push(row);return true}
@@ -2358,6 +2376,7 @@ function renderHQ(){
   }else if(HQV==="trend"){
     const l2=hqLast2(A,secs);
     body=`<div class="hq-grid"><div class="hq-card c-12"><div class="hq-ch"><h3>الاتجاه الشهري${HQSF?" — "+esc(HQSF):""}</h3><span class="sub">آخر 18 شهراً كحد أقصى</span></div>${hqLine(Object.assign(hqMonths(A),{_drop:A._mdrop}))}</div>
+      <div class="hq-card c-12"><div class="hq-ch"><h3>التوزيع الشهري</h3><div class="srt-w"><label class="hq-sel hq-sel-l"><span>حسب</span><select id="hqXR"><option value="sec"${HQXR==="sec"?" selected":""}>القطاع</option><option value="gov"${HQXR==="gov"?" selected":""}>المحافظة</option></select></label><label class="hq-sel hq-sel-l"><span>المؤشر</span><select id="hqXM">${Object.entries(HQXM_L).map(([k,l])=>`<option value="${k}"${HQXM===k?" selected":""}>${l}</option>`).join("")}</select></label></div><span class="tx-bs"><button type="button" class="btn2 tx-b" data-tx="pdf">📄 PDF</button><button type="button" class="btn2 pri tx-b" data-tx="xls">📊 Excel</button></span></div>${hqMatrix(L)}</div>
       <div class="hq-card c-5"><div class="hq-ch"><h3>المقارنة السنوية</h3><span class="tx-bs"><button type="button" class="btn2 tx-b" data-tx="pdf">📄 PDF</button><button type="button" class="btn2 pri tx-b" data-tx="xls">📊 Excel</button></span></div>${hqYoY(A)||'<div class="empty">تحتاج سنتين على الأقل — اختر «كل الفترات»</div>'}</div>
       <div class="hq-card c-7"><div class="hq-ch"><h3>مقارنة آخر شهرين</h3><span class="sub">${l2.lab}</span><span class="tx-bs"><button type="button" class="btn2 tx-b" data-tx="pdf">📄 PDF</button><button type="button" class="btn2 pri tx-b" data-tx="xls">📊 Excel</button></span></div>${l2.h||'<div class="empty">—</div>'}</div></div>`;
   }else if(HQV==="vio"){
@@ -2391,6 +2410,7 @@ function renderHQ(){
   if($("#hqMs"))$("#hqMs").onchange=e=>{const [k,d]=e.target.value.split(":");HQMK=k;HQMD=+d;re()};
   $$("#hqBody [data-msort]").forEach(b=>b.onclick=()=>{const k=b.dataset.msort;HQMD=HQMK===k?-HQMD:-1;HQMK=k;re()});
   if($("#hqMq")){$("#hqMq").oninput=e=>{HQMQ=e.target.value;clearTimeout(window._hqmt);window._hqmt=setTimeout(()=>{re();const i=$("#hqMq");if(i){i.focus();i.setSelectionRange(i.value.length,i.value.length)}},250)}}
+  if($("#hqXR"))$("#hqXR").onchange=e=>{HQXR=e.target.value;re()};if($("#hqXM"))$("#hqXM").onchange=e=>{HQXM=e.target.value;re()};
   $("#hqXls").onclick=e=>hqExport(A,secs,Object.keys(A.Y).map(Number).sort(),e.currentTarget);
   $("#hqPdf").onclick=e=>hqPdf(A,secs,sc,e.currentTarget);
   $("#hqPpt").onclick=e=>hqPpt(A,secs,sc,e.currentTarget);
