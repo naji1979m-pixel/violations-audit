@@ -632,6 +632,7 @@ section.block>h2::after{content:"";position:absolute;bottom:0;inset-inline-start
     <label class="f">رقم الجوال<input class="in" id="rgPhone" inputmode="tel" dir="ltr" placeholder="05xxxxxxxx"></label>
     <label class="f">الدور المطلوب<select class="in" id="rgRole"><option value="hq_staff">أخصائي جودة (المركز الرئيسي)</option><option value="staff">موظف الجودة (الوحدات)</option><option value="manager">رئيس الجودة بالوحدة</option><option value="exec">مدير الجودة</option><option value="clerk">إداري</option><option value="viewer">مطّلع</option><option value="trainee_o">متدرب — مأمور ضبط (الأكاديمية)</option><option value="trainee_m">متدرب — مدير رقابة (الأكاديمية)</option></select></label>
     <label class="f">الجهة<select class="in" id="rgUnit"></select></label>
+    <label class="f" id="rgGovL">المحافظة<select class="in" id="rgGov"></select></label>
     <label class="f">ملاحظة (اختياري)<input class="in" id="rgNote"></label>
     <div class="msg" id="rgMsg" role="alert"></div>
     <button class="btnp" type="submit" id="rgBtn">إرسال الطلب</button>
@@ -3689,6 +3690,17 @@ async function exportReportXls(st,btn,withList){
 
 /* ===================== المستخدمون (مدير النظام) ===================== */
 function tempPass(){const a="ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz23456789";let s="";const r=crypto.getRandomValues(new Uint8Array(10));r.forEach(v=>s+=a[v%a.length]);return s}
+function sectorSelect(id,cur){cur=String(cur||"").trim();const seen=new Set();const o=(v,t)=>{seen.add(gcl(v));return `<option value="${esc(v)}"${gcl(v)===gcl(cur)&&cur?" selected":""}>${esc(t||v)}</option>`};
+  const reg={};(rows||[]).forEach(r=>{if(r.sector&&r.region&&!reg[gcl(r.sector)])reg[gcl(r.sector)]=r.region});
+  const govs=[];(ORG.units||[]).forEach(u=>(u.govs||[]).forEach(g=>govs.push([g,u.name])));[...new Set((rows||[]).map(r=>r.sector).filter(Boolean))].sort().forEach(g=>{if(!govs.some(x=>gcl(x[0])===gcl(g)))govs.push([g,""])});
+  const regs=[...new Set((rows||[]).map(r=>r.region).filter(Boolean))].sort();
+  let h=`<option value=""${cur?"":" selected"}>— بدون (المركز الرئيسي) —</option>`;
+  if(ORG.hq)h+=`<optgroup label="المركز الرئيسي">${o(ORG.hq)}</optgroup>`;
+  if((ORG.units||[]).length)h+=`<optgroup label="الوحدات">${ORG.units.map(u=>o(u.name)).join("")}</optgroup>`;
+  if(govs.length)h+=`<optgroup label="المحافظات — المنطقة">${govs.filter(([g])=>!seen.has(gcl(g))).map(([g,un])=>o(g,g+" — "+(reg[gcl(g)]||un||""))).join("")}</optgroup>`;
+  if(regs.length)h+=`<optgroup label="المناطق">${regs.filter(g=>!seen.has(gcl(g))).map(g=>o(g)).join("")}</optgroup>`;
+  if(cur&&!seen.has(gcl(cur)))h+=`<optgroup label="القيمة الحالية"><option value="${esc(cur)}" selected>${esc(cur)}</option></optgroup>`;
+  return `<select class="in" id="${id}">${h}</select>`}
 function sectorOptions(){return (ORG.units||[]).map(u=>u.name).concat([ORG.hq||""]).filter(Boolean).concat([...new Set(rows.map(r=>r.region).filter(Boolean))].sort()).concat([...new Set(rows.map(r=>r.sector).filter(Boolean))].sort())}
 function orgEditor(){const govs=[...new Set(rows.map(r=>r.sector).filter(Boolean).concat((ORG.units||[]).flatMap(u=>u.govs||[])))].sort((a,b)=>(unitOf(a)||"ي").localeCompare(unitOf(b)||"ي","ar")||a.localeCompare(b,"ar"));
   const byU={};users.forEach(u=>{const k=(ORG.units||[]).find(x=>gcl(x.name)===gcl(u.sector||""));const n=k?k.name:(u.sector||ORG.hq||"المركز الرئيسي");(byU[n]=byU[n]||[]).push(u)});
@@ -3724,7 +3736,7 @@ function renderUsers(){
     <label class="f">الاسم الكامل<input class="in" id="nuName"></label>
     <label class="f">اسم المستخدم (بالإنجليزي)<input class="in" id="nuUser" dir="ltr" autocapitalize="off" autocomplete="off" placeholder="ahmed.ali"></label>
     <label class="f">الدور<select class="in" id="nuRole">${Object.entries(ROLE).filter(([k])=>k!=="admin").map(([k,t])=>`<option value="${k}"${k==="staff"?" selected":""}>${t}</option>`).join("")}<option value="admin">مدير النظام</option></select></label>
-    <label class="f">الوحدة (أو فارغ للمركز الرئيسي)<input class="in" id="nuSector" list="secList"><datalist id="secList">${secs.map(s=>`<option value="${esc(s)}">`).join("")}</datalist></label>
+    <label class="f">الوحدة (أو فارغ للمركز الرئيسي)${sectorSelect("nuSector","")}</label>
     <label class="f full">البريد الإلكتروني (لإشعارات الاعتماد)<input class="in" id="nuEmail" type="email" dir="ltr" placeholder="name@nwc.com.sa"></label>
     <label class="f full">كلمة مرور مؤقتة<input class="in" id="nuPass" dir="ltr" value="${tempPass()}"></label>
   </div>
@@ -3758,7 +3770,7 @@ function editUser(u){
     <label class="f full">الاسم الكامل<input class="in" id="euName" value="${esc(u.full_name)}"></label>
     <label class="f">الدور<select class="in" id="euRole">${Object.entries(ROLE).map(([k,t])=>`<option value="${k}"${k===roleKey(u)?" selected":""}>${t}</option>`).join("")}</select></label>
     <label class="f full">البريد الإلكتروني<input class="in" id="euEmail" type="email" dir="ltr" value="${esc(u.email||"")}"></label>
-    <label class="f">الوحدة (أو فارغ للمركز الرئيسي)<input class="in" id="euSec" list="secList2" value="${esc(u.sector||"")}"><datalist id="secList2">${secs.map(s=>`<option value="${esc(s)}">`).join("")}</datalist></label></div>
+    <label class="f">الوحدة (أو فارغ للمركز الرئيسي)${sectorSelect("euSec",u.sector||"")}</label></div>
     <div class="btns" style="margin-top:14px"><button type="button" class="btn2 pri" id="euSave">حفظ</button><button type="button" class="btn2" id="closeSh">إلغاء</button></div>`;
   openSheet();$("#closeSh").onclick=closeSheet;
   $("#euSave").onclick=async()=>{const r=await qUpd({p_user:u.id,p_role:$("#euRole").value,p_sector:$("#euSec").value,p_full_name:$("#euName").value});if(r.error){toast(r.error.message);return}
@@ -3810,14 +3822,21 @@ async function doImport(list,replace){if(!canUpload()){toast("غير مصرح ل
 $("#lgForgot").onclick=()=>{$("#loginForm").hidden=true;$("#fgForm").hidden=false;$("#fgUser").value=$("#lgUser").value.trim();$("#fgMsg").textContent="";$("#fgMsg").className="msg";$("#fgUser").focus()};
 $("#fgBack").onclick=()=>{$("#fgForm").hidden=true;$("#loginForm").hidden=false};
 $("#lgReg").onclick=()=>{$("#loginForm").hidden=true;$("#rgForm").hidden=false;$("#rgMsg").textContent="";$("#rgMsg").className="msg";
-  $("#rgUnit").innerHTML=[ORG.hq].concat((ORG.units||[]).map(u=>u.name)).map(x=>`<option>${esc(x)}</option>`).join("");$("#rgName").focus()};
-$("#rgRole").onchange=()=>{if($("#rgRole").value==="hq_staff"||$("#rgRole").value==="exec")$("#rgUnit").value=ORG.hq};
+  const fill=()=>{$("#rgUnit").innerHTML=[ORG.hq].concat((ORG.units||[]).map(u=>u.name)).map(x=>`<option>${esc(x)}</option>`).join("");rgGovFill()};fill();$("#rgName").focus();
+  if(sb)loadOrg().then(()=>{const v=$("#rgUnit").value;fill();if([...$("#rgUnit").options].some(o=>o.value===v))$("#rgUnit").value=v;rgGovFill()}).catch(()=>{})};
+function rgGovFill(){const u=(ORG.units||[]).find(x=>x.name===$("#rgUnit").value),g=u&&u.govs||[];$("#rgGovL").hidden=!g.length;
+  $("#rgGov").innerHTML=`<option value="">اختر المحافظة</option>`+g.map(x=>`<option>${esc(x)}</option>`).join("")}
+$("#rgUnit").onchange=rgGovFill;
+$("#rgRole").onchange=()=>{if($("#rgRole").value==="hq_staff"||$("#rgRole").value==="exec")$("#rgUnit").value=ORG.hq;rgGovFill()};
 $("#rgBack").onclick=()=>{$("#rgForm").hidden=true;$("#loginForm").hidden=false};
 $("#rgForm").onsubmit=async e=>{e.preventDefault();const m=$("#rgMsg");m.className="msg";
   const name=$("#rgName").value.trim(),mail=$("#rgMail").value.trim().toLowerCase(),phone=$("#rgPhone").value.trim();
   if(name.split(/\s+/).length<2){m.textContent="اكتب الاسم الكامل";return}
   if(!/^[^@\s]+@[^@\s]+\.[^@\s]{2,}$/.test(mail)){m.textContent="اكتب بريداً إلكترونياً صحيحاً";return}
-  $("#rgBtn").disabled=true;const {error}=await sb.from("quality_signup_requests").insert({full_name:name,email:mail,phone:phone||null,req_role:$("#rgRole").value,unit:$("#rgUnit").value,note:$("#rgNote").value.trim()||null});$("#rgBtn").disabled=false;
+  const gov=$("#rgGovL").hidden?"":$("#rgGov").value;if(!$("#rgGovL").hidden&&!gov){m.textContent="اختر المحافظة";return}
+  $("#rgBtn").disabled=true;const rq={full_name:name,email:mail,phone:phone||null,req_role:$("#rgRole").value,unit:$("#rgUnit").value,note:$("#rgNote").value.trim()||null};
+  let {error}=await sb.from("quality_signup_requests").insert(gov?Object.assign({gov},rq):rq);
+  if(error&&gov&&/gov/i.test(error.message||"")){({error}=await sb.from("quality_signup_requests").insert(Object.assign(rq,{note:("المحافظة: "+gov+(rq.note?" — "+rq.note:""))})))}$("#rgBtn").disabled=false;
   if(error){m.textContent="تعذر إرسال الطلب، حاول لاحقاً"+(error.message?" ("+error.message+")":"");return}
   m.className="msg ok";m.textContent="✓ وصل طلبك لمدير النظام. ستصلك بيانات الدخول بعد الموافقة.";["rgName","rgMail","rgPhone","rgNote"].forEach(id=>$("#"+id).value="")};
 $("#fgForm").onsubmit=async e=>{e.preventDefault();const u=$("#fgUser").value.trim(),m=$("#fgMsg");
@@ -3828,19 +3847,19 @@ $("#fgForm").onsubmit=async e=>{e.preventDefault();const u=$("#fgUser").value.tr
 let PWREQ=[],SIGNUPS=[];
 const REQ_ROLE={trainee_o:"متدرب — مأمور ضبط",trainee_m:"متدرب — مدير رقابة",hq_staff:"أخصائي جودة (المركز الرئيسي)",staff:"موظف الجودة",manager:"رئيس الجودة بالوحدة",exec:"مدير الجودة",clerk:"إداري",viewer:"مطّلع"};
 async function loadSignups(){if(!me||me.role!=="admin"){SIGNUPS=[];return}try{const {data}=await sb.from("quality_signup_requests").select("*").eq("status","pending").order("created_at");SIGNUPS=data||[]}catch(e){SIGNUPS=[]}}
-function signupBlock(){if(!SIGNUPS.length)return "";return `<section class="block" style="border-color:var(--navy)"><h2>طلبات التسجيل <span class="sub">${SIGNUPS.length}</span></h2><div class="ulist">${SIGNUPS.map(r=>{const inPend=(ORG.pending||[]).some(p=>gcl(p.name)===gcl(r.full_name));return `<div class="urow"><div class="uinfo"><b>${esc(r.full_name)}${inPend?' <span class="badge b-ok">موجود في الهيكل</span>':""}</b><span dir="ltr">${esc(r.email)}${r.phone?" · "+esc(r.phone):""}</span><small>${esc(REQ_ROLE[r.req_role]||r.req_role||"")} — ${esc(r.unit||"")} — ${fmtD(Date.parse(r.created_at))}${r.note?" — "+esc(r.note):""}</small></div><div class="uact"><button type="button" class="btn2 pri" data-sgok="${r.id}">قبول</button><button type="button" class="btn2" data-sgno="${r.id}">رفض</button></div></div>`}).join("")}</div></section>`}
+function signupBlock(){if(!SIGNUPS.length)return "";return `<section class="block" style="border-color:var(--navy)"><h2>طلبات التسجيل <span class="sub">${SIGNUPS.length}</span></h2><div class="ulist">${SIGNUPS.map(r=>{const inPend=(ORG.pending||[]).some(p=>gcl(p.name)===gcl(r.full_name));return `<div class="urow"><div class="uinfo"><b>${esc(r.full_name)}${inPend?' <span class="badge b-ok">موجود في الهيكل</span>':""}</b><span dir="ltr">${esc(r.email)}${r.phone?" · "+esc(r.phone):""}</span><small>${esc(REQ_ROLE[r.req_role]||r.req_role||"")} — ${esc(r.unit||"")}${r.gov?" — "+esc(r.gov):""} — ${fmtD(Date.parse(r.created_at))}${r.note?" — "+esc(r.note):""}</small></div><div class="uact"><button type="button" class="btn2 pri" data-sgok="${r.id}">قبول</button><button type="button" class="btn2" data-sgno="${r.id}">رفض</button></div></div>`}).join("")}</div></section>`}
 function bindSignups(){
   $$("[data-sgno]").forEach(b=>b.onclick=async()=>{if(!confirm("رفض طلب التسجيل؟"))return;await sb.from("quality_signup_requests").update({status:"rejected",handled_by:me.full_name,handled_at:new Date().toISOString()}).eq("id",b.dataset.sgno);await loadSignups();renderUsers();toast("رُفض الطلب")});
   $$("[data-sgok]").forEach(b=>b.onclick=()=>{const r=SIGNUPS.find(x=>x.id===b.dataset.sgok);if(r)approveSignup(r)});
 }
 function approveSignup(r){
   const un0=String(r.email||"").split("@")[0].toLowerCase().replace(/[^a-z0-9._-]/g,"");
-  const role0=r.req_role==="hq_staff"?"staff":(r.req_role||"staff"),unit0=r.req_role==="hq_staff"?ORG.hq:(r.unit||"");
+  const role0=r.req_role==="hq_staff"?"staff":(r.req_role||"staff"),unit0=r.req_role==="hq_staff"?ORG.hq:(r.gov||r.unit||"");
   $("#sheet").innerHTML=`<h3>قبول طلب ${esc(r.full_name)}</h3><div class="grid" style="margin-top:10px">
    <label class="f full">الاسم الكامل<input class="in" id="saName" value="${esc(r.full_name)}"></label>
    <label class="f">اسم المستخدم<input class="in" id="saUser" dir="ltr" value="${esc(un0)}"></label>
    <label class="f">الدور<select class="in" id="saRole">${Object.entries(ROLE).map(([k,t])=>`<option value="${k}"${k===role0?" selected":""}>${t}</option>`).join("")}</select></label>
-   <label class="f full">الجهة (المركز الرئيسي أو الوحدة)<input class="in" id="saSec" list="secList3" value="${esc(unit0)}"><datalist id="secList3">${sectorOptions().map(x=>`<option value="${esc(x)}">`).join("")}</datalist></label>
+   <label class="f full">الجهة (المركز الرئيسي أو الوحدة)${sectorSelect("saSec",unit0)}${r.gov?`<span class="sub">المحافظة التي اختارها المتقدم: ${esc(r.gov)}</span>`:""}</label>
    <label class="f full">البريد الإلكتروني<input class="in" id="saMail" dir="ltr" value="${esc(r.email||"")}"></label>
    <label class="f full">كلمة مرور مؤقتة<input class="in" id="saPass" dir="ltr" value="${tempPass()}"></label></div>
    <div class="btns" style="margin-top:12px"><button type="button" class="btn2 pri" id="saGo">إنشاء الحساب وتفعيله</button><button type="button" class="btn2" id="closeSh">إلغاء</button></div>`;
