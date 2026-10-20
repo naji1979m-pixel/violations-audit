@@ -965,15 +965,43 @@ function renderQueue(){
     if(qFilter==="ret"&&s!=="ret")return false;if(qFilter==="inc"&&s!=="inc")return false; if(qFilter==="ok"&&s!=="ok")return false;
     if(qSearch){const h=r._h||norm([r.vno,r.vid,r.officer,r.item,r.region,r.sector,r.name].join(" "));return h.includes(norm(qSearch))||r.vno.toLowerCase().includes(qSearch.toLowerCase())}
     return true});
+  const canRes=canEditAudit(),resN=list.filter(r=>!reserved(audits[r.vno])).length;
   body.innerHTML=`<div class="queue-tools"><input class="in" id="qSearch" placeholder="بحث برقم الزيارة أو المفتش أو المحافظة" value="${esc(qSearch)}"></div>
+   ${canRes?`<div class="pill-row" style="margin-bottom:10px;gap:8px"><label class="btn2" style="cursor:pointer" title="ملف إكسل فيه أرقام الزيارات أو معرفات المخالفات">📥 حجز من ملف إكسل<input type="file" id="resXl" accept=".xlsx,.xls,.csv" hidden></label>${qSearch.trim()&&resN?`<button type="button" class="btn2" id="resSr">📌 حجز نتائج البحث (${resN.toLocaleString("en-US")})</button>`:""}<span class="sub">احجز مخالفاتك قبل العمل بدون اتصال، فتظهر لغيرك «محجوزة» باسمك</span></div>`:""}
    <div class="pill-row" style="margin-bottom:10px">${fl.map(([k,t])=>`<button type="button" class="pill" data-qf="${k}" aria-pressed="${qFilter===k}">${t} ${counts[k].toLocaleString("en-US")}${k!=="all"&&k!=="mine"?` · ${pc(k)}`:""}</button>`).join("")}</div>
    <div class="queue">${list.length?list.slice(0,60).map(r=>{const s=statusOf(r.vno);const t=r.type>=0?GUIDE[r.type].name:(r.item||"بند غير محدد");
-     return `<button type="button" class="qrow" data-id="${esc(r.vno)}" aria-current="${current===r.vno}"><span class="id">${esc(r.visit||r.vno)}</span><span class="badge ${ST[s][1]}">${ST[s][0]}</span>${(()=>{const a=audits[r.vno];if(!a||!a._owner||!["prog","inc","pend"].includes(s))return "";return a._owner===me.id?`<span class="badge b-mine">📌 معاملتي</span>`:`<span class="badge b-lock">🔒 ${esc(userName(a._owner,a.auditor))}</span>`})()}${r.pkind===PK_RET?`<span class="badge b-pkret">مسترجعة</span>`:r.pkind===PK_PREV?`<span class="badge b-pkprev">عادت بعد اعتماد</span>`:""}<span class="t">${esc(t)}</span><span class="m">${esc(r.officer)} — ${esc([r.region,r.sector].filter(Boolean).join(" — "))} — ${esc(r.date)}</span></button>`}).join(""):`<div class="empty">لا توجد مخالفات بهذا التصنيف</div>`}</div>${list.length>60?`<div class="sub" style="margin-top:6px">يظهر أول 60 من ${list.length}، استخدم البحث للوصول لغيرها.</div>`:""}
+     return `<button type="button" class="qrow" data-id="${esc(r.vno)}" aria-current="${current===r.vno}"><span class="id">${esc(r.visit||r.vno)}</span><span class="badge ${ST[s][1]}">${ST[s][0]}</span>${(()=>{const a=audits[r.vno];if(!a||!a._owner||!["prog","inc","pend"].includes(s))return "";return a._owner===me.id?`<span class="badge b-mine">📌 معاملتي</span>`:`<span class="badge b-lock">🔒 محجوزة لـ ${esc(userName(a._owner,a.auditor))}</span>`})()}${r.pkind===PK_RET?`<span class="badge b-pkret">مسترجعة</span>`:r.pkind===PK_PREV?`<span class="badge b-pkprev">عادت بعد اعتماد</span>`:""}<span class="t">${esc(t)}</span><span class="m">${esc(r.officer)} — ${esc([r.region,r.sector].filter(Boolean).join(" — "))} — ${esc(r.date)}</span></button>`}).join(""):`<div class="empty">لا توجد مخالفات بهذا التصنيف</div>`}</div>${list.length>60?`<div class="sub" style="margin-top:6px">يظهر أول 60 من ${list.length}، استخدم البحث للوصول لغيرها.</div>`:""}
    `;
   const qs=$("#qSearch");qs.oninput=e=>{qSearch=e.target.value;const pos=e.target.selectionStart;renderQueue();const n=$("#qSearch");n.focus();n.setSelectionRange(pos,pos)};
   $$("[data-qf]").forEach(b=>b.onclick=()=>{qFilter=b.dataset.qf;renderQueue()});
+  if($("#resXl"))$("#resXl").onchange=resXl;if($("#resSr"))$("#resSr").onclick=()=>reserveMany(list.map(r=>r.vno),0);
   $$(".qrow").forEach(b=>b.onclick=()=>{openAudit(b.dataset.id);window.scrollTo({top:$("#typeSel").closest("section").offsetTop-8,behavior:"smooth"})});
 }
+
+/* ===================== حجز المخالفات قبل العمل بدون اتصال ===================== */
+async function resXl(e){const f=e.target.files&&e.target.files[0];e.target.value="";if(!f)return;
+  try{const wb=XLSX.read(new Uint8Array(await f.arrayBuffer()),{type:"array"});const vals=new Set();
+    wb.SheetNames.forEach(n=>XLSX.utils.sheet_to_json(wb.Sheets[n],{header:1,defval:"",raw:false}).forEach(rw=>rw.forEach(c=>{const v=String(c==null?"":c).trim();if(v)vals.add(v.toLowerCase())})));
+    const ids=[];rows.forEach(r=>{if([r.vno,r.visit,r.vid].some(x=>x&&vals.has(String(x).trim().toLowerCase())))ids.push(r.vno)});
+    if(!ids.length){toast("لم أجد في الملف أي رقم زيارة أو معرف مخالفة من الملف الشامل");return}
+    await reserveMany(ids,vals.size)}catch(err){console.warn(err);toast("تعذرت قراءة الملف، تأكد أنه ملف إكسل")}}
+async function reserveMany(ids,given){if(!canEditAudit())return;if(isOff()||!sb){toast("الحجز يحتاج اتصال بالإنترنت — احجز قبل فصل النت");return}
+  ids=[...new Set(ids)];const mine=[],other=[],todo=[];
+  ids.forEach(v=>{const a=audits[v];if(a&&a._id){(a._owner===me.id?mine:other).push(v)}else todo.push(v)});
+  if(todo.length>2000){toast("الحد الأعلى للحجز دفعة واحدة 2000 مخالفة");return}
+  if(!todo.length){toast(`لا توجد مخالفات جديدة للحجز — محجوزة لك ${mine.length}${other.length?` · لغيرك ${other.length}`:""}`);return}
+  if(!confirm(`حجز ${todo.length.toLocaleString("en-US")} مخالفة باسمك (${me.full_name})؟`))return;
+  const now=new Date().toISOString(),mk=v=>{const r=rows.find(x=>x.vno===v);const f={vno:r.visit||r.vno,vid:r.vid,name:r.name,nid:"",phone:"",meter:"",region:r.region,gov:r.sector,date:r.date,loc:r.loc,officer:r.officer,sev:r.sev,prop:r.prop,vstatus:r.vstat,explain:"",gnotes:"",_log:[{act:"حجز المخالفة",by:me.full_name,at:Date.now(),note:""}]};
+    return {visit_no:v,violation_type:r.type,violation_name:r.type>=0&&GUIDE[r.type]?GUIDE[r.type].name:null,case_name:null,sector:r.sector||null,region:r.region||null,violation_id:r.vid||null,fields:f,answers:{},status:"in_progress",auditor_name:me.full_name,completed_at:null,returned_at:null,updated_at:now}};
+  let got=0,lost=0;
+  try{for(let i=0;i<todo.length;i+=200){netPill(`📌 جارٍ الحجز ${Math.min(i+200,todo.length)} / ${todo.length}…`);const ch=todo.slice(i,i+200).map(mk);
+      const {data,error}=await sb.from("quality_audits").upsert(ch,{onConflict:"visit_no",ignoreDuplicates:true}).select("id,visit_no");if(error)throw error;got+=(data||[]).length;lost+=ch.length-(data||[]).length}}
+  catch(e){toast("توقف الحجز: "+(netErr(e)?"انقطع الاتصال":(e.message||e)))}
+  try{await loadAudits();bootSave()}catch(e){}netPill();renderQueue();try{if(page==="audit")renderAll()}catch(e){}
+  $("#sheet").innerHTML=`<h3>نتيجة الحجز</h3><div class="sub">المخالفات المحجوزة تظهر في «📌 معاملاتي»، وتقدر تفصل النت وتعمل عليها وتُرفع تلقائياً عند عودة الاتصال.</div>
+   <div class="tbl-wrap"><table class="tbl"><tbody><tr><td>حُجزت باسمك الآن</td><td><b>${got.toLocaleString("en-US")}</b></td></tr><tr><td>محجوزة لك مسبقاً</td><td>${mine.length.toLocaleString("en-US")}</td></tr><tr><td>محجوزة لموظف آخر</td><td>${(other.length+lost).toLocaleString("en-US")}</td></tr></tbody></table></div>
+   <div class="btns" style="margin-top:12px"><button type="button" class="btn2 pri" id="resMine">📌 عرض معاملاتي</button><button type="button" class="btn2" id="closeSh">إغلاق</button></div>`;
+  openSheet();$("#closeSh").onclick=closeSheet;$("#resMine").onclick=()=>{closeSheet();qFilter="mine";qSearch="";renderQueue()}}
 
 /* ===================== المعاملات المنجزة ===================== */
 let dSearch="";
@@ -1009,7 +1037,7 @@ function A(){
   audits[current].stage="مدقق الشركة";
   return audits[current];
 }
-function openAudit(id){current=id;activeKey=null;A();save();renderAll();loadDetails(id)}
+function openAudit(id){try{PEND_DOC=null}catch(e){}current=id;activeKey=null;A();save();renderAll();loadDetails(id)}
 async function loadDetails(id){
   const r=rows.find(x=>x.vno===id);if(!r||r._full||!sb)return;
   const {data}=await sb.from("quality_queue").select("violator_nid,location,explanation").eq("visit_no",id).maybeSingle();
@@ -1170,7 +1198,7 @@ async function addFiles(k,files){
   if(!isOff()&&a&&!a._id){a._force=true;save();await flush();a=audits[current]||a}
   if(isOff()||(a&&!a._id&&OUTBOX[current])){if(!a){toast("أدخل رقم الزيارة واختر المخالفة أولاً");return}if(a._ro&&!a._mgr){toast("هذه المعاملة للاطلاع فقط");return}
     const visit=current==="manual"?String(a.f.vno||"").trim():current;if(!visit){toast("أدخل رقم الزيارة أولاً");return}
-    if(current==="manual"){a._force=true;save();await flush()}
+    a._force=true;save();await flush();
     let room=ATT_MAX-attsOf(k).length-outAttOf(visit,k).length;let n=0;
     for(const f of files){if(room<=0){toast(`الحد الأعلى ${ATT_MAX} مرفقات لكل فقرة`);break}const isPdf=f.type==="application/pdf"||/\.pdf$/i.test(f.name);
       if(needPdf(k)&&!isPdf){toast("هذا المتطلب يقبل مستند PDF فقط: "+f.name);continue}
@@ -1222,12 +1250,13 @@ function attDoc(){const pk=k=>(PEND_DOC||[]).filter(x=>x.key===k);const its=allI
 /* ===== طباعة مسودة بدون اتصال ===== */
 let DOC_DRAFT=false,PEND_DOC=null;
 const blobUrl=b=>new Promise(res=>{const r=new FileReader();r.onload=()=>res(r.result);r.onerror=()=>res("");r.readAsDataURL(b)});
-async function draftPrint(){const a=A();if(a.type<0){toast("اختر المخالفة أولاً");return}
-  const vis=current==="manual"?String((a.f||{}).vno||"").trim():current;if(current==="manual"){save();await flush()}
-  toast("جارٍ تجهيز المسودة…");PEND_DOC=[];
+async function pendDoc(vis){PEND_DOC=[];
   for(const t of OUTATT.filter(x=>x.visit===vis)){const isPdf=t.type==="application/pdf"||/\.pdf$/i.test(t.name);
     try{if(isPdf){const r=await pdfPages(new File([t.blob],t.name,{type:"application/pdf"}));PEND_DOC.push({key:t.key,name:t.name,pages:r.pages})}else PEND_DOC.push({key:t.key,name:t.name,pages:[await blobUrl(t.blob)]})}
-    catch(e){PEND_DOC.push({key:t.key,name:t.name,pages:[],err:"تعذر عرضه بدون اتصال"})}}
+    catch(e){PEND_DOC.push({key:t.key,name:t.name,pages:[],err:"تعذر عرضه بدون اتصال"})}}}
+async function draftPrint(){const a=A();if(a.type<0){toast("اختر المخالفة أولاً");return}
+  const vis=current==="manual"?String((a.f||{}).vno||"").trim():current;if(current==="manual"){save();await flush()}
+  toast("جارٍ تجهيز المسودة…");await pendDoc(vis);
   DOC_DRAFT=true;const html=docHTML();
   $("#sheet").innerHTML=`<h3>مسودة المستند الداعم</h3><div class="sub">${isOff()?"🔴 بدون اتصال — ":""}تُطبع كمسودة غير معتمدة. ${isOff()&&attFor!==current?"المرفقات المرفوعة سابقاً لا تظهر بدون اتصال؛ تظهر المرفقات المحفوظة في الجهاز فقط.":""}</div>
     <div class="btns" style="margin-top:14px"><button type="button" class="btn2 pri" id="drPrint">🖨️ طباعة المسودة</button><button type="button" class="btn2" id="closeSh">إغلاق</button></div>
@@ -1271,9 +1300,7 @@ function updateBar(){try{draftBtn(A())}catch(e){}
   if(a.type<0){$("#barState").textContent="اختر المخالفة لبدء التدقيق";btn.classList.add("wait");btn.textContent="أكمل التدقيق";btn.disabled=true;btn.onclick=null;return}
   if(bad){$("#barState").textContent=`${bad} متطلب غير مكتمل`;btn.classList.add("ret");btn.textContent="إعادة للمفتش";btn.onclick=openReturn;return}
   if(ok===n&&!needCase){
-    if(a.status==="ok"){$("#barState").textContent="معتمدة من رئيس الجودة بالوحدة";btn.classList.add("print");btn.textContent="طباعة المستند الداعم";btn.onclick=openPrint;return}
-    if(a.status==="pend"){if(canApprove(a)){$("#barState").textContent="بانتظار اعتمادك";btn.classList.add("print");btn.textContent="اعتماد المستند الداعم";btn.onclick=approveDoc}else{$("#barState").textContent="بانتظار اعتماد رئيس الجودة بالوحدة";btn.classList.add("wait");btn.textContent="بانتظار الاعتماد";btn.disabled=true;btn.onclick=null}return}
-    $("#barState").textContent="جميع المتطلبات مكتملة";btn.classList.add("print");btn.textContent="إرسال لاعتماد رئيس الجودة بالوحدة";btn.onclick=requestApproval;return}
+    $("#barState").textContent=a.status==="ok"?"مكتملة — صدر المستند الداعم":"جميع المتطلبات مكتملة";btn.classList.add("print");btn.textContent="طباعة المستند الداعم";btn.onclick=openPrint;return}
   $("#barState").textContent=`متبقٍ ${n-ok} فقرة للتحقق`;btn.classList.add("wait");btn.textContent="أكمل التدقيق";btn.disabled=true;btn.onclick=null;
 }
 
@@ -1333,12 +1360,11 @@ function docHTML(){
   <div class="box" style="margin-top:14px;text-align:center;font-size:11px;color:#444">مستند إلكتروني صادر من نظام الجودة والتحقق، ولا يتطلب توقيعاً ورقياً.</div>${attDoc()}</div>`;
 }
 async function openPrint(){
-  if(A().status!=="ok"){toast("الطباعة بعد اعتماد رئيس الجودة بالوحدة");return}
   const m=missingFields();
   if(m.length){toast("أكمل الحقول الإلزامية: "+m.join("، "));return}
   if(current==="manual"){save();await flush();if(current==="manual"){toast("أدخل رقم الزيارة");return}}
   {const _a=A();_a.status="ok";if(!_a.doneAt)_a.doneAt=Date.now();_a.lastDone=Date.now();_a.auditor=_a.auditor||me.full_name;logAct(_a,"إصدار المستند الداعم")}
-  save();await flush();renderQueue();renderReview();
+  save();await flush();renderQueue();renderReview();DOC_DRAFT=false;await pendDoc(current);
   $("#sheet").innerHTML=`<h3>المستند الداعم جاهز</h3><div class="sub">اختر طريقة الإخراج: ملف PDF يشمل التدقيق وجميع المرفقات، أو طباعة مباشرة.</div>
   <div class="btns" style="margin-top:14px"><button type="button" class="btn2 pri" id="doPdf">📄 مستند PDF</button><button type="button" class="btn2" id="doPrint">🖨️ طباعة</button><button type="button" class="btn2" id="closeSh">إغلاق</button></div>
   <div style="margin-top:14px;border:1px solid var(--line);border-radius:12px;background:#fff;overflow:auto;max-height:50vh">${docHTML()}</div>`;
@@ -1590,14 +1616,19 @@ function netPill(msg,ok){const el=$("#netPill");if(!el||!me)return;try{if(page==
 function obApply(){Object.entries(OUTBOX).forEach(([k,o])=>{const a=audits[k];const x=o.row;const st=x.status==="completed"?"ok":x.status==="returned"?"ret":x.status==="pending_approval"?"pend":null;
   const v={_id:o.id||(a&&a._id)||null,_owner:(a&&a._owner)||me.id,_ro:false,type:x.violation_type==null?-1:x.violation_type,cas:x.case_name,ans:x.answers||{},f:x.fields||{},sector:x.sector||"",region:x.region||"",vid:x.violation_id||"",status:st,doneAt:x.completed_at?Date.parse(x.completed_at):null,retAt:x.returned_at?Date.parse(x.returned_at):null,auditor:x.auditor_name||"",created:(a&&a.created)||o.ts,updated:o.ts,stage:"مدقق الشركة",_pending:true};
   audits[k]=Object.assign(a||{},v)})}
-async function obSync(){if(SYNCING||navOff()||!sb||!me||!obCount())return;SYNCING=true;netPill("🔄 جارٍ مزامنة "+obCount()+"…");let ok=0,fail=0;
+async function ensureAud(v){let a=audits[v];if(a&&a._id)return a;if(OUTBOX[v])return null;
+  if(!a){const r=rows.find(x=>x.vno===v||x.visit===v);if(!r)return null;const c=current;current=r.vno;try{A()}finally{current=c}a=audits[r.vno];v=r.vno}
+  if(a._ro)return null;a._force=true;await pushAudit(v);a=audits[v];return a&&a._id?a:null}
+async function obSync(){if(SYNCING||navOff()||BOOT_STALE||!sb||!me||!obCount())return;SYNCING=true;netPill("🔄 جارٍ مزامنة "+obCount()+"…");let ok=0,fail=0;
   try{for(const [k,o] of Object.entries(OUTBOX)){try{let r;const row=Object.assign({},o.row,{updated_at:new Date().toISOString()});
         if(o.id||(audits[k]&&audits[k]._id)){const id=o.id||audits[k]._id;r=await sb.from("quality_audits").update(row).eq("id",id).select("id");if(!r.error&&(!r.data||!r.data.length))throw new Error("لا صلاحية تعديل "+k)}
         else{r=await sb.from("quality_audits").insert(row).select("id").single();if(!r.error&&audits[k]){audits[k]._id=r.data.id;audits[k]._owner=me.id}
           if(r.error&&String(r.error.code)==="23505"){toast("المخالفة "+k+" بدأ تدقيقها موظف آخر أثناء انقطاعك — لم تُرفع تعديلاتك عليها، راجعها");delete OUTBOX[k];fail++;continue}}
         if(r.error)throw r.error;NET_DOWN=false;if(audits[k])delete audits[k]._pending;delete OUTBOX[k];ok++}catch(e){if(netErr(e)){NET_DOWN=true;break}fail++;o.err=String((e&&(e.message||e))||e).slice(0,200);console.warn("sync",k,e)}}
     obSave();
-    for(let i=0;i<OUTATT.length;){const t=OUTATT[i];const a=audits[t.visit];if(!a||!a._id){t.err=OUTBOX[t.visit]?"بانتظار رفع المستند أولاً":"المستند غير موجود";i++;continue}
+    for(let i=0;i<OUTATT.length;){const t=OUTATT[i];let a=audits[t.visit];if(!a||!a._id){if(OUTBOX[t.visit]){t.err="بانتظار رفع المستند أولاً";i++;continue}
+        try{a=await ensureAud(t.visit)}catch(e){if(netErr(e)){NET_DOWN=true;break}a=null}if(NET_DOWN)break;
+        if(!a){const b=audits[t.visit];t.err=b&&b._ro?"المخالفة محجوزة لموظف آخر: "+userName(b._owner,b.auditor):OUTBOX[t.visit]?"بانتظار رفع المستند أولاً":"رقم الزيارة غير موجود في الملف الشامل";i++;continue}}
       try{const f=new File([t.blob],t.name,{type:t.type});const r=await attUpload(a,t.key,f,true);if(r||r===false){OUTATT.splice(i,1);if(r)ok++}else i++}catch(e){if(netErr(e)){NET_DOWN=true;break}console.warn("sync att",e);t.err=String((e&&(e.message||e))||e).slice(0,200);t.tries=(t.tries||0)+1;if(t.tries>=3){OUTATT.splice(i,1);toast("تعذر رفع المرفق "+t.name+" بعد 3 محاولات — أعد إرفاقه");fail++}else i++}}
     obSave()}finally{SYNCING=false}
   if(ok){netPill(`🟢 تمت المزامنة (${ok})`,true);try{bootSave()}catch(e){}if(page==="audit"){await loadAtt();renderCheck();updateBar()}renderQueue&&renderQueue()}else netPill();if(fail)toast(`تعذر رفع ${fail} عنصر — راجعها`)}
@@ -1646,7 +1677,7 @@ function mapAudits(q,ro){const keep=audits.manual;audits={};
   if(keep)audits.manual=keep;
 }
 async function loadUsers(){const {data}=await sb.from("quality_users").select("*").order("created_at");users=data||[]}
-async function loadData(){try{await Promise.all([loadOrg(),loadSouthCfg(),loadAbout(),loadQueue(),loadAudits(),loadRefs(),loadApprovers(),loadAttIdx()]);loadReportCols()}catch(e){toast("تعذر تحميل البيانات: "+(e.message||""))}try{buildFilters()}catch(e){}}
+let LD_ERR=false;async function loadData(){try{await Promise.all([loadOrg(),loadSouthCfg(),loadAbout(),loadQueue(),loadAudits(),loadRefs(),loadApprovers(),loadAttIdx()]);loadReportCols()}catch(e){LD_ERR=true;if(netErr(e)){NET_DOWN=true;netPill()}else toast("تعذر تحميل البيانات: "+(e.message||""))}try{buildFilters()}catch(e){}}
 
 /* ----- الحفظ ----- */
 let saveT=null;const dirty=new Set();
@@ -1656,7 +1687,7 @@ function secOf(k,a){const r=rows.find(x=>x.vno===k);return a.f.gov||a.sector||(r
 function regOf(k,a){const r=rows.find(x=>x.vno===k);return a.f.region||a.region||(r&&r.region)||""}
 let warnedRO=false;
 async function pushAudit(k){
-  if(!me)return;if(BOOT_STALE&&!isOff()&&sb){toast("لحظات… جارٍ تحديث البيانات، أعد المحاولة بعد ثوانٍ");return}let a=audits[k];if(!a)return;
+  if(!me)return;let a=audits[k];if(!a)return;
   if(!a._id&&!a._force&&!reserved(a))return;
   if(k==="manual"){const v=String(a.f.vno||"").trim();if(!v)return;
     if(audits[v]&&audits[v]!==a){toast("رقم الزيارة "+v+" موجود مسبقاً، افتحه من القوائم");return}
@@ -1669,7 +1700,7 @@ async function pushAudit(k){
     auditor_name:a.auditor||me.full_name,completed_at:a.status==="ok"&&a.doneAt?new Date(a.doneAt).toISOString():null,
     returned_at:a.retAt?new Date(a.retAt).toISOString():null,updated_at:new Date().toISOString()};
   const queue=()=>{OUTBOX[k]={id:a._id||null,row,ts:Date.now()};a._pending=true;obSave()};
-  if(isOff()||!sb){queue();return}
+  if(isOff()||!sb||BOOT_STALE){queue();return}
   let r;
   try{
   if(a._id){r=await sb.from("quality_audits").update(row).eq("id",a._id).select("id");if(!r.error&&(!r.data||!r.data.length)){toast("ليس لديك صلاحية تعديل هذه المعاملة");return}}
@@ -1726,7 +1757,7 @@ function bootSave(){try{if(!me)return;QDB.set(BOOT_K(),{v:1,at:Date.now(),role:m
 async function bootLoad(){try{const c=await QDB.get(BOOT_K()),q=await QDB.get("queue");if(!c||c.v!==1||c.role!==me.role||!q||!Array.isArray(q.rows)||q.cols!==QCOLS)return false;
     ORG=c.ORG||ORG;if(!ORG.pending)ORG.pending=JSON.parse(JSON.stringify(ORG_DEFAULT.pending));_um=null;SOUTH_GR=c.sg||[];NORTH_GR=c.ng||[];ABOUT=c.about||null;DATA_VER=DATA_VER||q.v;mapQueue(q.rows);AUD_RAW=c.aud||[];mapAudits(AUD_RAW,true);users=c.users||[];REFS=new Set(c.refs||[]);APPR=c.appr||[];
     ATT_IDX={};Object.entries(c.att||{}).forEach(([k,v])=>ATT_IDX[k]=new Set(v));loadReportCols();try{buildFilters()}catch(e){}return true}catch(e){return false}}
-async function bootLoadAll(){await Promise.all([loadData(),needUsers()?loadUsers():null,loadPwReq(),loadSignups()]);bootSave()}
+async function bootLoadAll(){LD_ERR=false;await Promise.all([loadData(),needUsers()?loadUsers():null,loadPwReq(),loadSignups()]);if(!LD_ERR)bootSave()}
 function bootBadge(on){const b=$("#refreshBtn");if(!b)return;b.disabled=on;b.textContent=on?"⏳ جارٍ التحديث…":"↻ تحديث"}
 async function enterApp(){
   show("appView");$("#whoName").textContent=me.full_name;$("#whoRole").textContent=roleLabel(me);
@@ -1736,7 +1767,8 @@ async function enterApp(){
   if(await bootLoad()){obApply();if(isOff()){current="manual";page="dash";buildTabs();try{renderAll();go(page)}catch(e){}netPill();toast("🔴 بدون اتصال — تعمل من آخر نسخة محفوظة، وتُرفع تعديلاتك عند عودة الاتصال");return}
     BOOT_STALE=true;bootBadge(true);current="manual";page="dash";
     buildTabs();try{renderAll();go(page)}catch(e){}{const f=$("#aiFab");if(f)f.hidden=me.role==="clerk"}
-    try{await bootLoadAll()}catch(e){}BOOT_STALE=false;bootBadge(false);obApply();netPill();setTimeout(obSync,500);const y=window.scrollY,cur=current;buildTabs();renderAll();go(page);window.scrollTo(0,y);
+    Promise.race([sb.from("quality_settings").select("key").limit(1).then(r=>!r.error,()=>false),new Promise(r=>setTimeout(()=>r(false),7000))]).then(ok=>{if(!ok&&BOOT_STALE){NET_DOWN=true;BOOT_STALE=false;bootBadge(false);netPill();try{if(page==="audit")updateBar()}catch(e){}toast("🔴 الشبكة بدون إنترنت — تعمل من آخر نسخة محفوظة، وتُرفع تعديلاتك تلقائياً عند عودة الاتصال")}});
+    try{await bootLoadAll()}catch(e){}const wasOff=LD_ERR&&NET_DOWN;BOOT_STALE=false;bootBadge(false);obApply();if(wasOff){netPill();return}netPill();setTimeout(obSync,500);const y=window.scrollY,cur=current;buildTabs();renderAll();go(page);window.scrollTo(0,y);
     {const msgs=[];if(PWREQ.length)msgs.push(`${PWREQ.length} طلب إعادة كلمة مرور`);if(SIGNUPS.length)msgs.push(`${SIGNUPS.length} طلب تسجيل`);if(msgs.length)setTimeout(()=>toast(`يوجد ${msgs.join(" و")} — في صفحة الإدارة والهيكل`),600)}return}
   if(isOff()){blockMsg("أنت بدون اتصال ولا توجد نسخة محفوظة على هذا الجهاز بعد — افتح المنصة مرة واحدة مع الإنترنت.");return}
   await bootLoadAll();netPill();setTimeout(obSync,500);{const msgs=[];if(PWREQ.length)msgs.push(`${PWREQ.length} طلب إعادة كلمة مرور`);if(SIGNUPS.length)msgs.push(`${SIGNUPS.length} طلب تسجيل`);if(msgs.length)setTimeout(()=>toast(`يوجد ${msgs.join(" و")} — في صفحة الإدارة والهيكل`),1200)}
