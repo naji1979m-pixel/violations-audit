@@ -738,6 +738,7 @@ section.block>h2::after{content:"";position:absolute;bottom:0;inset-inline-start
   <div class="pg" data-pg="perf" hidden><div id="perfBody"></div></div>
   <div class="pg" data-pg="acad" hidden><div id="acadBody"></div></div>
   <div class="pg" data-pg="south" hidden><div id="southBody"></div></div>
+  <div class="pg" data-pg="north" hidden><div id="northBody"></div></div>
 </div>
 
 <div class="bar" id="auditBar" hidden>
@@ -1479,7 +1480,7 @@ const isVIP=u=>{if(!u||!u.full_name)return false;const t=norm(u.full_name).split
 const seesAll=()=>!!me&&(["admin","exec","viewer"].includes(me.role)||isHQ(me)||isVIP(me));
 const isHQU=u=>!!u&&(u.role==="exec"||isHQ(u)||isVIP(u));
 const canHQ=()=>!!me&&(me.role==="admin"||isHQU(me));
-function pageOK(p){if(!me)return false;if(p[0]==="hq")return canHQ();if(p[0]==="south")return southOK();if(p[0]==="acad")return acadOK()&&(isAcadTeam(me)||p[2].includes(me.role)||isHQU(me));if(p[2].includes(me.role))return true;return isHQU(me)&&p[0]!=="users"}
+function pageOK(p){if(!me)return false;if(p[0]==="hq")return canHQ();if(p[0]==="south")return southOK();if(p[0]==="north")return northOK();if(p[0]==="acad")return acadOK()&&(isAcadTeam(me)||p[2].includes(me.role)||isHQU(me));if(p[2].includes(me.role))return true;return isHQU(me)&&p[0]!=="users"}
 const needUsers=()=>!!me&&(["admin","exec","manager","viewer"].includes(me.role)||isHQU(me));
 const TITLE_EXEC="المدير التنفيذي لإدارة المخالفات والجودة";const isAid=u=>!!u&&u.role==="exec"&&/عايض/.test(norm(u.full_name))&&/القحطاني/.test(norm(u.full_name));
 function roleLabel(u){if(isAid(u))return TITLE_EXEC;if(u&&u.role==="trainee")return ROLE[roleKey(u)];return u.role==="staff"&&isHQ(u)?"أخصائي جودة":(ROLE[u.role]||u.role)}
@@ -1634,9 +1635,9 @@ async function logout(){try{await flush()}catch(e){}try{await QDB.set(BOOT_K(),n
 $("#blockLogout").onclick=logout;
 /* ===== الفتح الفوري: عرض آخر نسخة محفوظة في الجهاز ثم التحديث في الخلفية ===== */
 let BOOT_STALE=false;const BOOT_K=()=>"boot:"+(me&&me.id);
-function bootSave(){try{if(!me)return;QDB.set(BOOT_K(),{v:1,at:Date.now(),role:me.role,ORG,about:ABOUT,aud:AUD_RAW,users:users||[],sg:SOUTH_GR||[],refs:[...REFS],appr:APPR||[],att:Object.fromEntries(Object.entries(ATT_IDX||{}).map(([k,v])=>[k,[...v]]))})}catch(e){}}
+function bootSave(){try{if(!me)return;QDB.set(BOOT_K(),{v:1,at:Date.now(),role:me.role,ORG,about:ABOUT,aud:AUD_RAW,users:users||[],sg:SOUTH_GR||[],ng:NORTH_GR||[],refs:[...REFS],appr:APPR||[],att:Object.fromEntries(Object.entries(ATT_IDX||{}).map(([k,v])=>[k,[...v]]))})}catch(e){}}
 async function bootLoad(){try{const c=await QDB.get(BOOT_K()),q=await QDB.get("queue");if(!c||c.v!==1||c.role!==me.role||!q||!Array.isArray(q.rows)||q.cols!==QCOLS)return false;
-    ORG=c.ORG||ORG;if(!ORG.pending)ORG.pending=JSON.parse(JSON.stringify(ORG_DEFAULT.pending));_um=null;SOUTH_GR=c.sg||[];ABOUT=c.about||null;mapQueue(q.rows);AUD_RAW=c.aud||[];mapAudits(AUD_RAW,true);users=c.users||[];REFS=new Set(c.refs||[]);APPR=c.appr||[];
+    ORG=c.ORG||ORG;if(!ORG.pending)ORG.pending=JSON.parse(JSON.stringify(ORG_DEFAULT.pending));_um=null;SOUTH_GR=c.sg||[];NORTH_GR=c.ng||[];ABOUT=c.about||null;mapQueue(q.rows);AUD_RAW=c.aud||[];mapAudits(AUD_RAW,true);users=c.users||[];REFS=new Set(c.refs||[]);APPR=c.appr||[];
     ATT_IDX={};Object.entries(c.att||{}).forEach(([k,v])=>ATT_IDX[k]=new Set(v));loadReportCols();try{buildFilters()}catch(e){}return true}catch(e){return false}}
 async function bootLoadAll(){await Promise.all([loadData(),needUsers()?loadUsers():null,loadPwReq(),loadSignups()]);bootSave()}
 function bootBadge(on){const b=$("#refreshBtn");if(!b)return;b.disabled=on;b.textContent=on?"⏳ جارٍ التحديث…":"↻ تحديث"}
@@ -1660,7 +1661,7 @@ async function boot(){
 }
 
 /* ----- التنقل ----- */
-const PAGES=[["dash","الرئيسية",["admin","exec","manager","staff","clerk","viewer"]],["hq","المركز الرئيسي",[]],["audit","المخالفات والتدقيق",["admin","exec","manager","staff","clerk","viewer"]],["report","تقارير التدقيق",["admin","exec","manager","viewer","clerk"]],["team","أداء الموظفين",["admin","exec","manager","viewer"]],["perf","تقييم الأداء",["admin","exec","manager","staff","viewer"]],["south","الوحدة الجنوبية – القطاع الشرقي",[]],["acad","أكاديمية إدارة المخالفات",["admin","exec","manager","staff","clerk","viewer","trainee"]],["users","الإدارة والهيكل",["admin"]]];
+const PAGES=[["dash","الرئيسية",["admin","exec","manager","staff","clerk","viewer"]],["hq","المركز الرئيسي",[]],["audit","المخالفات والتدقيق",["admin","exec","manager","staff","clerk","viewer"]],["report","تقارير التدقيق",["admin","exec","manager","viewer","clerk"]],["team","أداء الموظفين",["admin","exec","manager","viewer"]],["perf","تقييم الأداء",["admin","exec","manager","staff","viewer"]],["north","الوحدة الشمالية – القطاع الشرقي",[]],["south","الوحدة الجنوبية – القطاع الشرقي",[]],["acad","أكاديمية إدارة المخالفات",["admin","exec","manager","staff","clerk","viewer","trainee"]],["users","الإدارة والهيكل",["admin"]]];
 function buildTabs(){$("#tabs").innerHTML=PAGES.filter(pageOK).map(p=>`<button type="button" class="tab" data-go="${p[0]}">${p[1]}</button>`).join("");$$("[data-go]").forEach(b=>b.onclick=()=>go(b.dataset.go))}
 const PG_HERO={audit:["المخالفات والتدقيق","اختر مخالفة من القائمة وابدأ تدقيقها وفق دليل دراسة المخالفات وآلية ضبطها","check"],report:["تقارير التدقيق","مؤشرات جودة التدقيق حسب الوحدة والموظف وبند اللائحة","xls"],team:["أداء الموظفين","إنجاز موظفي الجودة ونتائج تدقيقهم","clock"],users:["الإدارة والهيكل","الحسابات والصلاحيات والهيكل التنظيمي","search"]};
 function pgHero(p){const h=PG_HERO[p],el=$("#pgHero");if(!el)return;if(!h){el.hidden=true;return}el.hidden=false;el.innerHTML=`<span class="ic">${hqIc(h[2],24)}</span><div><h2>${h[0]}</h2><p>${h[1]}</p></div>`}
@@ -1668,7 +1669,7 @@ function pgHero(p){const h=PG_HERO[p],el=$("#pgHero");if(!el)return;if(!h){el.hi
 function go(p){if(!PAGES.find(x=>x[0]===p&&pageOK(x)))p=isTrainee(me)?"acad":"dash";page=p;try{localStorage.setItem("vv:page",p)}catch(e){}
   $$(".pg").forEach(x=>x.hidden=x.dataset.pg!==p);$$("[data-go]").forEach(b=>b.setAttribute("aria-current",String(b.dataset.go===p)));
   $("#auditBar").hidden=p!=="audit";$("#upBtn").hidden=p!=="audit"||!canUpload();
-  if(p==="dash")renderDash();if(p==="report")renderReport();if(p==="team")renderTeam();if(p==="users")renderUsers();document.body.classList.toggle("hqwide",p==="hq"||p==="perf"||p==="acad"||p==="south"||p==="dash");document.body.classList.toggle("home-on",p==="dash");RD_BASE=null;RD_SCOPE="";pgHero(p);if(p==="hq")renderHQ();if(p==="perf")renderPerf();if(p==="acad")renderAcad();if(p==="south"){renderSouth();if(STV==="reg")stLoadReg()}window.scrollTo(0,0)}
+  if(p==="dash")renderDash();if(p==="report")renderReport();if(p==="team")renderTeam();if(p==="users")renderUsers();document.body.classList.toggle("hqwide",p==="hq"||p==="perf"||p==="acad"||p==="south"||p==="north"||p==="dash");document.body.classList.toggle("home-on",p==="dash");RD_BASE=null;RD_SCOPE="";pgHero(p);if(p==="hq")renderHQ();if(p==="perf")renderPerf();if(p==="acad")renderAcad();if(p==="south"){stUse(SOUTH_CX);renderSouth();if(STV==="reg")stLoadReg()}if(p==="north"){stUse(NORTH_CX);renderSouth();if(STV==="reg")stLoadReg()}window.scrollTo(0,0)}
 $("#logoutBtn").onclick=logout;
 $("#pwBtn").onclick=()=>{$("#pwCancel").hidden=false;$("#pwTitle").textContent="تغيير كلمة المرور";$("#pwMsg").textContent="";show("pwView")};
 $("#refreshBtn").onclick=async()=>{const b=$("#refreshBtn");if(b.disabled)return;if(isTrainee(me)){AC.courses=null;renderAcad();return}AC.courses=null;b.disabled=true;b.textContent="جارٍ التحديث…";await flush();await loadData();if(needUsers())await loadUsers();bootSave();renderAll();go(page);b.disabled=false;b.textContent="↻ تحديث";toast("تم تحديث البيانات")};
@@ -1888,11 +1889,11 @@ const ABOUT_DEF={title:"إدارة المخالفات والتعديات",tag:"�
 let ABOUT=null,HOMEV="about";
 async function loadAbout(){try{const {data}=await sb.from("quality_settings").select("value").eq("key","about").maybeSingle();ABOUT=data&&data.value&&data.value.title?data.value:null}catch(e){ABOUT=null}}
 const abOK=()=>isFeeder(me);
-const HOME_IC={dash:"home",hq:"bldg",audit:"check",report:"xls",team:"clock",perf:"chart",south:"map",acad:"cap",users:"user"};
+const HOME_IC={dash:"home",hq:"bldg",audit:"check",report:"xls",team:"clock",perf:"chart",south:"map",north:"map",acad:"cap",users:"user"};
 function homeStats(){let n=0,sent=0,iss=0,ret=0,fine=0;const G=new Set(),M=new Set();(rows||[]).forEach(r=>{n++;const c=r._hc||(r._hc=hqCls(r));if(c==="iss"||c==="ret"||c==="auth")sent++;if(c==="iss")iss++;if(c==="ret")ret++;const f=parseFloat(String(r.fine||"").replace(/[^\d.]/g,""));if(f>0)fine+=f;if(r.sector)G.add(r.sector.trim());const d=dayOfRow(r);if(d!=null)M.add(Math.floor(d/30))});
   return {n,sent,iss,ret,q:sent?Math.round((1-ret/sent)*1000)/10:null,g:G.size,fine}}
 function renderDash(){const nav=$("#homeNav");if(!nav)return;
-  const HID=["south","acad","users"],LOC={};
+  const HID=["south","north","acad","users"],LOC={};
   const items=[["about","الرئيسية","home"]].concat(PAGES.filter(p=>p[0]!=="dash"&&(pageOK(p)||!HID.includes(p[0]))).map(p=>{if(!pageOK(p))LOC[p[0]]=1;return [p[0],p[1],HOME_IC[p[0]]||"eye"]}),[["mine","ملخص أعمالي","user"],["faq","الأسئلة الشائعة والشكاوى","help"]]);
   const LV=["about","mine","faq"];
   nav.innerHTML=items.map(([k,l,ic])=>`<button type="button" data-hn="${k}" aria-current="${LV.includes(k)&&HOMEV===k}"${LOC[k]?' class="lk" title="لا تملك صلاحية الدخول"':""}><span class="hn-i">${hqIc(LOC[k]?"lock":ic,22)}</span><span class="hn-l">${esc(l)}</span></button>`).join("");
@@ -2708,29 +2709,35 @@ const SOUTH_U="الوحدة الجنوبية",SOUTH_T="الوحدة الجنوب
 let SOUTH_GR=[],STV="rep",STP="all",STF="pend",STG="",STQ="",ST_REQ=null,ST_USERS=null,ST_LOG=null,ST_ERR="";
 const isHussein=u=>{if(!u||!u.full_name)return false;const t=norm(u.full_name).split(" ");return ["حسين","الرمضان"].every(w=>t.includes(norm(w)))};
 const southAdmin=()=>!!me&&me.role!=="trainee"&&(me.role==="admin"||isHussein(me));
-const southOK=()=>!!me&&me.role!=="trainee"&&(southAdmin()||SOUTH_GR.includes(me.id));
-async function loadSouthCfg(){try{const {data}=await sb.from("quality_settings").select("value").eq("key","south_portal").maybeSingle();SOUTH_GR=data&&data.value&&Array.isArray(data.value.users)?data.value.users:[]}catch(e){SOUTH_GR=[]}}
+const southOK=()=>!!me&&me.role!=="trainee"&&(ST_CX.adm()||SOUTH_GR.includes(me.id));
+async function loadSouthCfg(){try{const {data}=await sb.from("quality_settings").select("value").eq("key","north_portal").maybeSingle();NORTH_GR=data&&data.value&&Array.isArray(data.value.users)?data.value.users:[]}catch(e){NORTH_GR=[]}try{const {data}=await sb.from("quality_settings").select("value").eq("key","south_portal").maybeSingle();SOUTH_GR=data&&data.value&&Array.isArray(data.value.users)?data.value.users:[]}catch(e){SOUTH_GR=[]}}
+/* بوابة الوحدة الشمالية — نفس بوابة الجنوبية؛ تظهر لموظفي الجودة في الوحدة الشمالية ومدير النظام */
+const NORTH_U="الوحدة الشمالية",NORTH_T="الوحدة الشمالية – القطاع الشرقي";let NORTH_GR=[];
+const isNorthGov=g=>gcl(unitOf(g))===gcl(NORTH_U)||gcl(g)===gcl(NORTH_U)||/حفر\s?الباطن|القيصوم|الخفجي|النعيري|قري[ةه] العليا|مليج/.test(g||"");
+const isNorthStaff=u=>!!u&&u.active!==false&&u.role!=="trainee"&&["manager","staff","clerk"].includes(u.role)&&isNorthGov(u.sector||"");
+const northAdmin=()=>!!me&&me.role==="admin";
+const northOK=()=>!!me&&me.role!=="trainee"&&(northAdmin()||isNorthStaff(me)||NORTH_GR.includes(me.id));
 const stGK=g=>gcl(g).replace(/[إأآ]/g,"ا");let ST_GL={};
 const stGov=r=>{const k=stGK(r.sector||"");return ST_GL[k]||(r.sector||"").trim()};
-const isSouthGov=g=>gcl(unitOf(g))===gcl(SOUTH_U)||/الأحساء|الاحساء|الإحساء|الهفوف|المبرز|بقيق/.test(g||"");
-function southRows(){const C={};rows.forEach(r=>{if(!isSouthGov(r.sector))return;const k=stGK(r.sector),l=(r.sector||"").trim();(C[k]=C[k]||{})[l]=(C[k][l]||0)+1});ST_GL={};Object.entries(C).forEach(([k,o])=>ST_GL[k]=Object.entries(o).sort((a,b)=>b[1]-a[1])[0][0]);return rows.filter(r=>{if(!isSouthGov(r.sector))return false;if(STP==="all")return true;const d=dayOfRow(r);if(d==null)return false;if(STP==="q3")return d>=hqMaxDay()-91;return new Date(d*864e5).getUTCFullYear()===+STP.slice(1)})}
-const ST_SEC=[["rep","تقرير الوحدة","M3 3v18h18M7 15l4-4 3 3 5-6",()=>southAdmin()],["aud","المخالفات والتدقيق","M9 11l3 3 8-8M20 12v7a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h9",()=>southOK()],["guide","الدليل الإجرائي للمخالفات","M4 19.5A2.5 2.5 0 0 1 6.5 17H20V3H6.5A2.5 2.5 0 0 0 4 5.5v14zM8 7h8M8 11h6",()=>southOK()],["reg","اعتماد الموظفين","M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM19 8v6M22 11h-6",()=>southAdmin()]];
-function renderSouth(){const el=$("#southBody");if(!el)return;if(!southOK()){el.innerHTML='<section class="block"><div class="empty">🔒 هذه البوابة غير متاحة لحسابك.</div></section>';return}
+const isSouthGov=g=>gcl(unitOf(g))===gcl(ST_CX.u)||/الأحساء|الاحساء|الإحساء|الهفوف|المبرز|بقيق/.test(g||"");
+function southRows(){const C={};rows.forEach(r=>{if(!ST_CX.gov(r.sector))return;const k=stGK(r.sector),l=(r.sector||"").trim();(C[k]=C[k]||{})[l]=(C[k][l]||0)+1});ST_GL={};Object.entries(C).forEach(([k,o])=>ST_GL[k]=Object.entries(o).sort((a,b)=>b[1]-a[1])[0][0]);return rows.filter(r=>{if(!ST_CX.gov(r.sector))return false;if(STP==="all")return true;const d=dayOfRow(r);if(d==null)return false;if(STP==="q3")return d>=hqMaxDay()-91;return new Date(d*864e5).getUTCFullYear()===+STP.slice(1)})}
+const ST_SEC=[["rep","تقرير الوحدة","M3 3v18h18M7 15l4-4 3 3 5-6",()=>ST_CX.adm()],["aud","المخالفات والتدقيق","M9 11l3 3 8-8M20 12v7a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h9",()=>ST_CX.ok()],["guide","الدليل الإجرائي للمخالفات","M4 19.5A2.5 2.5 0 0 1 6.5 17H20V3H6.5A2.5 2.5 0 0 0 4 5.5v14zM8 7h8M8 11h6",()=>ST_CX.ok()],["reg","اعتماد الموظفين","M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM19 8v6M22 11h-6",()=>ST_CX.adm()]];
+function renderSouth(){const el=$(ST_CX.el+"");if(!el)return;if(!ST_CX.ok()){el.innerHTML='<section class="block"><div class="empty">🔒 هذه البوابة غير متاحة لحسابك.</div></section>';return}
   const secs=ST_SEC.filter(x=>x[3]());if(!secs.some(x=>x[0]===STV))STV=secs[0][0];
-  const L=southRows();RD_BASE=southRows;RD_SCOPE=SOUTH_T;
+  const L=southRows();RD_BASE=southRows;RD_SCOPE=ST_CX.t;
   let body="";try{body=STV==="rep"?stReport(L):STV==="aud"?stAudit(L):STV==="guide"?stGuide():stReg()}catch(e){body=`<div class="hq-card"><div class="empty">تعذر العرض: ${esc(e.message||e)}</div></div>`}
-  el.innerHTML=`<div class="hq pv st"><div class="hq-top"><div class="hq-t1"><div><span class="hq-badge">بوابة الوحدة</span><h2>${SOUTH_T}</h2><p>محافظة الأحساء (الهفوف والمبرز والقرى والهجر التابعة) ومحافظة بقيق</p></div></div></div>
+  el.innerHTML=`<div class="hq pv st"><div class="hq-top"><div class="hq-t1"><div><span class="hq-badge">بوابة الوحدة</span><h2>${ST_CX.t}</h2><p>محافظة الأحساء (الهفوف والمبرز والقرى والهجر التابعة) ومحافظة بقيق</p></div></div></div>
     <div class="st-wrap"><nav class="st-nav" aria-label="أقسام البوابة">${secs.map(([k,l,ic])=>`<button type="button" data-stv="${k}" aria-current="${STV===k}"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="${ic}"/></svg><span>${l}</span></button>`).join("")}</nav>
     <div class="st-main">${body}</div></div></div>`;
-  $$("#southBody [data-stv]").forEach(b=>b.onclick=()=>{STV=b.dataset.stv;renderSouth();if(STV==="reg")stLoadReg()});
-  $$("#southBody [data-stp]").forEach(b=>b.onclick=()=>{STP=b.dataset.stp;renderSouth()});
-  $$("#southBody [data-stf]").forEach(b=>b.onclick=()=>{STF=b.dataset.stf;renderSouth()});
+  $$(ST_CX.el+" [data-stv]").forEach(b=>b.onclick=()=>{STV=b.dataset.stv;renderSouth();if(STV==="reg")stLoadReg()});
+  $$(ST_CX.el+" [data-stp]").forEach(b=>b.onclick=()=>{STP=b.dataset.stp;renderSouth()});
+  $$(ST_CX.el+" [data-stf]").forEach(b=>b.onclick=()=>{STF=b.dataset.stf;renderSouth()});
   if($("#stG"))$("#stG").onchange=e=>{STG=e.target.value;renderSouth()};
   if($("#stXM"))$("#stXM").onchange=e=>{HQXM=e.target.value;renderSouth()};
   if($("#stQ"))$("#stQ").oninput=e=>{STQ=e.target.value;clearTimeout(window._stt);window._stt=setTimeout(()=>{renderSouth();const i=$("#stQ");if(i){i.focus();i.setSelectionRange(i.value.length,i.value.length)}},250)};
-  $$("#southBody [data-sto]").forEach(b=>b.onclick=()=>{go("audit");openAudit(b.dataset.sto);setTimeout(()=>{const t=$("#typeSel");if(t)window.scrollTo({top:t.closest("section").offsetTop-8,behavior:"smooth"})},120)});
+  $$(ST_CX.el+" [data-sto]").forEach(b=>b.onclick=()=>{go("audit");openAudit(b.dataset.sto);setTimeout(()=>{const t=$("#typeSel");if(t)window.scrollTo({top:t.closest("section").offsetTop-8,behavior:"smooth"})},120)});
   if(STV==="reg")stBindReg();
-  if(STV==="guide"){const gq=$("#stGQ");if(gq)gq.oninput=()=>{const q=norm(gq.value);$$("#southBody .st-gi").forEach(x=>x.hidden=!!q&&!norm(x.dataset.t).includes(q));$$("#southBody .st-gc").forEach(c=>c.hidden=![...c.querySelectorAll(".st-gi")].some(x=>!x.hidden))}}}
+  if(STV==="guide"){const gq=$("#stGQ");if(gq)gq.oninput=()=>{const q=norm(gq.value);$$(ST_CX.el+" .st-gi").forEach(x=>x.hidden=!!q&&!norm(x.dataset.t).includes(q));$$(ST_CX.el+" .st-gc").forEach(c=>c.hidden=![...c.querySelectorAll(".st-gi")].some(x=>!x.hidden))}}}
 function stPer(){const ys=hqYears();return `<div class="hq-chips st-chips">${[["all","كل الفترات"]].concat(ys.map(y=>["y"+y,String(y)]),[["q3","آخر 3 أشهر"]]).map(([k,l])=>`<button type="button" class="hq-chip" data-stp="${k}" aria-pressed="${STP===k}">${l}</button>`).join("")}</div>`}
 function stReport(L){const A=hqAgg(L),T=A.T,q=qRate(T.ret,T.sent);
   const G={};L.forEach(r=>{const g=stGov(r);hqAdd(G[g]=G[g]||hqZ(),r._hc,r)});const gl=Object.entries(G).sort((a,b)=>b[1].n-a[1].n);
@@ -2741,16 +2748,16 @@ function stReport(L){const A=hqAgg(L),T=A.T,q=qRate(T.ret,T.sent);
   return `<div class="hq-card st-bar">${stPer()}<span class="rs-info">آخر تاريخ في البيانات ${(()=>{const m=hqMaxDay();return m!=null?wkDay(m):"—"})()} · ${hqF(L.length)} مخالفة</span></div>
   <div class="hq-kgrid">${hqTile("eye","المرصودة",hqF(T.n),"","#1F5BB0",null,null,rdA({}))}${hqTile("send","المرسلة للهيئة",hqF(T.sent),hqP(T.sent,T.n)+" من المرصود","#2F6FC0",T.sent/(T.n||1),null,rdA({c:"sent"}))}${hqTile("check","القرارات الصادرة",hqF(T.iss),hqP(T.iss,T.sent)+" من المرسل",HQC.iss,T.iss/(T.sent||1),null,rdA({c:"iss"}))}${hqTile("search","قيد التدقيق لدى الهيئة",hqF(T.auth),hqP(T.auth,T.sent)+" من المرسل",HQC.auth,T.auth/(T.sent||1),null,rdA({c:"auth"}))}${hqTile("undo","المسترجعة حالياً",hqF(T.ret),hqP(T.ret,T.sent)+" من المرسل"+retSplit(T,{}),HQC.ret,T.ret/(T.sent||1),null,rdA({c:"ret"}))}${hqTile("clock","بانتظار المراجعة",hqF(T.pend),hqP(T.pend,T.n)+" من المرصود",HQC.pend,T.pend/(T.n||1),null,rdA({c:"pend"}))}
     <div class="hk pf-qt ${qCls(q)}"${rdA({c:"ret"})}><div class="hk-h"><span class="hk-l">نسبة الجودة</span></div><b class="hk-v">${qTxt(q)}</b><div class="hk-s">${q==null?"لا يوجد مرسل":esc(qLab(q))}</div></div></div>
-  <div class="hq-card"><div class="hq-ch"><h3>المحافظات — منفصل ومجمّع</h3>${txb}</div><div class="tbl-wrap"><table class="tbl" data-tt="${SOUTH_T} — المحافظات"><thead><tr><th>المحافظة</th><th>المرصود</th><th>المرسل للهيئة</th><th>القرارات</th><th>قيد التدقيق</th><th>المسترجع</th><th>بانتظار المراجعة</th><th>غير مكتملة</th><th>نسبة الجودة</th></tr></thead><tbody>${gl.map(([k,o])=>row(k,o)).join("")}${row("الإجمالي (الأحساء وبقيق)",T,true)}</tbody></table></div></div>
+  <div class="hq-card"><div class="hq-ch"><h3>المحافظات — منفصل ومجمّع</h3>${txb}</div><div class="tbl-wrap"><table class="tbl" data-tt="${ST_CX.t} — المحافظات"><thead><tr><th>المحافظة</th><th>المرصود</th><th>المرسل للهيئة</th><th>القرارات</th><th>قيد التدقيق</th><th>المسترجع</th><th>بانتظار المراجعة</th><th>غير مكتملة</th><th>نسبة الجودة</th></tr></thead><tbody>${gl.map(([k,o])=>row(k,o)).join("")}${row("الإجمالي (الأحساء وبقيق)",T,true)}</tbody></table></div></div>
   <div class="hq-card"><div class="hq-ch"><h3>التوزيع الشهري حسب المحافظة</h3><div class="srt-w"><label class="hq-sel hq-sel-l"><span>المؤشر</span><select id="stXM">${Object.entries(HQXM_L).map(([k,l])=>`<option value="${k}"${HQXM===k?" selected":""}>${l}</option>`).join("")}</select></label></div>${txb}</div>${mx}</div>
-  <div class="hq-card"><div class="hq-ch"><h3>مدراء الرقابة <span class="sub">الأعلى إرسالاً</span></h3>${txb}</div>${ml.length?`<div class="tbl-wrap"><table class="tbl" data-tt="${SOUTH_T} — مدراء الرقابة"><thead><tr><th>مدير الرقابة</th><th>المدقق</th><th>المرسل للهيئة</th><th>المسترجع</th><th>القرارات</th><th>نسبة الجودة</th></tr></thead><tbody>${ml.map(([k,o])=>`<tr><td${erA("m",k)}><b class="er-n">${esc(k)}</b></td><td>${hqF(o.rev)}</td><td${rdA({c:"sent",m:k})}>${hqF(o.sent)}</td><td${rdA({c:"ret",m:k})}>${hqF(o.ret)}</td><td${rdA({c:"iss",m:k})}>${hqF(o.iss)}</td><td>${qBadge(o.ret,o.sent)}</td></tr>`).join("")}</tbody></table></div>`:'<div class="empty">لا توجد أسماء مدراء رقابة في البيانات</div>'}</div>`}
+  <div class="hq-card"><div class="hq-ch"><h3>مدراء الرقابة <span class="sub">الأعلى إرسالاً</span></h3>${txb}</div>${ml.length?`<div class="tbl-wrap"><table class="tbl" data-tt="${ST_CX.t} — مدراء الرقابة"><thead><tr><th>مدير الرقابة</th><th>المدقق</th><th>المرسل للهيئة</th><th>المسترجع</th><th>القرارات</th><th>نسبة الجودة</th></tr></thead><tbody>${ml.map(([k,o])=>`<tr><td${erA("m",k)}><b class="er-n">${esc(k)}</b></td><td>${hqF(o.rev)}</td><td${rdA({c:"sent",m:k})}>${hqF(o.sent)}</td><td${rdA({c:"ret",m:k})}>${hqF(o.ret)}</td><td${rdA({c:"iss",m:k})}>${hqF(o.iss)}</td><td>${qBadge(o.ret,o.sent)}</td></tr>`).join("")}</tbody></table></div>`:'<div class="empty">لا توجد أسماء مدراء رقابة في البيانات</div>'}</div>`}
 function stAudit(L){const govs=[...new Set(L.map(stGov).filter(Boolean))].sort((a,b)=>a.localeCompare(b,"ar"));if(STG&&!govs.includes(STG))STG="";
   let R=L.filter(r=>(!STG||stGov(r)===STG)&&(STF==="all"||r._hc===STF));if(STQ){const q=norm(STQ);R=R.filter(r=>[r.visit,r.vno,r.officer,r.mgr,r.item].some(v=>norm(v||"").includes(q)))}
   const cnt={};L.forEach(r=>{if(!STG||stGov(r)===STG)cnt[r._hc]=(cnt[r._hc]||0)+1});
   return `<div class="hq-card st-bar"><div class="hq-chips st-chips">${[["pend","بانتظار المراجعة"],["ret","المسترجعة"],["arch","غير مكتملة الأركان"],["auth","قيد التدقيق لدى الهيئة"],["all","الكل"]].map(([k,l])=>`<button type="button" class="hq-chip" data-stf="${k}" aria-pressed="${STF===k}">${l} <b>${hqF(k==="all"?Object.values(cnt).reduce((a,b)=>a+b,0):cnt[k]||0)}</b></button>`).join("")}</div>
     <label class="hq-sel hq-sel-l"><span>المحافظة</span><select id="stG"><option value="">الكل</option>${govs.map(g=>`<option${STG===g?" selected":""}>${esc(g)}</option>`).join("")}</select></label><span class="sp"></span><input class="in pf-q" id="stQ" type="search" placeholder="ابحث: رقم الزيارة، مأمور، بند" value="${esc(STQ)}"></div>
   <div class="hq-card"><div class="hq-ch"><h3>المخالفات <span class="sub">${hqF(R.length)} مخالفة</span></h3><span class="tx-bs"><button type="button" class="btn2 tx-b" data-tx="pdf">📄 PDF</button><button type="button" class="btn2 pri tx-b" data-tx="xls">📊 Excel</button></span></div>
-    ${R.length?`<div class="tbl-wrap"><table class="tbl rs-t" data-tt="${SOUTH_T} — المخالفات"><thead><tr><th>رقم الزيارة</th><th>المحافظة</th><th>بند المخالفة</th><th>مأمور الضبط</th><th>مدير الرقابة</th><th>تاريخ الزيارة</th><th>الحالة</th><th></th></tr></thead><tbody>
+    ${R.length?`<div class="tbl-wrap"><table class="tbl rs-t" data-tt="${ST_CX.t} — المخالفات"><thead><tr><th>رقم الزيارة</th><th>المحافظة</th><th>بند المخالفة</th><th>مأمور الضبط</th><th>مدير الرقابة</th><th>تاريخ الزيارة</th><th>الحالة</th><th></th></tr></thead><tbody>
     ${R.slice(0,300).map(r=>`<tr><td><b>${esc(r.visit||r.vno)}</b></td><td>${esc(r.sector||"")}</td><td class="rd-it" title="${esc(r.item||"")}">${esc(r.item||"")}</td><td>${esc(r.officer||"")}</td><td>${esc(r.mgr||"")}</td><td>${esc(r.date||"")}</td><td><span class="rd-st" style="--c:${HQC[r._hc]||"#94A3B8"}">${r._hc==="ret"?RD_K[retSub(r)]:(RD_K[r._hc]||"أخرى")}</span></td><td><button type="button" class="btn2 pri" data-sto="${esc(r.vno)}">فتح للتدقيق</button></td></tr>`).join("")}</tbody></table></div>${R.length>300?`<p class="hq-note">يظهر أول 300 — القائمة كاملة في Excel.</p>`:""}`:'<div class="empty">لا توجد مخالفات بهذا الفلتر</div>'}
     <p class="hq-note">تُطبَّق صلاحيات التدقيق المعتمدة لكل مستخدم كما هي في صفحة «المخالفات والتدقيق».</p></div>`}
 function stGuide(){const cats=[];GUIDE.forEach(g=>{let c=cats.find(x=>x.k===g.cat);if(!c){c={k:g.cat,L:[]};cats.push(c)}c.L.push(g)});
@@ -2759,26 +2766,26 @@ function stGuide(){const cats=[];GUIDE.forEach(g=>{let c=cats.find(x=>x.k===g.ca
   ${cats.map(c=>`<div class="hq-card st-gc"><div class="hq-ch"><h3>${esc(c.k)} <span class="sub">${hqF(c.L.length)}</span></h3></div>${c.L.map(g=>`<details class="st-gi" data-t="${esc(g.name+" "+(g.req||[]).join(" ")+" "+(g.proc||[]).join(" "))}"><summary><b>${esc(g.name)}</b><small>${esc(g.by||"")}</small></summary>
     <div class="st-g2"><div><h4>المتطلبات والمرفقات</h4><ul class="ac-chk">${(g.req||[]).map(x=>`<li>${esc(x)}</li>`).join("")}</ul></div><div><h4>إجراءات التحقق</h4><ul class="ac-chk">${(g.proc||[]).map(x=>`<li>${esc(x)}</li>`).join("")}</ul></div></div></details>`).join("")}</div>`).join("")}`}
 const ST_ROLES={staff:"موظف الجودة",clerk:"إداري",viewer:"مطّلع"};
-async function stLoadReg(){ST_ERR="";try{const [a,b,c]=await Promise.all([sb.from("quality_signup_requests").select("*").eq("status","pending").eq("unit",SOUTH_U).order("created_at"),sb.rpc("q_south_users"),sb.from("quality_audit_log").select("*").order("at",{ascending:false}).limit(100)]);
-    if(b.error&&/q_south_users|function|schema cache/i.test(b.error.message||""))ST_ERR="setup";ST_REQ=a.data||[];ST_USERS=b.data||[];ST_LOG=c.data||[]}catch(e){ST_ERR=e.message||String(e)}if(page==="south"&&STV==="reg")renderSouth()}
+async function stLoadReg(){ST_ERR="";try{const [a,b,c]=await Promise.all([sb.from("quality_signup_requests").select("*").eq("status","pending").eq("unit",ST_CX.u).order("created_at"),sb.rpc(ST_CX.rpc+"_users"),sb.from("quality_audit_log").select("*").order("at",{ascending:false}).limit(100)]);
+    if(b.error&&/q_(south|north)_users|function|schema cache/i.test(b.error.message||""))ST_ERR="setup";ST_REQ=a.data||[];ST_USERS=b.data||[];ST_LOG=c.data||[]}catch(e){ST_ERR=e.message||String(e)}if(page===ST_CX.k&&STV==="reg")renderSouth()}
 function stReg(){if(ST_REQ===null){return '<div class="hq-card"><div class="empty">جارٍ التحميل…</div></div>'}
-  if(ST_ERR==="setup")return `<div class="hq-card"><div class="empty">⚙️ تحتاج البوابة تجهيز قاعدة البيانات مرة واحدة.<br>${me.role==="admin"?"شغّل ملف <b>south-setup.sql</b> في Supabase ← SQL Editor ثم حدّث الصفحة.":"تواصل مع مدير النظام."}</div></div>`;
+  if(ST_ERR==="setup")return `<div class="hq-card"><div class="empty">⚙️ تحتاج البوابة تجهيز قاعدة البيانات مرة واحدة.<br>${me.role==="admin"?"شغّل ملف <b>${ST_CX.sql}</b> في Supabase ← SQL Editor ثم حدّث الصفحة.":"تواصل مع مدير النظام."}</div></div>`;
   const AL={insert:"إنشاء حساب",role:"تغيير الدور",sector:"تغيير الجهة",active:"تفعيل/إيقاف",job:"تغيير نوع المتدرب",signup_approved:"اعتماد طلب تسجيل",signup_rejected:"رفض طلب تسجيل",grant:"منح دخول البوابة",revoke:"سحب دخول البوابة"};
   return `<div class="hq-card"><div class="hq-ch"><h3>طلبات التسجيل الواردة للوحدة الجنوبية <span class="sub">${hqF(ST_REQ.length)}</span></h3></div>
     ${ST_REQ.length?`<div class="ulist">${ST_REQ.map(r=>`<div class="urow"><div class="uinfo"><b>${esc(r.full_name)}</b><span dir="ltr">${esc(r.email)}${r.phone?" · "+esc(r.phone):""}</span><small>${esc(REQ_ROLE[r.req_role]||r.req_role||"")} — ${fmtD(Date.parse(r.created_at))}${r.note?" — "+esc(r.note):""}</small></div><div class="uact"><button type="button" class="btn2 pri" data-sta="${r.id}">اعتماد</button><button type="button" class="btn2" data-str="${r.id}">رفض</button></div></div>`).join("")}</div>`:'<div class="empty">لا توجد طلبات معلّقة</div>'}
     <p class="hq-note">لا يُفعَّل أي حساب إلا بعد الاعتماد، ويُربط الموظف تلقائياً بنطاق الوحدة الجنوبية.</p></div>
-  <div class="hq-card"><div class="hq-ch"><h3>موظفو الوحدة الجنوبية <span class="sub">${hqF((ST_USERS||[]).length)}</span></h3></div>
+  <div class="hq-card"><div class="hq-ch"><h3>موظفو ${ST_CX.u} <span class="sub">${hqF((ST_USERS||[]).length)}</span></h3></div>
     ${(ST_USERS||[]).length?`<div class="tbl-wrap"><table class="tbl"><thead><tr><th>الاسم</th><th>اسم المستخدم</th><th>الصفة</th><th>الحالة</th><th>دخول البوابة (المخالفات والتدقيق + الدليل)</th></tr></thead><tbody>
-    ${ST_USERS.map(u=>{const on=SOUTH_GR.includes(u.id),self=isHussein(u)||u.role==="admin";return `<tr><td><b>${esc(u.full_name)}</b></td><td dir="ltr">${esc(u.username||"")}</td><td>${esc(roleLabel(u))}</td><td>${u.active?"مفعّل":"موقوف"}</td><td>${self?"—":`<button type="button" class="btn2${on?" pri":""}" data-stgr="${u.id}" data-on="${on?0:1}">${on?"✓ مسموح — سحب":"منح الدخول"}</button>`}</td></tr>`}).join("")}</tbody></table></div>`:'<div class="empty">لا يوجد موظفون مسجلون في الوحدة الجنوبية بعد</div>'}</div>
+    ${ST_USERS.map(u=>{const on=ST_CX.gr().includes(u.id),self=ST_CX.self(u);return `<tr><td><b>${esc(u.full_name)}</b></td><td dir="ltr">${esc(u.username||"")}</td><td>${esc(roleLabel(u))}</td><td>${u.active?"مفعّل":"موقوف"}</td><td>${self?"—":`<button type="button" class="btn2${on?" pri":""}" data-stgr="${u.id}" data-on="${on?0:1}">${on?"✓ مسموح — سحب":"منح الدخول"}</button>`}</td></tr>`}).join("")}</tbody></table></div>`:'<div class="empty">لا يوجد موظفون مسجلون في '+esc(ST_CX.u)+' بعد</div>'}</div>
   <div class="hq-card"><div class="hq-ch"><h3>سجل النظام <span class="sub">آخر 100 عملية — اعتماد المستخدمين وتعديل صلاحياتهم</span></h3><span class="tx-bs"><button type="button" class="btn2 tx-b" data-tx="pdf">📄 PDF</button><button type="button" class="btn2 pri tx-b" data-tx="xls">📊 Excel</button></span></div>
-    ${(ST_LOG||[]).length?`<div class="tbl-wrap" style="max-height:420px;overflow:auto"><table class="tbl" data-tt="سجل النظام — ${SOUTH_T}"><thead><tr><th>التاريخ</th><th>العملية</th><th>المستخدم المعني</th><th>التفاصيل</th><th>بواسطة</th></tr></thead><tbody>
+    ${(ST_LOG||[]).length?`<div class="tbl-wrap" style="max-height:420px;overflow:auto"><table class="tbl" data-tt="سجل النظام — ${ST_CX.t}"><thead><tr><th>التاريخ</th><th>العملية</th><th>المستخدم المعني</th><th>التفاصيل</th><th>بواسطة</th></tr></thead><tbody>
     ${ST_LOG.map(x=>`<tr><td dir="ltr">${esc(new Date(x.at).toLocaleString("en-GB",{hour12:false}).slice(0,17))}</td><td>${esc(AL[x.action]||x.action)}</td><td>${esc(x.target_name||"")}</td><td>${esc(x.details?Object.entries(x.details).map(([k,v])=>`${k}: ${v}`).join(" · "):"")}</td><td>${esc(x.actor_name||"النظام")}</td></tr>`).join("")}</tbody></table></div>`:'<div class="empty">لا توجد عمليات مسجلة بعد</div>'}</div>`}
 function stBindReg(){if(ST_REQ===null){stLoadReg();return}
-  $$("#southBody [data-str]").forEach(b=>b.onclick=async()=>{const r=ST_REQ.find(x=>x.id===b.dataset.str);if(!r||!confirm(`رفض طلب ${r.full_name}؟`))return;const {error}=await sb.rpc("q_south_reject",{p_req:r.id});if(error){toast("تعذر الرفض: "+error.message);return}toast("رُفض الطلب");stLoadReg()});
-  $$("#southBody [data-sta]").forEach(b=>b.onclick=()=>{const r=ST_REQ.find(x=>x.id===b.dataset.sta);if(r)stApprove(r)});
-  $$("#southBody [data-stgr]").forEach(b=>b.onclick=async()=>{b.disabled=true;const on=b.dataset.on==="1";const {error}=await sb.rpc("q_south_grant",{p_user:b.dataset.stgr,p_on:on});if(error){toast("تعذر الحفظ: "+error.message);b.disabled=false;return}await loadSouthCfg();toast(on?"تم منح الدخول":"تم سحب الدخول");stLoadReg()})}
+  $$(ST_CX.el+" [data-str]").forEach(b=>b.onclick=async()=>{const r=ST_REQ.find(x=>x.id===b.dataset.str);if(!r||!confirm(`رفض طلب ${r.full_name}؟`))return;const {error}=await sb.rpc(ST_CX.rpc+"_reject",{p_req:r.id});if(error){toast("تعذر الرفض: "+error.message);return}toast("رُفض الطلب");stLoadReg()});
+  $$(ST_CX.el+" [data-sta]").forEach(b=>b.onclick=()=>{const r=ST_REQ.find(x=>x.id===b.dataset.sta);if(r)stApprove(r)});
+  $$(ST_CX.el+" [data-stgr]").forEach(b=>b.onclick=async()=>{b.disabled=true;const on=b.dataset.on==="1";const {error}=await sb.rpc(ST_CX.rpc+"_grant",{p_user:b.dataset.stgr,p_on:on});if(error){toast("تعذر الحفظ: "+error.message);b.disabled=false;return}await loadSouthCfg();toast(on?"تم منح الدخول":"تم سحب الدخول");stLoadReg()})}
 function stApprove(r){const un0=String(r.email||"").split("@")[0].toLowerCase().replace(/[^a-z0-9._-]/g,""),rl0=ST_ROLES[r.req_role]?r.req_role:"staff";
-  $("#sheet").innerHTML=`<h3>اعتماد طلب ${esc(r.full_name)}</h3><div class="sub">سيُربط الحساب تلقائياً بنطاق ${SOUTH_U}</div><div class="grid" style="margin-top:10px">
+  $("#sheet").innerHTML=`<h3>اعتماد طلب ${esc(r.full_name)}</h3><div class="sub">سيُربط الحساب تلقائياً بنطاق ${ST_CX.u}</div><div class="grid" style="margin-top:10px">
    <label class="f full">الاسم الكامل <b class="req">*</b><input class="in" id="stN" value="${esc(r.full_name)}" required></label>
    <label class="f">اسم المستخدم <b class="req">*</b><input class="in" id="stU" dir="ltr" value="${esc(un0)}" required></label>
    <label class="f">الصفة <b class="req">*</b><select class="in" id="stR">${Object.entries(ST_ROLES).map(([k,t])=>`<option value="${k}"${k===rl0?" selected":""}>${t}</option>`).join("")}</select></label>
@@ -2788,8 +2795,12 @@ function stApprove(r){const un0=String(r.email||"").split("@")[0].toLowerCase().
   openSheet();$("#closeSh").onclick=closeSheet;
   $("#stGo").onclick=async()=>{const nm=$("#stN").value.trim(),un=$("#stU").value.trim().toLowerCase(),pw=$("#stP").value.trim(),em=$("#stE").value.trim(),rl=$("#stR").value;
     [["stN",nm],["stU",un],["stP",pw]].forEach(([i,v])=>$("#"+i).classList.toggle("bad",!v));if(!nm||!un||!pw){toast("أكمل الحقول الإلزامية المميّزة بالأحمر");return}
-    const b=$("#stGo");b.disabled=true;const {error}=await sb.rpc("q_south_approve",{p_req:r.id,p_username:un,p_full_name:nm,p_role:rl,p_password:pw,p_email:em||null});b.disabled=false;
+    const b=$("#stGo");b.disabled=true;const {error}=await sb.rpc(ST_CX.rpc+"_approve",{p_req:r.id,p_username:un,p_full_name:nm,p_role:rl,p_password:pw,p_email:em||null});b.disabled=false;
     if(error){toast("تعذر الاعتماد: "+error.message);return}showCred(nm,un,pw,"تم اعتماد الطلب وإنشاء الحساب",em);stLoadReg()}}
+const SOUTH_CX={k:"south",el:"#southBody",u:SOUTH_U,t:SOUTH_T,gov:g=>isSouthGov(g),adm:()=>southAdmin(),ok:()=>southOK(),gr:()=>SOUTH_GR,rpc:"q_south",sql:"south-setup.sql",self:u=>isHussein(u)||u.role==="admin"};
+const NORTH_CX={k:"north",el:"#northBody",u:NORTH_U,t:NORTH_T,gov:g=>isNorthGov(g),adm:()=>northAdmin(),ok:()=>northOK(),gr:()=>NORTH_GR,rpc:"q_north",sql:"north-setup.sql",self:u=>isNorthStaff(u)||u.role==="admin"};
+let ST_CX=SOUTH_CX;
+function stUse(cx){if(ST_CX!==cx){ST_CX=cx;STV="rep";STG="";STQ="";ST_REQ=null;ST_USERS=null;ST_LOG=null;ST_ERR=""}}
 function renderHQ(){
   const el=$("#hqBody");if(!canHQ()){el.innerHTML='<section class="block"><div class="empty">🔒 هذه البوابة خاصة بموظفي المركز الرئيسي.</div></section>';return}
   const L=hqRows(),A=hqAgg(L),T=A.T,sc=hqScope(A),ys=hqYears();RD_BASE=hqRows;RD_SCOPE=`بوابة المركز الرئيسي — ${sc.sec}${sc.per?" — "+sc.per:""}`;HQ_CTX=HQSF?{s:HQSF}:{};
