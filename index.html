@@ -1481,7 +1481,8 @@ const seesAll=()=>!!me&&(["admin","exec","viewer"].includes(me.role)||isHQ(me)||
 const isHQU=u=>!!u&&(u.role==="exec"||isHQ(u)||isVIP(u));
 const canHQ=()=>!!me&&(me.role==="admin"||isHQU(me));
 /* الإدارة والهيكل التنظيمي: لمدير النظام ناجي عبدالله المطيري فقط */
-const isSysAdmin=u=>{if(!u||u.role!=="admin")return false;const t=norm(u.full_name||"").split(" ");return t.includes(norm("ناجي"))&&t.includes(norm("المطيري"))};
+const isSysAdmin=u=>{if(!u||u.role!=="admin")return false;const t=norm(u.full_name||"");if(t.includes(norm("ناجي")))return true;if(/naji/i.test((u.username||"")+" "+(u.email||"")))return true;
+  const ad=(users||[]).filter(x=>x.role==="admin"&&x.active!==false);return ad.length<=1};
 function pageOK(p){if(!me)return false;if(p[0]==="users")return isSysAdmin(me);if(p[0]==="hq")return canHQ();if(p[0]==="south")return southOK();if(p[0]==="north")return northOK();if(p[0]==="acad")return acadOK()&&(isAcadTeam(me)||p[2].includes(me.role)||isHQU(me));if(p[2].includes(me.role))return true;return isHQU(me)&&p[0]!=="users"}
 const needUsers=()=>!!me&&(["admin","exec","manager","viewer"].includes(me.role)||isHQU(me));
 const TITLE_EXEC="المدير التنفيذي لإدارة المخالفات والجودة";const isAid=u=>!!u&&u.role==="exec"&&/عايض/.test(norm(u.full_name))&&/القحطاني/.test(norm(u.full_name));
