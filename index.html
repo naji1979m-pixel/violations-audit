@@ -628,7 +628,7 @@ section.block>h2::after{content:"";position:absolute;bottom:0;inset-inline-start
   <form id="rgForm" hidden style="display:flex;flex-direction:column;gap:12px;text-align:right">
     <span class="sub" style="text-align:right">عبّئ بياناتك، ويصل طلبك لمدير النظام. بعد الموافقة تصلك بيانات الدخول على بريدك.</span>
     <label class="f">الاسم الكامل<input class="in" id="rgName" autocomplete="name"></label>
-    <label class="f">البريد الإلكتروني للشركة<input class="in" id="rgMail" type="email" dir="ltr" placeholder="name@nwc.com.sa" autocomplete="email"></label>
+    <label class="f">البريد الإلكتروني<input class="in" id="rgMail" type="email" dir="ltr" placeholder="name@example.com" autocomplete="email"></label>
     <label class="f">رقم الجوال<input class="in" id="rgPhone" inputmode="tel" dir="ltr" placeholder="05xxxxxxxx"></label>
     <label class="f">الدور المطلوب<select class="in" id="rgRole"><option value="hq_staff">أخصائي جودة (المركز الرئيسي)</option><option value="staff">موظف الجودة (الوحدات)</option><option value="manager">رئيس الجودة بالوحدة</option><option value="exec">مدير الجودة</option><option value="clerk">إداري</option><option value="viewer">مطّلع</option><option value="trainee_o">متدرب — مأمور ضبط (الأكاديمية)</option><option value="trainee_m">متدرب — مدير رقابة (الأكاديمية)</option></select></label>
     <label class="f">الجهة<select class="in" id="rgUnit"></select></label>
@@ -3759,9 +3759,9 @@ $("#rgBack").onclick=()=>{$("#rgForm").hidden=true;$("#loginForm").hidden=false}
 $("#rgForm").onsubmit=async e=>{e.preventDefault();const m=$("#rgMsg");m.className="msg";
   const name=$("#rgName").value.trim(),mail=$("#rgMail").value.trim().toLowerCase(),phone=$("#rgPhone").value.trim();
   if(name.split(/\s+/).length<2){m.textContent="اكتب الاسم الكامل";return}
-  if(!/^[^@\s]+@nwc\.com\.sa$/.test(mail)){m.textContent="التسجيل متاح ببريد الشركة فقط (@nwc.com.sa)";return}
+  if(!/^[^@\s]+@[^@\s]+\.[^@\s]{2,}$/.test(mail)){m.textContent="اكتب بريداً إلكترونياً صحيحاً";return}
   $("#rgBtn").disabled=true;const {error}=await sb.from("quality_signup_requests").insert({full_name:name,email:mail,phone:phone||null,req_role:$("#rgRole").value,unit:$("#rgUnit").value,note:$("#rgNote").value.trim()||null});$("#rgBtn").disabled=false;
-  if(error){m.textContent="تعذر إرسال الطلب، حاول لاحقاً";return}
+  if(error){m.textContent="تعذر إرسال الطلب، حاول لاحقاً"+(error.message?" ("+error.message+")":"");return}
   m.className="msg ok";m.textContent="✓ وصل طلبك لمدير النظام. ستصلك بيانات الدخول بعد الموافقة.";["rgName","rgMail","rgPhone","rgNote"].forEach(id=>$("#"+id).value="")};
 $("#fgForm").onsubmit=async e=>{e.preventDefault();const u=$("#fgUser").value.trim(),m=$("#fgMsg");
   if(u.length<3){m.textContent="اكتب اسم المستخدم";return}
