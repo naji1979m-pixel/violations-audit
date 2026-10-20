@@ -1480,7 +1480,9 @@ const isVIP=u=>{if(!u||!u.full_name)return false;const t=norm(u.full_name).split
 const seesAll=()=>!!me&&(["admin","exec","viewer"].includes(me.role)||isHQ(me)||isVIP(me));
 const isHQU=u=>!!u&&(u.role==="exec"||isHQ(u)||isVIP(u));
 const canHQ=()=>!!me&&(me.role==="admin"||isHQU(me));
-function pageOK(p){if(!me)return false;if(p[0]==="hq")return canHQ();if(p[0]==="south")return southOK();if(p[0]==="north")return northOK();if(p[0]==="acad")return acadOK()&&(isAcadTeam(me)||p[2].includes(me.role)||isHQU(me));if(p[2].includes(me.role))return true;return isHQU(me)&&p[0]!=="users"}
+/* الإدارة والهيكل التنظيمي: لمدير النظام ناجي عبدالله المطيري فقط */
+const isSysAdmin=u=>{if(!u||u.role!=="admin")return false;const t=norm(u.full_name||"").split(" ");return t.includes(norm("ناجي"))&&t.includes(norm("المطيري"))};
+function pageOK(p){if(!me)return false;if(p[0]==="users")return isSysAdmin(me);if(p[0]==="hq")return canHQ();if(p[0]==="south")return southOK();if(p[0]==="north")return northOK();if(p[0]==="acad")return acadOK()&&(isAcadTeam(me)||p[2].includes(me.role)||isHQU(me));if(p[2].includes(me.role))return true;return isHQU(me)&&p[0]!=="users"}
 const needUsers=()=>!!me&&(["admin","exec","manager","viewer"].includes(me.role)||isHQU(me));
 const TITLE_EXEC="المدير التنفيذي لإدارة المخالفات والجودة";const isAid=u=>!!u&&u.role==="exec"&&/عايض/.test(norm(u.full_name))&&/القحطاني/.test(norm(u.full_name));
 function roleLabel(u){if(isAid(u))return TITLE_EXEC;if(u&&u.role==="trainee")return ROLE[roleKey(u)];return u.role==="staff"&&isHQ(u)?"أخصائي جودة":(ROLE[u.role]||u.role)}
