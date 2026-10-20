@@ -1,4 +1,4 @@
-const CACHE = "quality-v93";
+const CACHE = "quality-v94";
 const CORE = ["./", "./index.html", "./manifest.json", "./icon-192.png", "./icon-512.png", "./apple-touch-icon.png"];
 // مكتبات خارجية تُحفظ في الجهاز ليعمل التطبيق بدون إنترنت
 const EXT = [

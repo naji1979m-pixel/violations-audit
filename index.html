@@ -60,7 +60,7 @@ button,input,select,textarea{font:inherit;color:inherit}
 header.top{display:flex;align-items:flex-start;gap:12px;justify-content:space-between;padding:6px 2px 16px}
 header.top h1{font-size:21px;line-height:1.35;margin:0;font-weight:700}
 header.top p{margin:4px 0 0;color:var(--muted);font-size:13px}
-.upload{flex:none;display:flex;flex-direction:column;align-items:center;gap:4px;background:var(--navy);color:var(--navy-ink);border:0;border-radius:14px;padding:10px 12px;cursor:pointer;font-size:12px;font-weight:600}
+.up-dt{display:block;font-size:10.5px;font-weight:600;opacity:.88;line-height:1.5;text-align:center}.upload{flex:none;display:flex;flex-direction:column;align-items:center;gap:4px;background:var(--navy);color:var(--navy-ink);border:0;border-radius:14px;padding:10px 12px;cursor:pointer;font-size:12px;font-weight:600}
 .upload svg{width:24px;height:24px}
 .upload:focus-visible,button:focus-visible,select:focus-visible,input:focus-visible,textarea:focus-visible{outline:3px solid #4D8FE6;outline-offset:2px}
 section.block{background:var(--paper);border:1px solid var(--line);border-radius:16px;padding:16px;margin-bottom:14px}
@@ -663,6 +663,7 @@ section.block>h2::after{content:"";position:absolute;bottom:0;inset-inline-start
     <button class="upload" id="upBtn" type="button" aria-label="رفع ملف المخالفات">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5"/><path d="M12 17v-6"/><path d="M9.5 13.5 12 11l2.5 2.5"/></svg>
       ملف المخالفات
+      <small class="up-dt" id="upDt"></small>
     </button>
     <input type="file" id="fileIn" accept=".xlsx,.xls,.csv" hidden>
   </header>
@@ -1603,7 +1604,10 @@ async function snapBuild(){if(!canUpload()||!supGz())return;try{const v=await da
 async function loadQueue(){const v=await dataVer();DATA_VER=v;let q=null;if(v){const c=await QDB.get("queue");if(c&&c.v===v&&c.cols===QCOLS&&Array.isArray(c.rows))q=c.rows}
   if(!q&&v){toast("جارٍ تحميل المخالفات…");q=await snapGet(v);if(q)QDB.set("queue",{v,cols:QCOLS,rows:q,at:Date.now()})}
   if(!q){q=await fetchAll("quality_queue",QCOLS,"جارٍ تحميل المخالفات");if(v)QDB.set("queue",{v,cols:QCOLS,rows:q,at:Date.now()})}mapQueue(q)}
-function mapQueue(q){const MT={};rows=q.map(x=>{const r={vno:x.visit_no,visit:x.visit_no,vid:x.violation_id||"",name:x.violator_name||"",nid:"",loc:x.location||"",sector:x.sector||"",region:x.region||"",sev:(x.extra||{}).sev||"",vstat:(x.extra||{}).vstatus||"",pkind:pkFrom(x.extra||{}),reason:(x.extra||{}).reason||"",amin:(x.extra||{}).amin||"",decDate:(x.extra||{}).dec_date||"",mgr:(x.extra||{}).mgr||"",pres:("pres" in (x.extra||{}))?x.extra.pres:undefined,fine:(x.extra||{}).fine||"",vvisit:(x.extra||{}).visit_status||"",dec:("decision" in (x.extra||{}))?x.extra.decision:undefined,date:x.visit_date||"",officer:x.officer||"",explain:"",item:x.item||"",prop:x.property_type||"",type:(x.item||"") in MT?MT[x.item||""]:(MT[x.item||""]=matchType(x.item||""))};r._h=norm([r.vno,r.vid,r.officer,r.item,r.region,r.sector,r.name].join(" "));return r})}
+function upDt(){const el=$("#upDt");if(!el)return;let t="";const m=String(DATA_VER||"").match(/^(\d{4}-\d{2}-\d{2}T[\d:.]+Z)/);
+  if(m){const d=new Date(m[1]);if(!isNaN(d))t="رُفع: "+d.toLocaleDateString("ar-SA-u-nu-latn-ca-gregory",{timeZone:"Asia/Riyadh"})+" "+d.toLocaleTimeString("ar-SA-u-nu-latn",{timeZone:"Asia/Riyadh",hour:"2-digit",minute:"2-digit"})}
+  let md=null;(rows||[]).forEach(r=>{const x=dayOfRow(r);if(x!=null&&(md==null||x>md))md=x});if(md!=null)t+=(t?"<br>":"")+"آخر بيانات: "+wkDay(md);el.innerHTML=t}
+function mapQueue(q){setTimeout(upDt,0);const MT={};rows=q.map(x=>{const r={vno:x.visit_no,visit:x.visit_no,vid:x.violation_id||"",name:x.violator_name||"",nid:"",loc:x.location||"",sector:x.sector||"",region:x.region||"",sev:(x.extra||{}).sev||"",vstat:(x.extra||{}).vstatus||"",pkind:pkFrom(x.extra||{}),reason:(x.extra||{}).reason||"",amin:(x.extra||{}).amin||"",decDate:(x.extra||{}).dec_date||"",mgr:(x.extra||{}).mgr||"",pres:("pres" in (x.extra||{}))?x.extra.pres:undefined,fine:(x.extra||{}).fine||"",vvisit:(x.extra||{}).visit_status||"",dec:("decision" in (x.extra||{}))?x.extra.decision:undefined,date:x.visit_date||"",officer:x.officer||"",explain:"",item:x.item||"",prop:x.property_type||"",type:(x.item||"") in MT?MT[x.item||""]:(MT[x.item||""]=matchType(x.item||""))};r._h=norm([r.vno,r.vid,r.officer,r.item,r.region,r.sector,r.name].join(" "));return r})}
 let AUD_RAW=[];
 async function loadAudits(){const q=await fetchAll("quality_audits","*");AUD_RAW=q;mapAudits(q)}
 function mapAudits(q,ro){const keep=audits.manual;audits={};
@@ -1692,7 +1696,7 @@ $("#blockLogout").onclick=logout;
 let BOOT_STALE=false;const BOOT_K=()=>"boot:"+(me&&me.id);
 function bootSave(){try{if(!me)return;QDB.set(BOOT_K(),{v:1,at:Date.now(),role:me.role,ORG,about:ABOUT,aud:AUD_RAW,users:users||[],sg:SOUTH_GR||[],ng:NORTH_GR||[],refs:[...REFS],appr:APPR||[],att:Object.fromEntries(Object.entries(ATT_IDX||{}).map(([k,v])=>[k,[...v]]))})}catch(e){}}
 async function bootLoad(){try{const c=await QDB.get(BOOT_K()),q=await QDB.get("queue");if(!c||c.v!==1||c.role!==me.role||!q||!Array.isArray(q.rows)||q.cols!==QCOLS)return false;
-    ORG=c.ORG||ORG;if(!ORG.pending)ORG.pending=JSON.parse(JSON.stringify(ORG_DEFAULT.pending));_um=null;SOUTH_GR=c.sg||[];NORTH_GR=c.ng||[];ABOUT=c.about||null;mapQueue(q.rows);AUD_RAW=c.aud||[];mapAudits(AUD_RAW,true);users=c.users||[];REFS=new Set(c.refs||[]);APPR=c.appr||[];
+    ORG=c.ORG||ORG;if(!ORG.pending)ORG.pending=JSON.parse(JSON.stringify(ORG_DEFAULT.pending));_um=null;SOUTH_GR=c.sg||[];NORTH_GR=c.ng||[];ABOUT=c.about||null;DATA_VER=DATA_VER||q.v;mapQueue(q.rows);AUD_RAW=c.aud||[];mapAudits(AUD_RAW,true);users=c.users||[];REFS=new Set(c.refs||[]);APPR=c.appr||[];
     ATT_IDX={};Object.entries(c.att||{}).forEach(([k,v])=>ATT_IDX[k]=new Set(v));loadReportCols();try{buildFilters()}catch(e){}return true}catch(e){return false}}
 async function bootLoadAll(){await Promise.all([loadData(),needUsers()?loadUsers():null,loadPwReq(),loadSignups()]);bootSave()}
 function bootBadge(on){const b=$("#refreshBtn");if(!b)return;b.disabled=on;b.textContent=on?"⏳ جارٍ التحديث…":"↻ تحديث"}
