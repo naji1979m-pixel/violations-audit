@@ -412,6 +412,12 @@ body.home-on #tabs{display:none}.home{display:grid;grid-template-columns:112px m
 .ab-goals{display:grid;gap:9px}.ab-goals div{display:flex;align-items:center;gap:12px;padding:10px 12px;border-radius:12px;background:var(--field);border:1px solid var(--line);font-weight:700}.ab-goals b{flex:0 0 32px;height:32px;border-radius:10px;background:linear-gradient(135deg,#1C437E,#2F6FC0);color:#fff;display:flex;align-items:center;justify-content:center}
 .ab-inits{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:12px}.ab-in{padding:16px;border-radius:16px;border:1px solid var(--line);background:linear-gradient(180deg,var(--paper),var(--field));display:flex;flex-direction:column;gap:6px;border-top:4px solid #2F6FC0;transition:transform .25s,box-shadow .25s}.ab-in:hover{transform:translateY(-3px);box-shadow:0 10px 22px rgba(16,40,74,.1)}.ab-in b{font-size:15.5px;color:var(--ink)}.ab-in span{color:var(--muted);font-weight:600;line-height:1.7;font-size:13.5px}
 .ab-ach{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px}.ab-a{border-radius:18px;padding:18px;background:linear-gradient(135deg,#1C7A4B,#2FA36B);color:#fff;display:flex;flex-direction:column;gap:4px;box-shadow:0 10px 24px rgba(28,122,75,.22)}.ab-a b{font-size:34px;font-weight:900;line-height:1.1}.ab-a span{font-weight:800}.ab-a small{opacity:.85;font-weight:600}.ab-a.ph{background:var(--field);color:var(--muted);border:2px dashed var(--line);box-shadow:none}
+.home-nav button.lk{opacity:.55}.home-nav button.lk .hn-i{background:var(--field);color:var(--muted)}.ab-hero.sm{padding:34px 36px 40px}
+.fq{display:flex;flex-direction:column;gap:8px}.fq-i{border:1px solid var(--line);border-radius:14px;background:var(--field);padding:0 14px}.fq-i summary{cursor:pointer;font-weight:800;padding:13px 0;list-style:none;display:flex;justify-content:space-between;gap:10px}.fq-i summary:after{content:"+";font-size:20px;color:#2F6FC0}.fq-i[open] summary:after{content:"−"}.fq-i p{margin:0 0 14px;line-height:1.9;color:var(--ink)}
+.cp-f{display:flex;flex-direction:column;gap:10px}.cp-kinds{display:flex;gap:16px;font-weight:700}.cp-n{color:var(--muted);font-weight:600}.cp-l{display:flex;flex-direction:column;gap:10px;max-height:560px;overflow:auto}
+.cp-i{border:1px solid var(--line);border-radius:14px;padding:12px 14px;background:var(--field)}.cp-h{display:flex;flex-wrap:wrap;gap:8px;align-items:center}.cp-h b{flex:1;min-width:120px}.cp-i p{margin:8px 0;line-height:1.8;white-space:pre-wrap}.cp-i small{color:var(--muted);font-weight:600}
+.cp-k,.cp-s{font-size:11.5px;font-weight:800;border-radius:99px;padding:2px 10px}.cp-k{background:#E6EEF9;color:#1C437E}.cp-k.k-c{background:#FCE9E7;color:#9B2C22}.cp-k.k-s{background:#E3F4EA;color:#1E6B3F}.cp-s.s-new{background:#FDF1DC;color:#8A5A00}.cp-s.s-prog{background:#E6EEF9;color:#1C437E}.cp-s.s-done{background:#E3F4EA;color:#1E6B3F}
+.cp-r{margin-top:8px;background:var(--paper);border-inline-start:3px solid #1C7A4B;border-radius:10px;padding:8px 12px;line-height:1.8}.cp-r span{display:block;font-weight:800;color:#1C7A4B;font-size:12.5px}.cp-a{display:grid;grid-template-columns:1fr 140px auto;gap:8px;margin-top:10px;align-items:start}@media(max-width:640px){.cp-a{grid-template-columns:1fr}}
 .ab-hint{margin:10px 0 0;color:var(--muted);font-size:12.5px;font-weight:600}.ab-form{display:grid;gap:12px;padding:6px 2px}.ab-f{display:flex;flex-direction:column;gap:6px;font-weight:800}.ab-f small{color:var(--muted);font-weight:600}
 @media(max-width:1100px){.hs{grid-template-columns:repeat(3,minmax(0,1fr))}}
 @media(max-width:860px){.home{grid-template-columns:minmax(0,1fr)}.home-nav{grid-column:1;grid-row:1;position:static;flex-direction:row;overflow-x:auto;border-radius:16px}.home-nav button{flex:0 0 88px}.home-main{grid-column:1;grid-row:2}.ab-two{grid-template-columns:1fr}.hs{grid-template-columns:repeat(2,minmax(0,1fr));padding:0 8px}.ab-hero{padding:32px 20px 86px;border-radius:20px}}
@@ -1634,12 +1640,12 @@ async function enterApp(){
   if(isTrainee(me)&&!acadOK()){blockMsg("أكاديمية إدارة المخالفات قيد التجهيز، وسيتم إشعارك عند افتتاحها.");return}
   if(isTrainee(me)){buildTabs();page="acad";go("acad");{const f=$("#aiFab");if(f)f.hidden=true}["#upBtn","#auditBar"].forEach(q=>{const x=$(q);if(x)x.hidden=true});return}
   buildTabs();
-  if(await bootLoad()){BOOT_STALE=true;bootBadge(true);current="manual";try{page=localStorage.getItem("vv:page")||"dash"}catch(e){page="dash"}
+  if(await bootLoad()){BOOT_STALE=true;bootBadge(true);current="manual";page="dash";
     buildTabs();try{renderAll();go(page)}catch(e){}{const f=$("#aiFab");if(f)f.hidden=me.role==="clerk"}
     try{await bootLoadAll()}catch(e){}BOOT_STALE=false;bootBadge(false);const y=window.scrollY,cur=current;buildTabs();renderAll();go(page);window.scrollTo(0,y);
     {const msgs=[];if(PWREQ.length)msgs.push(`${PWREQ.length} طلب إعادة كلمة مرور`);if(SIGNUPS.length)msgs.push(`${SIGNUPS.length} طلب تسجيل`);if(msgs.length)setTimeout(()=>toast(`يوجد ${msgs.join(" و")} — في صفحة الإدارة والهيكل`),600)}return}
   await bootLoadAll();{const msgs=[];if(PWREQ.length)msgs.push(`${PWREQ.length} طلب إعادة كلمة مرور`);if(SIGNUPS.length)msgs.push(`${SIGNUPS.length} طلب تسجيل`);if(msgs.length)setTimeout(()=>toast(`يوجد ${msgs.join(" و")} — في صفحة الإدارة والهيكل`),1200)}
-  current="manual";try{page=localStorage.getItem("vv:page")||"dash"}catch(e){page="dash"}
+  current="manual";page="dash";
   buildTabs();renderAll();go(page);{const f=$("#aiFab");if(f)f.hidden=me.role==="clerk"}
 }
 async function boot(){
@@ -1867,7 +1873,13 @@ const ABOUT_DEF={title:"إدارة المخالفات والتعديات",tag:"�
   tasks:["رصد المخالفات والتعديات ميدانياً وتوثيقها بالصور والإحداثيات","ضبط المخالفات واحتساب المنفعة المفقودة وتكاليف إصلاح الضرر","تدقيق ملفات المخالفات قبل إحالتها للجهات المختصة","متابعة القرارات الصادرة واستكمال المعاملات المسترجعة","معالجة التوصيلات غير النظامية والعبث بالعدادات","رفع الوعي بأنظمة المياه واشتراطاتها"],
   goals:["خفض الفاقد المائي غير المحتسب","رفع نسبة الامتثال لدى المستفيدين","رفع جودة ملفات المخالفات وتقليل المسترجع","تسريع دورة المعاملة من الرصد إلى القرار","حماية الأصول والبنية التحتية"],
   inits:[["منصة الجودة والتدقيق","تدقيق رقمي لملفات المخالفات وفق الدليل الإجرائي قبل إرسالها للهيئة"],["جودة الرصد","تقييم شهري لعينات مأموري الضبط ومدراء الرقابة وفق ستة معايير"],["أكاديمية إدارة المخالفات","برامج تأهيل لمأموري الضبط ومدراء الرقابة"],["الخريطة التفاعلية","قراءة جغرافية لمواقع المخالفات وتركّزها"]],
-  ach:[["","نسبة خفض الفاقد","تُحدَّث من مدير النظام"],["","نسبة الامتثال","تُحدَّث من مدير النظام"]]};
+  ach:[["","نسبة خفض الفاقد","تُحدَّث من مدير النظام"],["","نسبة الامتثال","تُحدَّث من مدير النظام"]],
+  faq:[["ما الغرض من منصة الجودة والتدقيق؟","تدقيق ملفات المخالفات وفق الدليل الإجرائي للتأكد من اكتمال أركانها قبل إرسالها للهيئة، ومتابعة جودة الرصد والأداء."],
+    ["لماذا لا تظهر لي بعض البوابات؟","تظهر البوابات حسب صلاحيتك. البوابات المقفلة 🔒 تحتاج صلاحية من مدير النظام."],
+    ["كيف أعرف حالة المخالفة؟","من «المخالفات والتدقيق» ابحث برقم الزيارة، وتظهر الحالة: قيد التدقيق، مكتملة، معادة، أو بانتظار الاعتماد."],
+    ["من أين تأتي أرقام المخالفات؟","من التقرير الشامل (منصة مكين للتقارير) الذي يُرفع دورياً من المركز الرئيسي."],
+    ["نسيت كلمة المرور، ماذا أفعل؟","من شاشة الدخول اضغط «نسيت كلمة المرور» ويصل طلبك لمدير النظام."],
+    ["كيف أرفع شكوى أو اقتراحاً؟","من هذه الصفحة: نموذج «الشكاوى والاقتراحات» أدناه، وتتابع الرد من «طلباتي»."]]};
 let ABOUT=null,HOMEV="about";
 async function loadAbout(){try{const {data}=await sb.from("quality_settings").select("value").eq("key","about").maybeSingle();ABOUT=data&&data.value&&data.value.title?data.value:null}catch(e){ABOUT=null}}
 const abOK=()=>isFeeder(me);
@@ -1875,11 +1887,13 @@ const HOME_IC={dash:"home",hq:"bldg",audit:"check",report:"xls",team:"clock",per
 function homeStats(){let n=0,sent=0,iss=0,ret=0,fine=0;const G=new Set(),M=new Set();(rows||[]).forEach(r=>{n++;const c=r._hc||(r._hc=hqCls(r));if(c==="iss"||c==="ret"||c==="auth")sent++;if(c==="iss")iss++;if(c==="ret")ret++;const f=parseFloat(String(r.fine||"").replace(/[^\d.]/g,""));if(f>0)fine+=f;if(r.sector)G.add(r.sector.trim());const d=dayOfRow(r);if(d!=null)M.add(Math.floor(d/30))});
   return {n,sent,iss,ret,q:sent?Math.round((1-ret/sent)*1000)/10:null,g:G.size,fine}}
 function renderDash(){const nav=$("#homeNav");if(!nav)return;
-  const items=[["about","الرئيسية","home"]].concat(PAGES.filter(p=>p[0]!=="dash"&&pageOK(p)).map(p=>[p[0],p[1],HOME_IC[p[0]]||"eye"]),[["mine","ملخص أعمالي","user"]]);
-  nav.innerHTML=items.map(([k,l,ic])=>`<button type="button" data-hn="${k}" aria-current="${(k==="about"&&HOMEV==="about")||(k==="mine"&&HOMEV==="mine")}"><span class="hn-i">${hqIc(ic,22)}</span><span class="hn-l">${esc(l)}</span></button>`).join("");
-  nav.querySelectorAll("[data-hn]").forEach(b=>b.onclick=()=>{const k=b.dataset.hn;if(k==="about"||k==="mine"){HOMEV=k;renderDash();$("#homeMain").scrollIntoView({block:"start"})}else go(k)});
-  const ab=$("#aboutBody"),db=$("#dashBody");ab.hidden=HOMEV!=="about";db.hidden=HOMEV!=="mine";
-  if(HOMEV==="mine"){renderMine();return}
+  const HID=["south","acad","users"],LOC={};
+  const items=[["about","الرئيسية","home"]].concat(PAGES.filter(p=>p[0]!=="dash"&&(pageOK(p)||!HID.includes(p[0]))).map(p=>{if(!pageOK(p))LOC[p[0]]=1;return [p[0],p[1],HOME_IC[p[0]]||"eye"]}),[["mine","ملخص أعمالي","user"],["faq","الأسئلة الشائعة والشكاوى","help"]]);
+  const LV=["about","mine","faq"];
+  nav.innerHTML=items.map(([k,l,ic])=>`<button type="button" data-hn="${k}" aria-current="${LV.includes(k)&&HOMEV===k}"${LOC[k]?' class="lk" title="لا تملك صلاحية الدخول"':""}><span class="hn-i">${hqIc(LOC[k]?"lock":ic,22)}</span><span class="hn-l">${esc(l)}</span></button>`).join("");
+  nav.querySelectorAll("[data-hn]").forEach(b=>b.onclick=()=>{const k=b.dataset.hn;if(LOC[k]){toast("ليس لديك صلاحية الدخول لهذه البوابة — تواصل مع مدير النظام");return}if(LV.includes(k)){HOMEV=k;renderDash();$("#homeMain").scrollIntoView({block:"start"})}else go(k)});
+  const ab=$("#aboutBody"),db=$("#dashBody");ab.hidden=HOMEV==="mine";db.hidden=HOMEV!=="mine";
+  if(HOMEV==="mine"){renderMine();return}if(HOMEV==="faq"){renderFaq(ab);return}
   const A=Object.assign({},ABOUT_DEF,ABOUT||{}),S=homeStats(),ed=abOK();
   const cnt=(v,l,sub,ic,suf)=>`<div class="hs-c rv"><span class="hs-i">${hqIc(ic,22)}</span><b data-cnt="${v==null?"":v}" data-suf="${suf||""}">${v==null?"—":(v%1?v.toFixed(1):hqF(v))+(suf||"")}</b><span>${l}</span>${sub?`<small>${sub}</small>`:""}</div>`;
   const ach=(A.ach||[]).filter(a=>ed||String(a[0]||"").trim());
@@ -1895,6 +1909,31 @@ function renderDash(){const nav=$("#homeNav");if(!nav)return;
     <section class="ab-sec rv"><h2>${hqIc("bolt",22)} مبادراتنا</h2><div class="ab-inits">${(A.inits||[]).map(([t,d])=>`<div class="ab-in"><b>${esc(t)}</b><span>${esc(d||"")}</span></div>`).join("")}</div></section>`;
   if($("#abEdit"))$("#abEdit").onclick=abEdit;
   abAnim(ab)}
+let CMP=null,CMP_ERR="";
+async function loadCmp(){try{const {data,error}=await sb.from("quality_complaints").select("*").order("created_at",{ascending:false}).limit(500);if(error)throw error;CMP=data||[];CMP_ERR=""}catch(e){CMP=[];CMP_ERR=/quality_complaints|relation|schema cache/i.test(e.message||"")?"setup":(e.message||"")}}
+const CMP_K={c:"شكوى",s:"اقتراح",q:"استفسار"},CMP_S={new:"جديدة",prog:"قيد المعالجة",done:"تم الرد"};
+function renderFaq(ab){const A=Object.assign({},ABOUT_DEF,ABOUT||{}),ed=abOK();if(CMP==null){ab.innerHTML='<div class="ab-sec"><div class="empty">جارٍ التحميل…</div></div>';loadCmp().then(()=>{if(HOMEV==="faq")renderFaq(ab)});return}
+  const mine=CMP.filter(x=>x.user_id===me.id),all=ed?CMP:[];
+  const row=(x,adm)=>`<div class="cp-i"><div class="cp-h"><span class="cp-k k-${esc(x.kind)}">${esc(CMP_K[x.kind]||x.kind)}</span><b>${esc(x.subject||"")}</b><span class="cp-s s-${esc(x.status)}">${esc(CMP_S[x.status]||x.status)}</span></div>
+    <p>${esc(x.body||"")}</p><small>${adm?esc([x.user_name,x.sector].filter(Boolean).join(" — "))+" · ":""}${esc(new Date(x.created_at).toLocaleString("ar-SA-u-nu-latn-ca-gregory"))}</small>
+    ${x.reply?`<div class="cp-r"><span>الرد${x.replied_by?" — "+esc(x.replied_by):""}</span>${esc(x.reply)}</div>`:""}
+    ${adm?`<div class="cp-a"><textarea class="in" rows="2" data-cpr="${x.id}" placeholder="اكتب الرد…">${esc(x.reply||"")}</textarea><select class="in" data-cps="${x.id}">${Object.entries(CMP_S).map(([k,l])=>`<option value="${k}"${x.status===k?" selected":""}>${l}</option>`).join("")}</select><button type="button" class="btn2 pri" data-cpsave="${x.id}">حفظ</button></div>`:""}</div>`;
+  ab.innerHTML=`<section class="ab-hero sm"><div class="ab-hx"><span class="ab-k">متاحة للجميع</span><h1>الأسئلة الشائعة والشكاوى</h1><p>إجابات سريعة عن المنصة، ونموذج لرفع الشكاوى والاقتراحات ومتابعة الرد عليها.</p>${ed?`<button type="button" class="ab-ed" id="abEdit">${hqIc("edit",16)} تعديل الأسئلة</button>`:""}</div></section>
+    <section class="ab-sec rv"><h2>${hqIc("help",22)} الأسئلة الشائعة</h2><div class="fq">${(A.faq||[]).map(([q,a])=>`<details class="fq-i"><summary>${esc(q)}</summary><p>${esc(a||"")}</p></details>`).join("")||'<div class="empty">لا توجد أسئلة بعد</div>'}</div></section>
+    ${CMP_ERR==="setup"?`<section class="ab-sec"><div class="empty">⚙️ نموذج الشكاوى يحتاج تجهيز قاعدة البيانات مرة واحدة${me.role==="admin"?" — شغّل ملف <b>complaints-setup.sql</b> في Supabase":" — تواصل مع مدير النظام"}.</div></section>`:`
+    <section class="ab-two"><div class="ab-sec rv"><h2>${hqIc("send",22)} الشكاوى والاقتراحات</h2><div class="cp-f">
+      <div class="cp-kinds">${Object.entries(CMP_K).map(([k,l],i)=>`<label><input type="radio" name="cpk" value="${k}"${i===0?" checked":""}> ${l}</label>`).join("")}</div>
+      <input class="in" id="cpSub" maxlength="120" placeholder="عنوان مختصر"><textarea class="in" id="cpBody" rows="5" maxlength="3000" placeholder="اكتب التفاصيل…"></textarea>
+      <button type="button" class="btn2 pri" id="cpSend">إرسال</button><small class="cp-n">تصل لمدير النظام ومدير الجودة، ويظهر الرد في «طلباتي».</small></div></div>
+      <div class="ab-sec rv"><h2>${hqIc("clock",22)} طلباتي <span class="sub">${hqF(mine.length)}</span></h2><div class="cp-l">${mine.map(x=>row(x,false)).join("")||'<div class="empty">لم ترسل أي طلب بعد</div>'}</div></div></section>
+    ${ed?`<section class="ab-sec rv"><h2>${hqIc("user",22)} الوارد — للمعالجة <span class="sub">${hqF(all.filter(x=>x.status!=="done").length)} مفتوحة من ${hqF(all.length)}</span></h2><div class="cp-l">${all.map(x=>row(x,true)).join("")||'<div class="empty">لا يوجد وارد</div>'}</div></section>`:""}`}`;
+  if($("#abEdit"))$("#abEdit").onclick=abEdit;
+  const sd=$("#cpSend");if(sd)sd.onclick=async()=>{const k=(document.querySelector('input[name=cpk]:checked')||{}).value||"c",sub=$("#cpSub").value.trim(),body=$("#cpBody").value.trim();
+    if(!sub||!body){toast("اكتب العنوان والتفاصيل");return}sd.disabled=true;const {error}=await sb.from("quality_complaints").insert({user_id:me.id,kind:k,subject:sub,body,user_name:me.full_name,sector:me.sector||""});sd.disabled=false;
+    if(error){toast("تعذر الإرسال: "+error.message);return}toast("تم الإرسال — شكراً لك");CMP=null;renderFaq(ab)};
+  ab.querySelectorAll("[data-cpsave]").forEach(b=>b.onclick=async()=>{const id=b.dataset.cpsave,rp=ab.querySelector(`[data-cpr="${id}"]`).value.trim(),st=ab.querySelector(`[data-cps="${id}"]`).value;b.disabled=true;
+    const {error}=await sb.from("quality_complaints").update({reply:rp||null,status:st,replied_by:me.full_name,replied_at:new Date().toISOString()}).eq("id",id);b.disabled=false;if(error){toast("تعذر الحفظ: "+error.message);return}toast("تم الحفظ");CMP=null;renderFaq(ab)});
+  abAnim(ab)}
 function abAnim(root){const els=root.querySelectorAll(".rv,.hs-c");const run=el=>{el.classList.add("in");el.querySelectorAll("[data-cnt]").forEach(b=>{const v=parseFloat(b.dataset.cnt);if(!(v>=0))return;const suf=b.dataset.suf||"",dec=v%1?1:0,t0=performance.now(),D=1100;const f=t=>{const k=Math.min(1,(t-t0)/D),e=1-Math.pow(1-k,3);b.textContent=(dec?(v*e).toFixed(1):Math.round(v*e).toLocaleString("en-US"))+suf;if(k<1)requestAnimationFrame(f)};requestAnimationFrame(f)})};
   if(!("IntersectionObserver" in window)){els.forEach(run);return}const io=new IntersectionObserver(es=>es.forEach(e=>{if(e.isIntersecting){run(e.target);io.unobserve(e.target)}}),{threshold:.15});els.forEach(el=>io.observe(el))}
 function abEdit(){if(!abOK())return;const A=Object.assign({},ABOUT_DEF,ABOUT||{}),L=a=>(a||[]).join("\n"),P=a=>(a||[]).map(x=>x.filter(Boolean).join(" | ")).join("\n");
@@ -1902,10 +1941,11 @@ function abEdit(){if(!abOK())return;const A=Object.assign({},ABOUT_DEF,ABOUT||{}
   $("#sheet").innerHTML=`<div class="rd-h"><div><span class="er-tag">الصفحة الرئيسية</span><h3>تعديل المحتوى التعريفي</h3><div class="sub">يظهر لجميع مستخدمي المنصة</div></div><div class="rd-b"><button type="button" class="btn2 pri" id="abSave">حفظ</button><button type="button" class="btn2" id="abCl">إغلاق</button></div></div>
     <div class="ab-form">${fld("abT","اسم الإدارة",A.title)}${fld("abG","العبارة التعريفية",A.tag)}${fld("abI","من نحن",A.intro,4)}${fld("abV","الرؤية",A.vision,2)}${fld("abM","الرسالة",A.mission,3)}
     ${fld("abTs","مهامنا",L(A.tasks),6,"سطر لكل مهمة")}${fld("abGs","أهدافنا",L(A.goals),5,"سطر لكل هدف")}${fld("abIn","مبادراتنا",P(A.inits),5,"سطر لكل مبادرة: الاسم | الوصف")}
+    ${fld("abFq","الأسئلة الشائعة",P(A.faq),6,"سطر لكل سؤال: السؤال | الجواب")}
     ${fld("abAc","ما حققناه",P((A.ach||[]).map(a=>[a[0]||"—",a[1],a[2]])),4,"سطر لكل إنجاز: الرقم | العنوان | وصف قصير — مثال: 18% | خفض الفاقد | مقارنة بعام 2025")}</div>`;
   $("#sheet").classList.add("wide");openSheet();$("#abCl").onclick=closeSheet;
   $("#abSave").onclick=async()=>{const sp=id=>$("#"+id).value.split("\n").map(x=>x.trim()).filter(Boolean),pp=id=>sp(id).map(x=>x.split("|").map(y=>y.trim()));
-    const v={title:$("#abT").value.trim()||ABOUT_DEF.title,tag:$("#abG").value.trim(),intro:$("#abI").value.trim(),vision:$("#abV").value.trim(),mission:$("#abM").value.trim(),tasks:sp("abTs"),goals:sp("abGs"),inits:pp("abIn").map(a=>[a[0],a.slice(1).join(" | ")]),ach:pp("abAc").map(a=>[a[0]==="—"?"":a[0],a[1]||"",a.slice(2).join(" | ")])};
+    const v={title:$("#abT").value.trim()||ABOUT_DEF.title,tag:$("#abG").value.trim(),intro:$("#abI").value.trim(),vision:$("#abV").value.trim(),mission:$("#abM").value.trim(),tasks:sp("abTs"),goals:sp("abGs"),inits:pp("abIn").map(a=>[a[0],a.slice(1).join(" | ")]),faq:pp("abFq").map(a=>[a[0],a.slice(1).join(" | ")]),ach:pp("abAc").map(a=>[a[0]==="—"?"":a[0],a[1]||"",a.slice(2).join(" | ")])};
     const b=$("#abSave");b.disabled=true;const {error}=await sb.from("quality_settings").upsert({key:"about",value:v,updated_at:new Date().toISOString()});b.disabled=false;
     if(error){toast("تعذر الحفظ: "+error.message);return}ABOUT=v;bootSave();toast("تم حفظ المحتوى");closeSheet();renderDash()}}
 /* ===================== تفاصيل المربعات ===================== */
@@ -2148,6 +2188,8 @@ const HQ_IC={
   flag:'<path d="M5 21V4M5 4h11l-2 4 2 4H5"/>',
   star:'<path d="m12 3 2.7 5.6 6.1.9-4.4 4.3 1 6.1L12 17l-5.4 2.9 1-6.1-4.4-4.3 6.1-.9z"/>',
   bolt:'<path d="M13 2 4 14h7l-1 8 9-12h-7z"/>',
+  help:'<circle cx="12" cy="12" r="9"/><path d="M9.5 9a2.5 2.5 0 0 1 5 .5c0 1.7-2.5 2-2.5 3.5"/><path d="M12 17h.01"/>',
+  lock:'<rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/>',
   edit:'<path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z"/>'};
 const hqIc=(k,s)=>`<svg viewBox="0 0 24 24" width="${s||22}" height="${s||22}" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${HQ_IC[k]}</svg>`;
 function hqYears(){const y={};rows.forEach(r=>{const d=dayOfRow(r);if(d!=null)y[new Date(d*864e5).getUTCFullYear()]=1});return Object.keys(y).map(Number).sort()}
