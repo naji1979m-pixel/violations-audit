@@ -3023,7 +3023,44 @@ document.addEventListener("keydown",e=>{if(e.key!=="Enter")return;const t=e.targ
 /* ===================== المساعد الذكي «اسأل المنصة» ===================== */
 let AI_H=[],AI_BUSY=false;
 function aiBase(){try{if(page==="hq"&&canHQ())return {L:hqRows(),scope:"بوابة المركز الرئيسي — "+hqScope(hqAgg(hqRows())).sec};if(page==="perf")return {L:pfBase(),scope:"تقييم الأداء"};}catch(e){}return {L:vrows(),scope:fLabel()}}
-function aiContext(){const {L,scope}=aiBase();const A=hqAgg(L),T=A.T,r1=x=>Math.round(x*10)/10,pc=(a,b)=>b?r1(a/b*100):null;
+/* ===== استعلام دقيق حسب السؤال: يفهم التاريخ والمكان والاسم ويحسب الأرقام من البيانات الفعلية ===== */
+const AI_CL={iss:"قرار صادر",ret:"مسترجعة حالياً",auth:"قيد التدقيق لدى الهيئة",arch:"غير مكتملة الأركان",pend:"بانتظار المراجعة",oth:"أخرى"};
+function aiDay(s){s=String(s||"").replace(/[٠-٩]/g,d=>"٠١٢٣٤٥٦٧٨٩".indexOf(d));let m=s.match(/(\d{4})[-\/.](\d{1,2})[-\/.](\d{1,2})/);if(m)return Math.floor(Date.UTC(+m[1],+m[2]-1,+m[3])/864e5);
+  m=s.match(/(\d{1,2})[-\/.](\d{1,2})[-\/.](\d{4})/);if(m)return Math.floor(Date.UTC(+m[3],+m[2]-1,+m[1])/864e5);return null}
+const aiDec=r=>r._dd!==undefined?r._dd:(r._dd=aiDay(r.decDate));
+function aiToday(){const t=new Date(Date.now()+3*3600e3);return Math.floor(Date.UTC(t.getUTCFullYear(),t.getUTCMonth(),t.getUTCDate())/864e5)}
+function aiRange(q){const n=norm(q).replace(/[٠-٩]/g,d=>"٠١٢٣٤٥٦٧٨٩".indexOf(d)),T=aiToday();let m;
+  if(/اول امس|قبل امس/.test(n))return [T-2,T-2,"أول أمس"];if(/امس|البارحه/.test(n))return [T-1,T-1,"أمس"];if(/اليوم/.test(n))return [T,T,"اليوم"];
+  if((m=n.match(/اخر (\d+) (يوم|ايام)/)))return [T-(+m[1])+1,T,`آخر ${m[1]} أيام`];if(/الاسبوع الماضي/.test(n))return [T-13,T-7,"الأسبوع الماضي"];if(/هذا الاسبوع|الاسبوع الحالي|اخر اسبوع/.test(n))return [T-6,T,"آخر 7 أيام"];
+  const t=new Date(T*864e5),Y=t.getUTCFullYear(),M=t.getUTCMonth(),md=(y,mo)=>[Math.floor(Date.UTC(y,mo,1)/864e5),Math.floor(Date.UTC(y,mo+1,0)/864e5)];
+  if(/الشهر الماضي|الشهر السابق/.test(n)){const r=md(M?Y:Y-1,M?M-1:11);return [r[0],r[1],"الشهر الماضي"]}if(/هذا الشهر|الشهر الحالي/.test(n)){const r=md(Y,M);return [r[0],T,"هذا الشهر"]}
+  const raw=String(q||"").replace(/[٠-٩]/g,d=>"٠١٢٣٤٥٦٧٨٩".indexOf(d));
+  const ds=[...raw.matchAll(/(\d{4})[-\/.](\d{1,2})[-\/.](\d{1,2})|(\d{1,2})[-\/.](\d{1,2})(?:[-\/.](\d{4}))?/g)].map(x=>x[1]?Math.floor(Date.UTC(+x[1],+x[2]-1,+x[3])/864e5):Math.floor(Date.UTC(x[6]?+x[6]:Y,+x[5]-1,+x[4])/864e5)).filter(x=>!isNaN(x));
+  if(ds.length)return [Math.min(...ds),Math.max(...ds),ds.length>1?"من "+wkDay(Math.min(...ds))+" إلى "+wkDay(Math.max(...ds)):wkDay(ds[0])];
+  for(let i=0;i<12;i++){const mn=norm(HQ_MON[i]);if(n.includes(mn)){const ym=n.match(/(20\d\d)/),y=ym?+ym[1]:(i<=M?Y:Y-1),r=md(y,i);return [r[0],r[1],HQ_MON[i]+" "+y]}}
+  if((m=n.match(/(?:^|\s)(20\d\d)(?:\s|$)/)))return [Math.floor(Date.UTC(+m[1],0,1)/864e5),Math.floor(Date.UTC(+m[1],11,31)/864e5),"سنة "+m[1]];return null}
+function aiQuery(q,L){const n=" "+norm(q)+" ",rg=aiRange(q),core=g=>norm(g).replace(/^(محافظه|مدينه|محافظ)\s+/,"");
+  const govs=[...new Set(L.map(r=>(r.sector||"").trim()).filter(Boolean))],G=govs.filter(g=>{const c=core(g);return c.length>=3&&n.includes(" "+c)}) ;
+  const secs=HQ_SECS.filter(sc=>n.includes(norm(sc).replace(/^القطاع\s+/,"")));const units=(ORG.units||[]).filter(u=>n.includes(norm(u.name)));
+  const regs=[...new Set(L.map(r=>(r.region||"").trim()).filter(Boolean))].filter(g=>{const c=norm(g).replace(/^منطقه\s+/,"");return c.length>=3&&n.includes(" "+c)&&!G.some(x=>core(x)===c)});
+  const nm=(f)=>{const S=new Set();L.forEach(r=>{const v=(r[f]||"").trim();if(v)S.add(v)});return [...S].filter(v=>{const t=norm(v).split(" ").filter(w=>w.length>2);return t.length>=2&&t.filter(w=>n.includes(" "+w+" ")).length>=2})};
+  const MG=nm("mgr").slice(0,3),OF=nm("officer").slice(0,3);
+  if(!rg&&!G.length&&!regs.length&&!secs.length&&!units.length&&!MG.length&&!OF.length)return null;
+  let F=L.filter(r=>(!G.length||G.includes((r.sector||"").trim()))&&(!regs.length||regs.includes((r.region||"").trim()))&&(!secs.length||secs.includes(secOf(r.region)))&&(!units.length||units.some(u=>gcl(unitOf(r.sector))===gcl(u.name)))&&(!MG.length||MG.includes((r.mgr||"").trim()))&&(!OF.length||OF.includes((r.officer||"").trim())));
+  const inR=d=>d!=null&&(!rg||(d>=rg[0]&&d<=rg[1])),V=F.filter(r=>inR(dayOfRow(r))),D=F.filter(r=>inR(aiDec(r)));
+  const cnt=X=>{const o={الإجمالي:X.length};X.forEach(r=>{const c=AI_CL[r._hc||(r._hc=hqCls(r))]||"أخرى";o[c]=(o[c]||0)+1});return o};
+  const byDec=X=>{const o={};X.forEach(r=>{const k=(r.dec||"").trim()||"غير محدد";o[k]=(o[k]||0)+1});return o};
+  const md=hqMaxDay(),mdd=(()=>{let m=null;F.forEach(r=>{const d=aiDec(r);if(d!=null&&(m==null||d>m))m=d});return m})();
+  let a=rg?rg[0]:Math.max((md||aiToday())-13,0),b=rg?rg[1]:(md||aiToday());if(b-a>62)a=b-62;const daily=[];
+  for(let d=b;d>=a;d--){const v=F.filter(r=>dayOfRow(r)===d),k=F.filter(r=>aiDec(r)===d);if(v.length||k.length)daily.push([wkDay(d),v.length,k.length,v.filter(r=>r._hc==="iss").length,v.filter(r=>r._hc==="ret").length])}
+  const lst=X=>X.slice(0,40).map(r=>[r.visit||r.vno,(r.sector||"").trim(),(r.officer||"").trim(),(r.mgr||"").trim(),(r.item||"").trim().slice(0,70),r.date?String(r.date).slice(0,10):"",r.decDate?String(r.decDate).slice(0,16):"",(r.dec||"").trim(),AI_CL[r._hc]||""]);
+  return {فهمي_للسؤال:{الفترة:rg?(/\d/.test(rg[2])?rg[2]:rg[2]+(rg[0]!==rg[1]?` (${wkDay(rg[0])} – ${wkDay(rg[1])})`:` (${wkDay(rg[0])})`)):"كل الفترات",المحافظات:G.length?G:undefined,المناطق:regs.length?regs:undefined,القطاعات:secs.length?secs:undefined,الوحدات:units.length?units.map(u=>u.name):undefined,مدير_الرقابة:MG.length?MG:undefined,مأمور_الضبط:OF.length?OF:undefined,تاريخ_اليوم:wkDay(aiToday())},
+    "حسب_تاريخ_الزيارة(الرصد)":cnt(V),"حسب_تاريخ_اعتماد_القرار_من_مدير_الرقابة":Object.assign({الإجمالي:D.length},{حسب_القرار:byDec(D)},{حالتها_الحالية:cnt(D)}),
+    يومياً:{الأعمدة:"[اليوم، مرصودة بتاريخ الزيارة، معتمدة بتاريخ اعتماد القرار، منها قرار صادر، منها مسترجعة]",الصفوف:daily},
+    "قائمة_المعتمدة_في_الفترة":lst(D),"قائمة_المرصودة_في_الفترة":lst(V),أعمدة_القوائم:"[رقم الزيارة، المحافظة، مأمور الضبط، مدير الرقابة، البند، تاريخ الزيارة، تاريخ اعتماد القرار، قرار مدير الرقابة، الحالة]",
+    آخر_تاريخ_في_البيانات:{الزيارة:md!=null?wkDay(md):"",اعتماد_القرار:mdd!=null?wkDay(mdd):""},
+    تعليمات:"هذه الأرقام محسوبة بدقة لسؤال المستخدم من التقرير الشامل؛ أجب منها مباشرة بالرقم ثم التفاصيل. «اعتمد/المعتمدة» = حسب تاريخ اعتماد القرار من مدير الرقابة، و«رُصد/المرصودة» = حسب تاريخ الزيارة. إن كانت الفترة بعد آخر تاريخ في البيانات فاذكر أن التقرير الشامل لم يُحدَّث بعد لهذا اليوم مع آخر تاريخ متاح."}}
+function aiContext(q){const {L,scope}=aiBase();const A=hqAgg(L),T=A.T,r1=x=>Math.round(x*10)/10,pc=(a,b)=>b?r1(a/b*100):null;
   const mk=o=>[o.n,o.sent,o.iss,o.auth,o.ret,o.pend,o.arch,pc(o.sent-o.ret,o.sent)];const COLS_AI="[مرصود، مرسل للهيئة، قرارات صادرة، قيد التدقيق لدى الهيئة، مسترجع حالياً، بانتظار المراجعة، غير مكتملة الأركان، نسبة الجودة%]";
   const ppl=fn=>{const P={};L.forEach(r=>{const k=fn(r);if(!k)return;const s=secOf(r.region);(P[k]=P[k]||Object.assign(hqZ(),{sec:{}}));hqAdd(P[k],r._hc,r);P[k].sec[s]=(P[k].sec[s]||0)+1});
     return Object.entries(P).sort((a,b)=>b[1].sent-a[1].sent||b[1].n-a[1].n).slice(0,60).map(([k,v])=>[k,Object.entries(v.sec).sort((a,b)=>b[1]-a[1])[0][0],v.rev].concat(mk(v)))};
@@ -3054,6 +3091,7 @@ function aiContext(){const {L,scope}=aiBase();const A=hqAgg(L),T=A.T,r1=x=>Math.
   rowsGM=build(gl);while(JSON.stringify(out).length+JSON.stringify(rowsGM).length>105000&&gl.length>5){gl=gl.slice(0,Math.floor(gl.length*0.8));cut=Object.keys(GM).length-gl.length;rowsGM=build(gl)}
   out.المحافظات_شهرياً=rowsGM;
   out.شرح_الأعمدة+="؛ القطاعات_شهرياً: [القطاع، الشهر YYYY-MM]+الأعمدة؛ المحافظات_شهرياً: [المحافظة، القطاع، الشهر YYYY-MM]+الأعمدة (الأشهر بلا مخالفات محذوفة)"+(cut?`؛ المحافظات_شهرياً تشمل أكبر ${gl.length} محافظة فقط — اطلب تضييق الفلتر لبقية المحافظات (${cut})`:"");
+  try{const Q=q?aiQuery(q,L):null;if(Q)return Object.assign({نتيجة_الاستعلام_الدقيق:Q},out)}catch(e){console.warn("aiQuery",e)}
   return out}
 function aiMd(t){const e=esc(String(t||""));const lines=e.split("\n"),out=[];let inT=false,inL=false;
   const fmt=x=>x.replace(/\*\*(.+?)\*\*/g,"<b>$1</b>").replace(/`([^`]+)`/g,"<code>$1</code>");
@@ -3072,7 +3110,7 @@ async function aiAsk(q){q=String(q||"").trim();if(!q||AI_BUSY)return;AI_BUSY=tru
   const w=document.createElement("div");w.className="ai-m ai-bot ai-wait";w.innerHTML="<span></span><span></span><span></span>";$("#aiLog").appendChild(w);$("#aiLog").scrollTop=1e9;$("#aiSend").disabled=true;
   try{const {data:{session}}=await sb.auth.getSession();const tok=session&&session.access_token;
     const ctl=new AbortController(),to=setTimeout(()=>ctl.abort(),60000);
-    const r=await fetch(SB_URL+"/functions/v1/ask-quality",{method:"POST",signal:ctl.signal,headers:{apikey:SB_KEY,"Content-Type":"application/json",Authorization:"Bearer "+(tok||SB_KEY)},body:JSON.stringify({question:q,context:aiContext(),history:AI_H.slice(-6)})});
+    const r=await fetch(SB_URL+"/functions/v1/ask-quality",{method:"POST",signal:ctl.signal,headers:{apikey:SB_KEY,"Content-Type":"application/json",Authorization:"Bearer "+(tok||SB_KEY)},body:JSON.stringify({question:q,context:aiContext(q),history:AI_H.slice(-6)})});
     clearTimeout(to);let d={};try{d=await r.json()}catch(e){}w.remove();
     if(!r.ok||!d.text){aiMsg("bot","⚠️ "+(d.error||(r.status===404?"المساعد غير مفعّل بعد — ارفع الوظيفة السحابية ask-quality.":"تعذر الحصول على رد ("+r.status+")")));}
     else{aiMsg("bot",d.text);AI_H.push({role:"user",text:q},{role:"assistant",text:d.text});if(d.left!=null)$("#aiLeft").textContent=`متبقٍ اليوم: ${d.left}`}}
