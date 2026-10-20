@@ -2158,7 +2158,12 @@ const rsEdit=()=>!!me&&(me.role==="admin"||me.role==="exec"||isHQ(me));
 /* التقييم لمدراء الرقابة بالقطاعات (ومدير النظام) — المستهدف لكل موظف يحدده مدير الجودة */
 const rsIsEv=u=>!!u&&u.active!==false&&u.role!=="trainee"&&!isHQ(u)&&(u.role==="manager"||u.role==="staff"||u.job==="m");
 const rsInMine=x=>{if(!me||!me.sector)return false;const u=myUnit();if(u)return unitOf(x.gov)===u.name;return areaMatch(me.sector,{f:{gov:x.gov,region:x.region}})};
-const rsCanEv=x=>!!me&&!!x&&(me.role==="admin"||(rsIsEv(me)&&rsInMine(x)));
+/* فريق التقييم المعتمد في جدول تقييم الأداء (المستهدف لكل موظف يحدده نايف البقمي) */
+const RS_TEAM=[["نايف تركي البقمي","مدير الجودة"],["تركي مبارك الدوسري","مدير الجودة"],["رناد فواز العتيبي","أخصائي جودة"],["بندر سعد العمار","أخصائي جودة"],["محمد صالح اللحيدان","أخصائي جودة"],["منيرة مطلق الرويس","أخصائي جودة"]];
+const rsNm=n=>norm(String(n||"")).split(/\s+/).filter(Boolean);
+const rsSame=(a,b)=>{const x=rsNm(a),y=rsNm(b);if(!x.length||!y.length)return false;if(x.join(" ")===y.join(" "))return true;return x[0]===y[0]&&x[x.length-1]===y[y.length-1]&&(x.length<3||y.length<3||x[1]===y[1])};
+const rsTeamOf=u=>u?RS_TEAM.find(t=>rsSame(t[0],u.full_name||u.eval_name||"")):null;
+const rsCanEv=x=>!!me&&!!x&&(me.role==="admin"||!!rsTeamOf(me)||(rsIsEv(me)&&rsInMine(x)));
 const rsTgEd=()=>isFeeder(me);
 const rsTgOf=k=>{const t=(RS_CFG.evalT||{})[k];return +t>0?+t:(+RS_CFG.evalTarget||30)};
 let RS_RPC=true;
@@ -2230,19 +2235,20 @@ const rsEvMonth=x=>{const t=x.eval_first_at||x.eval_at;if(!t)return "";const d=n
 function rsEvalCard(scf){scf=scf||(()=>true);const dflt=+RS_CFG.evalTarget||30,te=rsTgEd();const done=(RASD||[]).filter(x=>x.score!=null&&(x.eval_first_at||x.eval_at)&&scf(x));
   const now=new Date(),cur=now.getFullYear()+"-"+String(now.getMonth()+1).padStart(2,"0"),ms=[...new Set(done.map(rsEvMonth).concat([cur]))].filter(Boolean).sort().reverse();if(!RSEM||!ms.includes(RSEM))RSEM=cur;
   const P={},uOf=k=>(users||[]).find(u=>u.id===k);done.filter(x=>rsEvMonth(x)===RSEM).forEach(x=>{const k=x.eval_by||("n:"+(x.eval_name||""));const u=uOf(k);const o=P[k]=P[k]||{k,n:(u&&u.full_name)||x.eval_name||"—",s:(u&&u.sector)||"",c:0,sum:0};o.c++;o.sum+=+x.score});
-  const mine=RS_CTX!=="hq"&&!rsEdit()&&!rsTgEd()&&me&&me.sector;
-  (users||[]).filter(u=>rsIsEv(u)&&!P[u.id]&&(!mine||gcl(u.sector||"")===gcl(me.sector))).forEach(u=>P[u.id]={k:u.id,n:u.full_name,s:u.sector||"",c:0,sum:0});
+  {const Q={};RS_TEAM.forEach(([nm,jt])=>{const u=(users||[]).find(z=>z.active!==false&&rsSame(nm,z.full_name));const k=u?u.id:"n:"+nm;
+      let o=P[k];if(!o){const pk=Object.keys(P).find(x=>rsSame(nm,P[x].n));o=pk?P[pk]:null}
+      Q[k]=Object.assign(o?{...o}:{c:0,sum:0},{k,n:u?u.full_name:nm,s:jt})});for(const k in P)delete P[k];Object.assign(P,Q)}
   Object.values(P).forEach(o=>o.tg=rsTgOf(o.k));
   let R=Object.values(P).sort((a,b)=>b.c/b.tg-a.c/a.tg||b.c-a.c||a.n.localeCompare(b.n,"ar"));const opts=R.slice();if(RSEV&&!R.some(r=>r.k===RSEV))RSEV="";if(RSEV)R=R.filter(r=>r.k===RSEV);
   const one=RSEV&&R[0],pc=o=>Math.min(100,Math.round(o.c/o.tg*1000)/10),av=o=>o.c?Math.round(o.sum/o.c*10)/10:null,canSee=k=>rsEdit()||te||(me&&k===me.id);
   const tl=(l,v,sub,tone,frac)=>`<div class="hk" style="--tone:${tone}"><div class="hk-h"><span class="hk-l">${l}</span></div><b class="hk-v">${v}</b><div class="hk-s">${sub||"&nbsp;"}</div>${frac!=null?`<div class="hk-bar"><i style="width:${Math.max(0,Math.min(100,frac*100))}%"></i></div>`:""}</div>`;
   const nm=o=>canSee(o.k)?`<button type="button" class="lnk" data-rsev="${esc(o.k)}" title="عرض أعماله">${esc(o.n)}</button>`:`<b>${esc(o.n)}</b>`;
-  return `<div class="hq-card rs-ev"><div class="hq-ch"><h3>إنجاز مدراء الرقابة بالقطاعات <span class="sub">المستهدف الشهري لكل موظف يحدده مدير الجودة${te?` · الافتراضي ${hqF(dflt)} <button type="button" class="lnk" id="rsETg">تعديل</button>`:""}</span></h3>
+  return `<div class="hq-card rs-ev"><div class="hq-ch"><h3>تقييم أداء فريق الجودة <span class="sub">المستهدف الشهري لكل موظف يحدده مدير الجودة${te?` · الافتراضي ${hqF(dflt)} <button type="button" class="lnk" id="rsETg">تعديل</button>`:""}</span></h3>
     <div class="srt-w"><label class="hq-sel hq-sel-l"><span>الشهر</span><select id="rsEM">${ms.map(m=>`<option value="${m}"${m===RSEM?" selected":""}>${rsMLab(m)}</option>`).join("")}</select></label>
     <label class="hq-sel hq-sel-l"><span>الموظف</span><select id="rsEV"><option value="">كل الموظفين</option>${opts.map(o=>`<option value="${esc(o.k)}"${RSEV===o.k?" selected":""}>${esc(o.n)}</option>`).join("")}</select></label></div>
     <span class="tx-bs"><button type="button" class="btn2 tx-b" data-tx="pdf">📄 PDF</button><button type="button" class="btn2 pri tx-b" data-tx="xls">📊 Excel</button></span></div>
     ${one?`<div class="hq-kgrid">${tl("المستهدف الشهري",hqF(one.tg),esc(one.s||""),"#58708F",null)}${tl("التقييمات المنجزة",hqF(one.c),"خلال "+rsMLab(RSEM),"#2F6FC0",null)}${tl("المتبقي للمستهدف",hqF(Math.max(0,one.tg-one.c)),`من ${hqF(one.tg)}`,"#B7861A",null)}${tl("نسبة الإنجاز",qTxt(pc(one)),"المنجز ÷ المستهدف × 100","#1F5BB0",pc(one)/100)}${tl("متوسط درجات تقييماته",av(one)==null?"—":qTxt(av(one)),av(one)==null?"لا توجد تقييمات مكتملة":"معدل درجات المخالفات التي قيّمها","#3D9B5F",null)}</div>`:""}
-    ${R.length?`<div class="tbl-wrap"><table class="tbl" data-tt="إنجاز مدراء الرقابة بالقطاعات — ${rsMLab(RSEM)}"><thead><tr><th>الموظف</th><th>الجهة</th><th>المستهدف</th><th>المنجز</th><th>المتبقي</th><th style="width:26%">نسبة الإنجاز</th><th>متوسط درجات تقييماته</th></tr></thead><tbody>
+    ${R.length?`<div class="tbl-wrap"><table class="tbl" data-tt="تقييم أداء فريق الجودة — ${rsMLab(RSEM)}"><thead><tr><th>الموظف</th><th>المسمى</th><th>المستهدف</th><th>المنجز</th><th>المتبقي</th><th style="width:26%">نسبة الإنجاز</th><th>متوسط درجات تقييماته</th></tr></thead><tbody>
     ${R.map(o=>`<tr><td>${nm(o)}</td><td>${esc(o.s||"—")}</td><td>${hqF(o.tg)}${te&&!String(o.k).startsWith("n:")?` <button type="button" class="lnk" data-rstg="${esc(o.k)}" title="تحديد المستهدف">✎</button>`:""}</td><td>${hqF(o.c)}</td><td>${hqF(Math.max(0,o.tg-o.c))}</td><td><div class="pf-ib pf-q100"><span class="pf-tr"><i class="${o.c>=o.tg?"q-e":"q-na"}" style="width:${Math.max(o.c?2:0,pc(o))}%;${o.c>=o.tg?"":"background:#4D8FE6"}"></i></span><b>${qTxt(pc(o))}</b></div></td><td>${av(o)==null?"—":qTxt(av(o))}</td></tr>`).join("")}</tbody></table></div>`:'<div class="empty">لا يوجد موظفون للتقييم</div>'}
     <p class="hq-note">يُحتسب التقييم المكتمل (المعايير الستة) مرة واحدة في شهر أول تقييم له، ولا تُحتسب المسودات · نسبة الإنجاز = المنجز ÷ المستهدف الخاص بالموظف × 100 · متوسط درجات تقييماته = معدل درجات جميع المخالفات التي قيّمها خلال الشهر${rsEdit()||te?" · اضغط على اسم الموظف لعرض أعماله":""}.</p></div>`}
 const rsEvK=x=>x.eval_by||("n:"+(x.eval_name||""));
