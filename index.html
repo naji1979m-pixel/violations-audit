@@ -605,6 +605,20 @@ section.block>h2::after{content:"";position:absolute;bottom:0;inset-inline-start
   .wrap,.bar,.sheet-bg,.toast{display:none!important}
   #printDoc{display:block}
 }
+
+/* البوابات طولية يمين الشاشة في جميع الصفحات — مثل الصفحة الرئيسية */
+#tabs .hn-i{display:none}
+@media(min-width:861px){
+body:not(.home-on) #appView{padding-right:136px}
+body:not(.home-on) header.top{margin-left:calc(50% - 50vw + 61px);margin-right:calc(50% - 50vw - 61px);padding-right:max(150px,calc(50vw - 706px + 136px))}
+body:not(.home-on) #auditBar{right:max(136px,calc((100vw - 1440px)/2 + 136px))}
+body:not(.home-on) #tabs{position:fixed;z-index:40;top:16px;right:max(14px,calc((100vw - 1440px)/2 + 14px));width:108px;max-height:calc(100vh - 32px);overflow-y:auto;overflow-x:hidden;margin:0;display:flex;flex-direction:column;gap:6px;background:var(--paper);border:1px solid var(--line);border-radius:20px;padding:8px;box-shadow:0 6px 22px rgba(16,40,74,.07);scrollbar-width:thin}
+body:not(.home-on) #tabs .tab{display:flex;flex-direction:column;align-items:center;gap:6px;padding:12px 4px;border:0;border-radius:14px;background:transparent;color:var(--muted);font:inherit;font-weight:700;font-size:12px;line-height:1.35;text-align:center;white-space:normal;box-shadow:none;transition:background .2s,color .2s,transform .2s}
+body:not(.home-on) #tabs .tab:hover{background:var(--soft);color:var(--ink);transform:translateY(-1px)}
+body:not(.home-on) #tabs .tab[aria-current="true"]{background:#1C437E;color:#fff;box-shadow:0 6px 16px rgba(28,67,126,.3)}
+body:not(.home-on) #tabs .hn-i{display:flex;width:40px;height:40px;align-items:center;justify-content:center;border-radius:12px;background:var(--soft);color:#1C437E}
+body:not(.home-on) #tabs .tab[aria-current="true"] .hn-i{background:rgba(255,255,255,.16);color:#fff}
+}
 </style>
 </head>
 <body>
@@ -1786,7 +1800,7 @@ async function boot(){
 
 /* ----- التنقل ----- */
 const PAGES=[["dash","الرئيسية",["admin","exec","manager","staff","clerk","viewer"]],["hq","المركز الرئيسي",[]],["audit","المخالفات والتدقيق",["admin","exec","manager","staff","clerk","viewer"]],["report","تقارير التدقيق",["admin","exec","manager","viewer","clerk"]],["team","أداء الموظفين",["admin","exec","manager","viewer"]],["perf","تقييم الأداء",["admin","exec","manager","staff","viewer"]],["north","الوحدة الشمالية – القطاع الشرقي",[]],["south","الوحدة الجنوبية – القطاع الشرقي",[]],["acad","أكاديمية إدارة المخالفات",["admin","exec","manager","staff","clerk","viewer","trainee"]],["users","الإدارة والهيكل",["admin"]]];
-function buildTabs(){$("#tabs").innerHTML=PAGES.filter(pageOK).map(p=>`<button type="button" class="tab" data-go="${p[0]}">${p[1]}</button>`).join("");$$("[data-go]").forEach(b=>b.onclick=()=>go(b.dataset.go))}
+function buildTabs(){$("#tabs").innerHTML=PAGES.filter(pageOK).map(p=>`<button type="button" class="tab" data-go="${p[0]}"><span class="hn-i">${hqIc(HOME_IC[p[0]]||"eye",20)}</span><span class="hn-l">${p[1]}</span></button>`).join("");$$("[data-go]").forEach(b=>b.onclick=()=>go(b.dataset.go))}
 const PG_HERO={audit:["المخالفات والتدقيق","اختر مخالفة من القائمة وابدأ تدقيقها وفق دليل دراسة المخالفات وآلية ضبطها","check"],report:["تقارير التدقيق","مؤشرات جودة التدقيق حسب الوحدة والموظف وبند اللائحة","xls"],team:["أداء الموظفين","إنجاز موظفي الجودة ونتائج تدقيقهم","clock"],users:["الإدارة والهيكل","الحسابات والصلاحيات والهيكل التنظيمي","search"]};
 function pgHero(p){const h=PG_HERO[p],el=$("#pgHero");if(!el)return;if(!h){el.hidden=true;return}el.hidden=false;el.innerHTML=`<span class="ic">${hqIc(h[2],24)}</span><div><h2>${h[0]}</h2><p>${h[1]}</p></div>`}
 (function(){const pg=document.querySelector('.pg[data-pg="audit"]');if(!pg||pg.querySelector(".aud-side"))return;const side=document.createElement("div");side.className="aud-side";const main=document.createElement("div");main.className="aud-main";[...pg.children].forEach(c=>{(c.id==="queueBlock"||c.id==="doneBlock"?side:main).appendChild(c)});pg.appendChild(side);pg.appendChild(main)})();
