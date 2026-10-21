@@ -1996,7 +1996,7 @@ function renderMine(){
 }
 
 /* ===================== الصفحة الرئيسية التعريفية ===================== */
-const ABOUT_DEF={title:"إدارة المخالفات والتعديات",tag:"نحمي الموارد المائية ونصون البنية التحتية — رقابة عادلة وامتثال مستدام",
+const ABOUT_DEF={title:"إدارة المخالفات والتعديات",tag:"نحمي الموارد المائية ونحافظ على البنية التحتية — رقابة عادلة وامتثال مستدام",
   intro:"تختص إدارة المخالفات والتعديات في شركة المياه الوطنية برصد المخالفات والتعديات على شبكات المياه والصرف الصحي وضبطها وفق الأنظمة واللوائح المعتمدة، ومتابعة إحالتها واستكمال إجراءاتها حتى صدور القرار، بما يسهم في خفض الفاقد المائي وحماية الأصول ورفع مستوى الامتثال لدى المستفيدين.",
   vision:"امتثالٌ كامل… وفاقدٌ أقل.",
   mission:"ضبط المخالفات والتعديات بكفاءة وعدالة، وفق إجراءات موحّدة وملفات مكتملة الأركان، وبكوادر مؤهلة وأدوات رقمية حديثة.",
@@ -2011,7 +2011,7 @@ const ABOUT_DEF={title:"إدارة المخالفات والتعديات",tag:"�
     ["نسيت كلمة المرور، ماذا أفعل؟","من شاشة الدخول اضغط «نسيت كلمة المرور» ويصل طلبك لمدير النظام."],
     ["كيف أرفع شكوى أو اقتراحاً؟","من هذه الصفحة: نموذج «الشكاوى والاقتراحات» أدناه، وتتابع الرد من «طلباتي»."]]};
 let ABOUT=null,HOMEV="about";
-async function loadAbout(){try{const {data}=await sb.from("quality_settings").select("value").eq("key","about").maybeSingle();ABOUT=data&&data.value&&data.value.title?data.value:null}catch(e){ABOUT=null}}
+async function loadAbout(){try{const {data}=await sb.from("quality_settings").select("value").eq("key","about").maybeSingle();ABOUT=data&&data.value&&data.value.title?data.value:null;if(ABOUT&&typeof ABOUT.tag==="string")ABOUT.tag=ABOUT.tag.replace("ونصون البنية التحتية","ونحافظ على البنية التحتية")}catch(e){ABOUT=null}}
 const abOK=()=>isFeeder(me);
 const HOME_IC={dash:"home",hq:"bldg",audit:"check",report:"xls",team:"clock",perf:"chart",south:"map",north:"map",acad:"cap",users:"user"};
 function homeStats(){let n=0,sent=0,iss=0,ret=0,fine=0;const G=new Set(),M=new Set();(rows||[]).forEach(r=>{n++;const c=r._hc||(r._hc=hqCls(r));if(c==="iss"||c==="ret"||c==="auth")sent++;if(c==="iss")iss++;if(c==="ret")ret++;const f=parseFloat(String(r.fine||"").replace(/[^\d.]/g,""));if(f>0)fine+=f;if(r.sector)G.add(r.sector.trim());const d=dayOfRow(r);if(d!=null)M.add(Math.floor(d/30))});
@@ -3782,11 +3782,10 @@ function importDialog(out,fresh){
   window.lastOut=out;const canRep=me&&["admin","exec","manager","clerk"].includes(me.role)&&rows.length>0;
   const K=r=>r.visitSt||"غير محدد",RG=r=>r.region||"غير محدد";
   const vs=[...new Set(out.map(K))].sort(),regs=[...new Set(out.map(RG))].sort();
-  const defSt=vs.includes("بانتظار المراجعة والاعتماد")?["بانتظار المراجعة والاعتماد"]:vs;
-  const defReg=me&&me.sector&&regs.includes(me.sector)?[me.sector]:regs;
+  const defSt=vs,defReg=regs;
   const box=(id,list,def)=>`<div class="chks" id="${id}">${list.map(v=>`<label class="chk"><input type="checkbox" value="${esc(v)}"${def.includes(v)?" checked":""}><span>${esc(v)}</span><small></small></label>`).join("")}</div>`;
   $("#sheet").innerHTML=`<h3>اختر ما يدخل قائمة التدقيق</h3><div class="sub">الملف فيه ${out.length.toLocaleString("en-US")} مخالفة</div>
-   ${canRep?`<div class="repbox"><label class="chk"><input type="checkbox" id="impRep"${fresh?" checked":""}><span><b>استبدال الملف الحالي</b><br><small style="margin:0">يحذف كل المخالفات الموجودة الآن (${rows.length.toLocaleString("en-US")}) ويضع بدلها مخالفات هذا الملف. التدقيقات المنجزة تبقى محفوظة.</small></span></label><div class="sub" style="margin-top:4px">بدون تحديد: تُضاف المخالفات للموجود وتتحدث المكررة.</div></div>`:""}
+   ${canRep?`<div class="repbox"><label class="chk"><input type="checkbox" id="impRep" checked><span><b>استبدال الملف الحالي بالملف الجديد</b><br><small style="margin:0">يُحذف الملف القديم (${rows.length.toLocaleString("en-US")}) ويُنزَّل الملف الجديد كاملاً ببياناته، ولا يُحذف منه إلا رقم الزيارة المكرر. التدقيقات المنجزة تبقى محفوظة.</small></span></label><div class="sub" style="margin-top:4px">بدون تحديد: تُضاف المخالفات للموجود وتتحدث المكررة.</div></div>`:""}
    <h3 class="sec">حالة الزيارة</h3>${box("impSt",vs,defSt)}
    <h3 class="sec">المنطقة <span><button type="button" class="linkbtn" id="impAll">تحديد الكل</button> · <button type="button" class="linkbtn" id="impNone">إلغاء الكل</button></span></h3>${box("impReg",regs,defReg)}
    <div class="btns" style="margin-top:14px"><button type="button" class="btn2 pri" id="impGo">رفع</button><button type="button" class="btn2" id="closeSh">إلغاء</button></div>`;
@@ -3801,7 +3800,7 @@ function importDialog(out,fresh){
   document.querySelectorAll("#impSt input,#impReg input").forEach(i=>i.onchange=upd);
   $("#impAll").onclick=()=>{document.querySelectorAll("#impReg input").forEach(i=>i.checked=true);upd()};
   $("#impNone").onclick=()=>{document.querySelectorAll("#impReg input").forEach(i=>i.checked=false);upd()};
-  $("#impGo").onclick=()=>{const l=sel(),rp=!!($("#impRep")&&$("#impRep").checked);if(rp&&!confirm(`سيتم حذف ${rows.length.toLocaleString("en-US")} مخالفة الحالية ووضع ${l.length.toLocaleString("en-US")} مخالفة من الملف الجديد بدلها. متابعة؟`))return;closeSheet();doImport(l,rp)};
+  $("#impGo").onclick=()=>{const l=sel(),rp=!!($("#impRep")&&$("#impRep").checked);if(rp&&!confirm(`سيُستبدل الملف القديم (${rows.length.toLocaleString("en-US")}) بالملف الجديد (${l.length.toLocaleString("en-US")} مخالفة، ويُحذف منه رقم الزيارة المكرر فقط). متابعة؟`))return;closeSheet();doImport(l,rp)};
   upd();
 }
 async function doImport(list,replace){if(!canUpload()){toast("غير مصرح لك بتزويد المنصة");return}
@@ -3815,7 +3814,7 @@ async function doImport(list,replace){if(!canUpload()){toast("غير مصرح ل
     const {error}=await sb.from("quality_queue").delete().neq("visit_no","__none__");if(error){toast("تعذر إزالة الملف السابق: "+error.message);return}}
   for(let i=0;i<up.length;i+=400){toast(`جارٍ الرفع… ${Math.min(i+400,up.length)} من ${up.length}`);
     const {error}=await sb.from("quality_queue").upsert(up.slice(i,i+400),{onConflict:"visit_no"});if(error){await bumpVer();toast("تعذر الرفع: "+error.message);return}}
-  await bumpVer();await snapBuild();await loadData();renderQueue();toast(`تم رفع ${up.length} مخالفة. للاختيار مرة ثانية اضغط «ملف المخالفات»`+(dup?` (تجاهل ${dup} مكررة)`:""));
+  await bumpVer();await snapBuild();await loadData();renderQueue();toast(`تم رفع ${up.length.toLocaleString("en-US")} مخالفة`+(dup?` — حُذف ${dup.toLocaleString("en-US")} رقم زيارة مكرر`:" — لا يوجد رقم زيارة مكرر"));
 }
 
 /* ===================== نسيت كلمة المرور ===================== */
