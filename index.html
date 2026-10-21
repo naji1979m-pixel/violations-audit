@@ -622,6 +622,47 @@ body:not(.home-on) #tabs .tab[aria-current="true"]{background:#1C437E;color:#fff
 body:not(.home-on) #tabs .hn-i{display:flex;width:40px;height:40px;align-items:center;justify-content:center;border-radius:12px;background:var(--soft);color:#1C437E}
 body:not(.home-on) #tabs .tab[aria-current="true"] .hn-i{background:rgba(255,255,255,.16);color:#fff}
 }
+
+/* ===== الهوية البصرية — «مستقبل مائي مستدام»: منصة زرقاء داكنة، أسطح بيضاء منحنية، حواف مضيئة وماء متدفق ===== */
+:root{--glow:#5CC8FF;--glow2:#2F7FE0;--stage:#061433}
+@media screen{
+body:has(#appView:not([hidden])){background:
+  radial-gradient(1100px 520px at 85% -8%,rgba(92,200,255,.22),transparent 62%),
+  radial-gradient(900px 600px at 5% 105%,rgba(47,127,224,.28),transparent 60%),
+  radial-gradient(700px 400px at 50% 40%,rgba(28,67,126,.35),transparent 70%),
+  linear-gradient(180deg,#040C1F 0%,#081B3F 45%,#0A2552 100%) fixed;color:var(--ink)}
+/* الشريط العلوي: شاشة ماء مضيئة */
+header.top{background:
+  radial-gradient(600px 180px at 20% 120%,rgba(92,200,255,.35),transparent 70%),
+  repeating-linear-gradient(115deg,rgba(255,255,255,0) 0 22px,rgba(160,220,255,.07) 22px 23px,rgba(255,255,255,0) 23px 48px),
+  linear-gradient(135deg,#071a3d 0%,#0E3470 50%,#1756A8 100%);
+  background-size:auto,300% 100%,auto;animation:jw-flow 26s linear infinite;box-shadow:0 10px 40px rgba(0,0,0,.45)}
+header.top::after{content:"";position:absolute;inset:auto 0 0 0;height:3px;background:linear-gradient(90deg,transparent,var(--glow) 20%,#fff 50%,var(--glow) 80%,transparent);box-shadow:0 0 18px 2px rgba(92,200,255,.8);pointer-events:none}
+@keyframes jw-flow{to{background-position:0 0,300% 0,0 0}}
+.userbar,.userbar .linkbtn{color:#BFD8F5}.userbar b{color:#fff}
+/* الأسطح البيضاء المنحنية بحواف مضيئة */
+section.block,.hq-card,.fbar,.hq-nav,.hk,.hs-c{border-color:rgba(127,200,255,.35)!important;box-shadow:0 0 0 1px rgba(92,200,255,.12),0 14px 40px rgba(0,0,0,.35),inset 0 1px 0 rgba(255,255,255,.9)!important}
+section.block,.hq-card{border-radius:24px}
+.hk{border-radius:20px}
+/* البطاقات الداكنة: إضاءة حافة سفلية مثل خط الـ LED */
+.pghero,.hq-top,.ab-hero{border-bottom:0!important;box-shadow:0 0 0 1px rgba(92,200,255,.25),0 18px 50px rgba(0,0,0,.45)!important;background:
+  radial-gradient(500px 200px at 15% 110%,rgba(92,200,255,.3),transparent 70%),
+  repeating-linear-gradient(115deg,rgba(255,255,255,0) 0 26px,rgba(160,220,255,.06) 26px 27px,rgba(255,255,255,0) 27px 54px),
+  linear-gradient(135deg,#061433 0%,#0D2E66 55%,#1A5AB0 100%)!important}
+.pghero::after,.hq-top::after{content:"";position:absolute;inset:auto 24px 0 24px;height:3px;border-radius:3px;background:linear-gradient(90deg,transparent,var(--glow),#fff,var(--glow),transparent);box-shadow:0 0 14px rgba(92,200,255,.9);pointer-events:none}
+/* العمود الطولي: حلقة بيضاء بحافة مضيئة */
+@media (min-width:861px){
+body:not(.home-on) #tabs,.home-nav{background:linear-gradient(180deg,#FFFFFF 0%,#F2F8FF 100%)!important;border-left:0!important;box-shadow:-2px 0 0 rgba(92,200,255,.9),-8px 0 30px rgba(92,200,255,.35),-10px 0 40px rgba(0,0,0,.35)!important}
+}
+body:not(.home-on) #tabs .tab[aria-current="true"],.home-nav button[aria-current=true]{background:linear-gradient(160deg,#0B2A5E 0%,#1C4F9C 60%,#2F7FE0 100%)!important;box-shadow:0 0 0 1px rgba(92,200,255,.6),0 8px 22px rgba(47,127,224,.45),0 0 18px rgba(92,200,255,.35)!important}
+#tabs .tab:hover .hn-i,.home-nav button:hover .hn-i{box-shadow:0 0 0 2px rgba(92,200,255,.45)}
+/* الأزرار الرئيسية بلمعة مائية */
+.btn2.pri,.act.print{background:linear-gradient(135deg,#0E3470,#2F7FE0)!important;border-color:transparent!important;color:#fff!important;box-shadow:0 6px 18px rgba(47,127,224,.35)}
+.hq-nav button[aria-selected=true]{box-shadow:0 0 0 1px rgba(92,200,255,.5),0 6px 16px rgba(47,127,224,.35)}
+/* الشريط السفلي للتدقيق */
+#auditBar{background:rgba(255,255,255,.96);-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);border-top:0;box-shadow:0 -2px 0 rgba(92,200,255,.8),0 -10px 30px rgba(0,0,0,.35)}
+}
+@media (prefers-reduced-motion:reduce){header.top{animation:none}}
 </style>
 </head>
 <body>
