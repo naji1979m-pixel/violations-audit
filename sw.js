@@ -1,4 +1,4 @@
-const CACHE = "quality-v117";
+const CACHE = "quality-v118";
 const CORE = ["./", "./index.html", "./manifest.json", "./icon-192.png", "./icon-512.png", "./apple-touch-icon.png"];
 // مكتبات خارجية تُحفظ في الجهاز ليعمل التطبيق والتقارير والطباعة بدون إنترنت
 const EXT = [
@@ -13,7 +13,7 @@ const EXT = [
   "https://cdn.jsdelivr.net/npm/pptxgenjs@4.0.1/dist/pptxgen.bundle.js"
 ];
 self.addEventListener("install", e => {
-  e.waitUntil(caches.open(CACHE).then(c => c.addAll(CORE).then(() => Promise.all(EXT.map(u => c.add(new Request(u, { mode: "cors" })).catch(() => {}))))).then(() => self.skipWaiting()));
+  e.waitUntil(caches.open(CACHE).then(c => c.addAll(CORE.map(u => new Request(u, { cache: "reload" }))).then(() => Promise.all(EXT.map(u => c.add(new Request(u, { mode: "cors" })).catch(() => {}))))).then(() => self.skipWaiting()));
 });
 self.addEventListener("activate", e => {
   e.waitUntil(caches.keys().then(ks => Promise.all(ks.filter(k => k !== CACHE).map(k => caches.delete(k)))).then(() => self.clients.claim()));
@@ -35,8 +35,9 @@ self.addEventListener("fetch", e => {
   e.respondWith(new Promise(res => {
     let done = false;
     const fb = () => caches.match(e.request).then(m => m || (e.request.mode === "navigate" ? caches.match("./index.html") : null));
-    const net = fetch(e.request).then(r => put(e.request, r));
-    const t = setTimeout(() => fb().then(m => { if (m && !done) { done = true; res(m); } }), 6000);
+    const nav = e.request.mode === "navigate";
+    const net = fetch(nav ? new Request(e.request.url, { cache: "no-cache", credentials: "same-origin" }) : e.request, nav ? undefined : { cache: "no-cache" }).then(r => put(e.request, r));
+    const t = setTimeout(() => fb().then(m => { if (m && !done) { done = true; res(m); } }), nav ? 10000 : 6000);
     net.then(r => { if (!done) { done = true; clearTimeout(t); res(r); } }).catch(() => { clearTimeout(t); fb().then(m => { if (!done) { done = true; res(m || Response.error()); } }); });
   }));
 });
