@@ -663,6 +663,10 @@ body:not(.home-on) #tabs .tab[aria-current="true"],.home-nav button[aria-current
 #auditBar{background:rgba(255,255,255,.96);-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);border-top:0;box-shadow:0 -2px 0 rgba(92,200,255,.8),0 -10px 30px rgba(0,0,0,.35)}
 }
 @media (prefers-reduced-motion:reduce){header.top{animation:none}}
+.home-ban{position:relative;border-radius:24px;overflow:hidden;background:#061433;box-shadow:0 0 0 1px rgba(92,200,255,.35),0 18px 50px rgba(0,0,0,.45)}
+.home-ban img{display:block;width:100%;aspect-ratio:1290/853;max-height:600px;object-fit:cover;object-position:center 10%}
+.home-ban::after{content:"";position:absolute;inset:auto 24px 0 24px;height:3px;border-radius:3px;background:linear-gradient(90deg,transparent,#5CC8FF,#fff,#5CC8FF,transparent);box-shadow:0 0 14px rgba(92,200,255,.9)}
+@media(max-width:860px){.home-ban{border-radius:18px}}
 </style>
 </head>
 <body>
@@ -2085,7 +2089,7 @@ function renderDash(){const nav=$("#homeNav");if(!nav)return;
   const A=Object.assign({},ABOUT_DEF,ABOUT||{}),S=homeStats(),ed=abOK();
   const cnt=(v,l,sub,ic,suf)=>`<div class="hs-c rv"><span class="hs-i">${hqIc(ic,22)}</span><b data-cnt="${v==null?"":v}" data-suf="${suf||""}">${v==null?"—":(v%1?v.toFixed(1):hqF(v))+(suf||"")}</b><span>${l}</span>${sub?`<small>${sub}</small>`:""}</div>`;
   const ach=(A.ach||[]).filter(a=>ed||String(a[0]||"").trim());
-  ab.innerHTML=`<section class="ab-hero"><div class="ab-hx"><span class="ab-k">شركة المياه الوطنية</span><h1>${esc(A.title)}</h1><p>${esc(A.tag)}</p>${ed?`<button type="button" class="ab-ed" id="abEdit">${hqIc("edit",16)} تعديل محتوى الصفحة</button>`:""}</div>
+  ab.innerHTML=`<div class="home-ban"><img src="home-banner.jpg" alt="شركة المياه الوطنية — مستقبل مائي مستدام" decoding="async" onerror="this.parentNode.remove()"></div><section class="ab-hero"><div class="ab-hx"><span class="ab-k">شركة المياه الوطنية</span><h1>${esc(A.title)}</h1><p>${esc(A.tag)}</p>${ed?`<button type="button" class="ab-ed" id="abEdit">${hqIc("edit",16)} تعديل محتوى الصفحة</button>`:""}</div>
       <svg class="ab-wave" viewBox="0 0 1200 120" preserveAspectRatio="none" aria-hidden="true"><path d="M0 60 C 200 110 400 10 600 60 S 1000 110 1200 60 V120 H0Z"/><path class="w2" d="M0 80 C 250 30 450 120 700 75 S 1050 40 1200 85 V120 H0Z"/></svg>
       <span class="ab-drop d1">${hqIc("drop",34)}</span><span class="ab-drop d2">${hqIc("drop",22)}</span><span class="ab-drop d3">${hqIc("drop",28)}</span></section>
     <section class="hs rv-g">${cnt(S.n,"مخالفة مرصودة","من التقرير الشامل","eye")}${cnt(S.sent,"مرسلة للهيئة","","send")}${cnt(S.iss,"قرار صادر","","check")}${cnt(S.q,"نسبة جودة الملفات","100% − نسبة المسترجع","star","%")}${cnt(S.g,"محافظة ومدينة","نطاق التغطية","map")}</section>
