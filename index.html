@@ -927,8 +927,8 @@ $("#fileIn").onchange=async e=>{if(!canUpload()){toast("تزويد المنصة 
   try{
     toast("جارٍ قراءة الملف…");await new Promise(r=>setTimeout(r,50));
     toast("جارٍ قراءة الملف… قد يستغرق دقيقة للملفات الكبيرة");const {data,arr}=await xlsxRead(f);toast("جارٍ تجهيز المخالفات…");await new Promise(r=>setTimeout(r,30));const hdr=(arr[0]||[]).map(h=>String(h??"").trim());
-    const vi=hdr.indexOf(COLS.visit),ii=hdr.indexOf(COLS.vno),rawBy={};
-    for(let i=1;i<arr.length;i++){const row=arr[i];const k=String((vi>=0?row[vi]:"")||(ii>=0?row[ii]:"")).trim();if(k&&!(k in rawBy))rawBy[k]=hdr.map((_,j)=>row[j]==null?"":String(row[j]))}
+    const vi=hdr.indexOf(COLS.visit),ii=hdr.indexOf(COLS.vno),bi=hdr.indexOf(COLS.item),rawBy={};
+    for(let i=1;i<arr.length;i++){const row=arr[i];const k=String((vi>=0?row[vi]:"")||(ii>=0?row[ii]:"")).trim()+"|"+norm(String(bi>=0?row[bi]??"":"").trim());if(k&&!(k in rawBy))rawBy[k]=hdr.map((_,j)=>row[j]==null?"":String(row[j]))}
     window.lastHeaders=hdr;
     const g=(r,k)=>String(r[COLS[k]]??"").trim();
     const out=data.map(r=>{
@@ -937,7 +937,7 @@ $("#fileIn").onchange=async e=>{if(!canUpload()){toast("تزويد المنصة 
         loc:coords,coords,region:g(r,"region"),vstatus:g(r,"status"),visitSt:g(r,"vstat"),
         date:fmtDate(r[COLS.date]||r[COLS.date2]),officer:g(r,"officer"),explain:g(r,"explain"),
         item:g(r,"item"),prop:g(r,"prop"),sev:g(r,"sev"),decision:g(r,"decision"),reason:g(r,"reason"),amin:g(r,"amin"),decDate:g(r,"decDate"),mgr:g(r,"mgr"),pres:g(r,"pres"),fine:g(r,"fine")};
-    }).filter(r=>r.vno||r.visit);out.forEach(r=>{r.raw=rawBy[r.visit||r.vno]||null});
+    }).filter(r=>r.vno||r.visit);out.forEach(r=>{r.raw=rawBy[(r.visit||r.vno)+"|"+norm(r.item||"")]||null});
     if(!out.length){toast("لم أجد عمود «معرف المخالفة» في الملف");return}
     importDialog(out,true);
   }catch(err){toast("تعذرت قراءة الملف، تأكد أنه ملف إكسل")}
@@ -1667,7 +1667,7 @@ async function loadQueue(){const v=await dataVer();DATA_VER=v;let q=null;if(v){c
 function upDt(){const el=$("#upDt");if(!el)return;let t="";const m=String(DATA_VER||"").match(/^(\d{4}-\d{2}-\d{2}T[\d:.]+Z)/);
   if(m){const d=new Date(m[1]);if(!isNaN(d))t="رُفع: "+d.toLocaleDateString("ar-SA-u-nu-latn-ca-gregory",{timeZone:"Asia/Riyadh"})+" "+d.toLocaleTimeString("ar-SA-u-nu-latn",{timeZone:"Asia/Riyadh",hour:"2-digit",minute:"2-digit"})}
   let md=null;(rows||[]).forEach(r=>{const x=dayOfRow(r);if(x!=null&&(md==null||x>md))md=x});if(md!=null)t+=(t?"<br>":"")+"آخر بيانات: "+wkDay(md);el.innerHTML=t}
-function mapQueue(q){setTimeout(upDt,0);const MT={};rows=q.map(x=>{const r={vno:x.visit_no,visit:x.visit_no,vid:x.violation_id||"",name:x.violator_name||"",nid:"",loc:x.location||"",sector:x.sector||"",region:x.region||"",sev:(x.extra||{}).sev||"",vstat:(x.extra||{}).vstatus||"",pkind:pkFrom(x.extra||{}),reason:(x.extra||{}).reason||"",amin:(x.extra||{}).amin||"",decDate:(x.extra||{}).dec_date||"",mgr:(x.extra||{}).mgr||"",pres:("pres" in (x.extra||{}))?x.extra.pres:undefined,fine:(x.extra||{}).fine||"",vvisit:(x.extra||{}).visit_status||"",dec:("decision" in (x.extra||{}))?x.extra.decision:undefined,date:x.visit_date||"",officer:x.officer||"",explain:"",item:x.item||"",prop:x.property_type||"",type:(x.item||"") in MT?MT[x.item||""]:(MT[x.item||""]=matchType(x.item||""))};r._h=norm([r.vno,r.vid,r.officer,r.item,r.region,r.sector,r.name].join(" "));return r})}
+function mapQueue(q){setTimeout(upDt,0);const MT={};rows=q.map(x=>{const r={vno:x.visit_no,visit:(x.extra||{}).vis||x.visit_no,vid:x.violation_id||"",name:x.violator_name||"",nid:"",loc:x.location||"",sector:x.sector||"",region:x.region||"",sev:(x.extra||{}).sev||"",vstat:(x.extra||{}).vstatus||"",pkind:pkFrom(x.extra||{}),reason:(x.extra||{}).reason||"",amin:(x.extra||{}).amin||"",decDate:(x.extra||{}).dec_date||"",mgr:(x.extra||{}).mgr||"",pres:("pres" in (x.extra||{}))?x.extra.pres:undefined,fine:(x.extra||{}).fine||"",vvisit:(x.extra||{}).visit_status||"",dec:("decision" in (x.extra||{}))?x.extra.decision:undefined,date:x.visit_date||"",officer:x.officer||"",explain:"",item:x.item||"",prop:x.property_type||"",type:(x.item||"") in MT?MT[x.item||""]:(MT[x.item||""]=matchType(x.item||""))};r._h=norm([r.vno,r.visit,r.vid,r.officer,r.item,r.region,r.sector,r.name].join(" "));return r})}
 let AUD_RAW=[];
 async function loadAudits(){const q=await fetchAll("quality_audits","*");AUD_RAW=q;mapAudits(q)}
 function mapAudits(q,ro){const keep=audits.manual;audits={};
@@ -3806,15 +3806,22 @@ function importDialog(out,fresh){
 async function doImport(list,replace){if(!canUpload()){toast("غير مصرح لك بتزويد المنصة");return}
   if(window.lastHeaders&&window.lastHeaders.length){REPORT_COLS=window.lastHeaders;try{await sb.from("quality_settings").upsert({key:"report_cols",value:{cols:window.lastHeaders},updated_at:new Date().toISOString()})}catch(e){}}
   const seen=new Set(),uniq=[];let dup=0;
-  list.forEach(r=>{const k=r.visit||r.vno;if(!k)return;if(seen.has(k)){dup++;return}seen.add(k);uniq.push(r)});
-  const up=uniq.map(r=>({raw:r.raw||null,visit_no:r.visit||r.vno,violation_id:r.vno||null,violator_name:r.name,violator_nid:r.nid,sector:r.gov||null,region:r.region||null,location:r.loc,visit_date:r.date,officer:r.officer,explanation:r.explain,item:r.item,property_type:r.prop,extra:(()=>{const e={sev:r.sev||"",vstatus:r.vstatus||"",visit_status:r.visitSt||"",decision:r.decision||"",reason:r.reason||"",amin:r.amin||"",dec_date:r.decDate||"",mgr:r.mgr||"",pres:r.pres||"",fine:r.fine||""};e.pkind=pkFrom(e);return e})()}));
+  /* المكرر = نفس رقم الزيارة ونفس البند؛ رقم الزيارة الذي تحته أكثر من بند يُحفظ كل بند منه كمخالفة مستقلة */
+  const ik=r=>norm(r.item||"");
+  list.forEach(r=>{const v=r.visit||r.vno;if(!v)return;const d=v+"|"+ik(r);if(seen.has(d)){dup++;return}seen.add(d);uniq.push(r)});
+  const byV={},keyOf=new Map(),taken=new Set();uniq.forEach(r=>{const v=r.visit||r.vno;(byV[v]=byV[v]||[]).push(r)});
+  Object.entries(byV).forEach(([v,L])=>{if(L.length===1){keyOf.set(L[0],v);taken.add(v);return}
+    const ex=rows.filter(x=>(x.visit||x.vno)===v);L.forEach(r=>{const m=ex.find(x=>!taken.has(x.vno)&&norm(x.item||"")===ik(r));if(m){keyOf.set(r,m.vno);taken.add(m.vno)}});
+    L.forEach((r,n)=>{if(keyOf.has(r))return;let k=taken.has(v)?v+"#"+(r.vno||n+1):v;let j=2;while(taken.has(k))k=v+"#"+(r.vno||n+1)+"-"+(j++);keyOf.set(r,k);taken.add(k)})});
+  const multi=Object.values(byV).filter(L=>L.length>1).length;
+  const up=uniq.map(r=>({raw:r.raw||null,visit_no:keyOf.get(r),violation_id:r.vno||null,violator_name:r.name,violator_nid:r.nid,sector:r.gov||null,region:r.region||null,location:r.loc,visit_date:r.date,officer:r.officer,explanation:r.explain,item:r.item,property_type:r.prop,extra:(()=>{const e={sev:r.sev||"",vstatus:r.vstatus||"",visit_status:r.visitSt||"",decision:r.decision||"",reason:r.reason||"",amin:r.amin||"",dec_date:r.decDate||"",mgr:r.mgr||"",pres:r.pres||"",fine:r.fine||""};e.pkind=pkFrom(e);if(keyOf.get(r)!==(r.visit||r.vno))e.vis=r.visit||r.vno;return e})()}));
   if(replace){const ks=[...new Set(rows.map(r=>r.vno).filter(Boolean))];
     for(let i=0;i<ks.length;i+=300){toast(`جارٍ إزالة الملف السابق… ${Math.min(i+300,ks.length).toLocaleString("en-US")} من ${ks.length.toLocaleString("en-US")}`);
       const r=await sbTry(()=>sb.from("quality_queue").delete().in("visit_no",ks.slice(i,i+300)),3).catch(e=>({error:e}));if(r&&r.error){toast("تعذر إزالة الملف السابق: "+(r.error.message||r.error));return}}
     const {error}=await sb.from("quality_queue").delete().neq("visit_no","__none__");if(error){toast("تعذر إزالة الملف السابق: "+error.message);return}}
   for(let i=0;i<up.length;i+=400){toast(`جارٍ الرفع… ${Math.min(i+400,up.length)} من ${up.length}`);
     const {error}=await sb.from("quality_queue").upsert(up.slice(i,i+400),{onConflict:"visit_no"});if(error){await bumpVer();toast("تعذر الرفع: "+error.message);return}}
-  await bumpVer();await snapBuild();await loadData();renderQueue();toast(`تم رفع ${up.length.toLocaleString("en-US")} مخالفة`+(dup?` — حُذف ${dup.toLocaleString("en-US")} رقم زيارة مكرر`:" — لا يوجد رقم زيارة مكرر"));
+  await bumpVer();await snapBuild();await loadData();renderQueue();toast(`تم رفع ${up.length.toLocaleString("en-US")} مخالفة`+(dup?` — حُذف ${dup.toLocaleString("en-US")} مكرر (نفس رقم الزيارة ونفس البند)`:" — لا يوجد مكرر")+(multi?` — ${multi.toLocaleString("en-US")} رقم زيارة تحته أكثر من بند حُفظ كل بند مستقلاً`:""));
 }
 
 /* ===================== نسيت كلمة المرور ===================== */
