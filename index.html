@@ -2807,7 +2807,7 @@ function acForm(c){if(!acEdit())return;const E=c||{title:"",summary:"",category:
 function llParse(t){const m=String(t||"").replace(/[٠-٩]/g,d=>"٠١٢٣٤٥٦٧٨٩".indexOf(d)).replace(/٫/g,".").match(/-?\d{1,3}(?:\.\d+)?/g);if(!m||m.length<2)return null;const dm=m.filter(x=>x.includes("."));const u=dm.length>=2?dm:m;let a=+u[0],b=+u[1];
   const isLat=x=>x>=15&&x<=33,isLng=x=>x>=34&&x<=57;if(isLat(a)&&isLng(b))return [a,b];if(isLat(b)&&isLng(a))return [b,a];return null}
 const rowLL=r=>r._ll!==undefined?r._ll:(r._ll=llParse(r.loc));
-let HQMM="n",HQMAP=null,HQMLAY=null;
+let HQMM="n",HQMAP=null,HQMLAY=null,HQRPL=null,HQRPM=true,HQFLY=null;const RP_C1="#7B2CBF",RP_C2="#D6336C";
 const HQMM_L={n:"المرصودة",sent:"المرسلة للهيئة",ret:"المسترجعة حالياً",iss:"القرارات الصادرة",arch:"غير مكتملة الأركان",pend:"بانتظار المراجعة"};
 const mmOK=r=>{const c=r._hc||(r._hc=hqCls(r));return HQMM==="n"||(HQMM==="sent"?(c==="iss"||c==="ret"||c==="auth"):c===HQMM)};
 function hqCells(L,step){const C={};L.forEach(r=>{if(!mmOK(r))return;const ll=rowLL(r);if(!ll)return;const a=Math.floor(ll[0]/step)*step,b=Math.floor(ll[1]/step)*step,k=a.toFixed(3)+","+b.toFixed(3);
@@ -2820,8 +2820,8 @@ function llCov(L){const G={};L.forEach(r=>{if(!mmOK(r))return;const g=(r.sector|
 function llFar(r){const g=(r.sector||"").trim(),c=(window._llC||{})[g],ll=rowLL(r);if(!c||!ll)return false;return Math.hypot((ll[1]-c[1])*111*Math.cos(c[0]*Math.PI/180),(ll[0]-c[0])*111)>60}
 function hqMapHtml(L){const COV=llCov(L);window._llC={};COV.forEach(o=>{if(o.c)window._llC[o.g]=o.c});const withLL=L.filter(r=>rowLL(r)),sel=withLL.filter(mmOK),H=hqCells(L,0.01).sort((a,b)=>b.n-a.n).slice(0,15);
   return `<div class="hq-grid"><div class="hq-card c-12"><div class="hq-ch"><h3>خريطة المخالفات</h3><span class="sub">${hqF(sel.length)} مخالفة على الخريطة · ${hqF(withLL.length)} من ${hqF(L.length)} لها إحداثيات</span>
-      <div class="srt-w"><label class="hq-sel hq-sel-l"><span>المؤشر</span><select id="hqMM">${Object.entries(HQMM_L).map(([k,l])=>`<option value="${k}"${HQMM===k?" selected":""}>${l}</option>`).join("")}</select></label></div></div>
-    ${withLL.length?`<div id="hqMap" class="hq-map" role="img" aria-label="خريطة المخالفات"></div><div class="hq-mleg"><span>أقل</span><i style="background:#9CC1F2"></i><i style="background:#2F6FC0"></i><i style="background:#E0A11B"></i><i style="background:#C0392B"></i><span>أكثر</span><small>الرقم داخل الدائرة = عدد المخالفات · قرّب لتتفصّل الدوائر · اضغط الدائرة لتفاصيلها</small></div><div class="hq-mview" id="hqMView"></div>`:`<div class="empty">لا توجد إحداثيات في البيانات الحالية.<br>أعد رفع التقرير الشامل (استبدال) ليُحمَّل عمود «موقع المخالفة».</div>`}</div>
+      <div class="srt-w"><label class="hq-sel hq-sel-l"><span>المؤشر</span><select id="hqMM">${Object.entries(HQMM_L).map(([k,l])=>`<option value="${k}"${HQMM===k?" selected":""}>${l}</option>`).join("")}</select></label><label class="chk" style="margin-inline-start:8px"><input type="checkbox" id="hqRpm"${HQRPM?" checked":""}><span>🔁 المواقع المكررة (${hqF(rpGroups(L).length)})</span></label></div></div>
+    ${withLL.length?`<div id="hqMap" class="hq-map" role="img" aria-label="خريطة المخالفات"></div><div class="hq-mleg"><span>أقل</span><i style="background:#9CC1F2"></i><i style="background:#2F6FC0"></i><i style="background:#E0A11B"></i><i style="background:#C0392B"></i><span>أكثر</span><small>الرقم داخل الدائرة = عدد المخالفات · قرّب لتتفصّل الدوائر · اضغط الدائرة لتفاصيلها</small></div>${HQRPM?`<div class="hq-mleg"><span>🔁 تكرار الرصد:</span><i style="background:${RP_C1};border-radius:4px;transform:rotate(45deg)"></i><span>نفس الموقع — مأمور ضبط واحد</span><i style="background:${RP_C2};border-radius:4px;transform:rotate(45deg)"></i><span>نفس الموقع — أكثر من مأمور ضبط</span><small>الرقم داخل المعيّن = عدد مرات الرصد · اضغطه لتفاصيله</small></div>`:""}<div class="hq-mview" id="hqMView"></div>`:`<div class="empty">لا توجد إحداثيات في البيانات الحالية.<br>أعد رفع التقرير الشامل (استبدال) ليُحمَّل عمود «موقع المخالفة».</div>`}</div>
     <div class="hq-card c-12"><div class="hq-ch"><h3>اكتمال الإحداثيات حسب المحافظة <span class="sub">${esc(HQMM_L[HQMM])} · «خارج نطاقها» = إحداثيات تبعد أكثر من 60 كم عن مركز مخالفات محافظتها (غالباً خطأ إدخال)</span></h3><span class="tx-bs"><button type="button" class="btn2 tx-b" data-tx="pdf">📄 PDF</button><button type="button" class="btn2 pri tx-b" data-tx="xls">📊 Excel</button></span></div>
       <div class="tbl-wrap" style="max-height:460px;overflow:auto"><table class="tbl" data-tt="اكتمال الإحداثيات حسب المحافظة"><thead><tr><th>المحافظة</th><th>القطاع</th><th>المخالفات</th><th>على الخريطة</th><th>بدون إحداثيات</th><th>خارج نطاقها</th><th>نسبة الاكتمال</th></tr></thead><tbody>
       ${COV.map(o=>{const base=Object.assign(HQMM==="n"?{}:{c:HQMM},{g:o.g});return `<tr><td><b>${esc(o.g)}</b></td><td>${esc(o.s)}</td><td${rdA(base)}><b>${hqF(o.n)}</b></td><td${o.ll?rdA(Object.assign({ll:"y"},base)):""}>${hqF(o.ll)}</td><td${o.n-o.ll?rdA(Object.assign({ll:"n"},base)):""} style="${o.n-o.ll?"color:var(--bad);font-weight:700":""}">${hqF(o.n-o.ll)}</td><td${o.far?rdA(Object.assign({ll:"far"},base)):""} style="${o.far?"color:#B7861A;font-weight:700":""}">${hqF(o.far)}</td><td>${o.c?`<button type="button" class="btn2" data-fly="${o.c[0]},${o.c[1]},11">${hqP(o.ll-o.far,o.n)}</button>`:hqP(o.ll,o.n)}</td></tr>`}).join("")}</tbody></table></div></div>
@@ -2838,12 +2838,16 @@ async function hqMapInit(L){const el=document.getElementById("hqMap");if(!el)ret
     let step=z<=6?0.25:z<=8?0.08:z<=10?0.02:z<=12?0.006:0.002,C=hqCells(V,step);while(C.length>700&&step<2){step*=2;C=hqCells(V,step)}const mx=Math.max(1,...C.map(o=>o.n));
     HQMLAY=Lf.layerGroup();C.forEach(o=>{const f=Math.sqrt(o.n/mx),col=f>.75?"#C0392B":f>.5?"#E0A11B":f>.25?"#2F6FC0":"#9CC1F2";
       const d=Math.round(18+f*34),m=Lf.marker([o.la,o.lo],{icon:Lf.divIcon({className:"hq-mk",html:`<span style="width:${d}px;height:${d}px;background:${col};font-size:${d<26?10:d<40?11.5:13}px">${o.n>=1000?(o.n/1000).toFixed(o.n>=10000?0:1)+"k":o.n}</span>`,iconSize:[d,d],iconAnchor:[d/2,d/2]})});
-      m.bindPopup(`<div dir="rtl" style="font-family:inherit;min-width:180px"><b>${esc(o.gv||"")}</b><br>${hqF(o.n)} مخالفة${o.top?`<br><small>أكثر بند: ${esc(o.top)}</small>`:""}<br><button type="button" class="btn2 pri" style="margin-top:6px" data-rd="${esc(rdS(Object.assign(HQMM==="n"?{}:{c:HQMM},{cell:`${o.a.toFixed(4)},${o.b.toFixed(4)},${step}`})))}">عرض المخالفات</button></div>`);m.addTo(HQMLAY)});HQMLAY.addTo(HQMAP)};
+      m.bindPopup(`<div dir="rtl" style="font-family:inherit;min-width:180px"><b>${esc(o.gv||"")}</b><br>${hqF(o.n)} مخالفة${o.top?`<br><small>أكثر بند: ${esc(o.top)}</small>`:""}<br><button type="button" class="btn2 pri" style="margin-top:6px" data-rd="${esc(rdS(Object.assign(HQMM==="n"?{}:{c:HQMM},{cell:`${o.a.toFixed(4)},${o.b.toFixed(4)},${step}`})))}">عرض المخالفات</button></div>`);m.addTo(HQMLAY)});HQMLAY.addTo(HQMAP);drawRp()};
+  const drawRp=()=>{if(HQRPL){HQRPL.remove();HQRPL=null}if(!HQRPM)return;const bd=HQMAP.getBounds().pad(0.1),G=rpGroups(L).filter(g=>bd.contains([g.lat,g.lng])).slice(0,700);HQRPL=Lf.layerGroup();
+    G.forEach(g=>{const col=g.offs.length>1?RP_C2:RP_C1,d=g.n>=10?30:g.n>=4?26:22;const m=Lf.marker([g.lat,g.lng],{zIndexOffset:1000,icon:Lf.divIcon({className:"hq-rpk",html:`<span style="display:flex;align-items:center;justify-content:center;width:${d}px;height:${d}px;background:${col};border:2px solid #fff;border-radius:6px;transform:rotate(45deg);box-shadow:0 2px 6px rgba(0,0,0,.35)"><b style="transform:rotate(-45deg);color:#fff;font-size:11px">${g.n}</b></span>`,iconSize:[d,d],iconAnchor:[d/2,d/2]})});
+      m.bindPopup(`<div dir="rtl" style="font-family:inherit;min-width:200px"><b>🔁 ${esc(g.gov||"موقع مكرر")}</b><br>رُصد ${g.n} مرات${g.sameDay?" (منها في نفس اليوم)":""}<br><small>${g.offs.map(([o,c])=>esc(o)+" ("+c+")").join("<br>")}</small><br><button type="button" class="btn2 pri" style="margin-top:6px" data-rpg2="${g.id}">عرض المخالفات</button></div>`);m.addTo(HQRPL)});HQRPL.addTo(HQMAP)};
   const pts=L.filter(mmOK).map(rowLL).filter(Boolean);if(pts.length){const q=(a,p)=>{const b=a.slice().sort((x,y)=>x-y);return b[Math.min(b.length-1,Math.max(0,Math.floor(b.length*p)))]};const la=pts.map(x=>x[0]),lo=pts.map(x=>x[1]);HQMAP.fitBounds([[q(la,.01),q(lo,.01)],[q(la,.99),q(lo,.99)]],{padding:[20,20],maxZoom:12})}
   const vc=()=>{const el2=document.getElementById("hqMView");if(!el2)return;const bd=HQMAP.getBounds(),G={};let n=0;L.forEach(r=>{if(!mmOK(r))return;const ll=rowLL(r);if(!ll||!bd.contains(ll))return;n++;const g=(r.sector||"").trim();G[g]=(G[g]||0)+1});
     const t=Object.entries(G).sort((a,b)=>b[1]-a[1]).slice(0,6);el2.innerHTML=`<b>في الجزء الظاهر من الخريطة: ${hqF(n)} مخالفة</b>${t.length?" — "+t.map(([g,v])=>`${esc(g.replace(/^محافظة\s+|^مدينة\s+/,""))} <bdi>${hqF(v)}</bdi>`).join(" · "):""}`};
   let _mt=null;HQMAP.on("moveend",()=>{clearTimeout(_mt);_mt=setTimeout(()=>{vc();const pp=HQMAP._popup;if(!(pp&&pp.isOpen&&pp.isOpen()))draw()},120)});
-  draw();vc();HQMAP.on("popupopen",e=>{const b=e.popup.getElement().querySelector("[data-rd]");if(b)b.onclick=ev=>{ev.stopPropagation();openRD(b.dataset.rd)}});
+  draw();vc();HQMAP.on("popupopen",e=>{const b=e.popup.getElement().querySelector("[data-rd]");if(b)b.onclick=ev=>{ev.stopPropagation();openRD(b.dataset.rd)};const b2=e.popup.getElement().querySelector("[data-rpg2]");if(b2)b2.onclick=ev=>{ev.stopPropagation();const g=RP_C.g.find(x=>x.id===+b2.dataset.rpg2);if(g)rpSheet(g)}});
+  if(HQFLY){HQMAP.setView(HQFLY,17);HQFLY=null;el.scrollIntoView({block:"center"})}
   $$("#hqBody [data-fly]").forEach(bt=>bt.onclick=()=>{const [x,y,z]=bt.dataset.fly.split(",").map(Number);HQMAP.flyTo([x,y],z||14);el.scrollIntoView({behavior:"smooth",block:"center"})})}
 /* ===================== بوابة الوحدة الجنوبية – القطاع الشرقي ===================== */
 const SOUTH_U="الوحدة الجنوبية",SOUTH_T="الوحدة الجنوبية – القطاع الشرقي";
@@ -2942,13 +2946,50 @@ const SOUTH_CX={desc:"محافظة الأحساء (الهفوف والمبرز �
 const NORTH_CX={desc:"محافظات حفر الباطن والقيصومة والخفجي والنعيرية وقرية العليا ومليجة",tot:"محافظات الوحدة الشمالية",k:"north",el:"#northBody",u:NORTH_U,t:NORTH_T,gov:g=>isNorthGov(g),adm:()=>northAdmin(),ok:()=>northOK(),gr:()=>NORTH_GR,rpc:"q_north",sql:"north-setup.sql",self:u=>isNorthStaff(u)||u.role==="admin"};
 let ST_CX=SOUTH_CX;
 function stUse(cx){if(ST_CX!==cx){ST_CX=cx;STV="rep";STG="";STQ="";ST_REQ=null;ST_USERS=null;ST_LOG=null;ST_ERR=""}}
+/* ===================== تكرار الرصد — نفس الموقع (25 متر أو أقل) في أي وقت ===================== */
+let HQRP="all",HQRQ="",RP_C={k:"",g:[]};
+function rpGroups(L){const ck=L.length+"|"+(L[0]&&L[0].vno)+"|"+(L[L.length-1]&&L[L.length-1].vno)+"|"+HQP.k+HQP.d1+HQP.d2+HQSF+HQG.join(",");if(RP_C.k===ck)return RP_C.g;
+  const C=.00025,pts=[];L.forEach(r=>{const ll=llParse(r.loc);if(ll)pts.push([ll[0],ll[1],r])});
+  const G=new Map(),key=(a,b)=>a+","+b;pts.forEach((p,i)=>{const k=key(Math.floor(p[0]/C),Math.floor(p[1]/C));let a=G.get(k);if(!a)G.set(k,a=[]);a.push(i)});
+  const par=pts.map((_,i)=>i),f=i=>{while(par[i]!==i){par[i]=par[par[i]];i=par[i]}return i};
+  const dist=(p,q)=>{const dy=(p[0]-q[0])*111320,dx=(p[1]-q[1])*111320*Math.cos(p[0]*Math.PI/180);return Math.sqrt(dx*dx+dy*dy)};
+  G.forEach((ids,k)=>{const [cx,cy]=k.split(",").map(Number);for(let dx=-1;dx<=1;dx++)for(let dy=-1;dy<=1;dy++){const o=G.get(key(cx+dx,cy+dy));if(!o)continue;const same=dx===0&&dy===0;
+      for(const i of ids)for(const j of o){if(same&&j<=i)continue;const a=f(i),b=f(j);if(a!==b&&dist(pts[i],pts[j])<=25)par[a]=b}}});
+  const by=new Map();pts.forEach((p,i)=>{const r=f(i);let g=by.get(r);if(!g)by.set(r,g={pts:[]});g.pts.push(p)});
+  const out=[];by.forEach(g=>{const vis=new Set(g.pts.map(p=>p[2].visit||p[2].vno));if(vis.size<2)return;
+    const rows=g.pts.map(p=>p[2]).sort((a,b)=>(dayOfRow(a)??0)-(dayOfRow(b)??0));const off={},day={};
+    rows.forEach(r=>{const o=(r.officer||"غير محدد").trim();(off[o]=off[o]||new Set()).add(r.visit||r.vno);const d=dayOfRow(r);if(d!=null)(day[d]=day[d]||new Set()).add(r.visit||r.vno)});
+    const ds=rows.map(dayOfRow).filter(d=>d!=null);const lat=g.pts.reduce((t,p)=>t+p[0],0)/g.pts.length,lng=g.pts.reduce((t,p)=>t+p[1],0)/g.pts.length;
+    out.push({rows,n:vis.size,offs:Object.entries(off).map(([o,s])=>[o,s.size]).sort((a,b)=>b[1]-a[1]),sameDay:Object.values(day).some(s=>s.size>1),d1:ds.length?Math.min(...ds):null,d2:ds.length?Math.max(...ds):null,lat,lng,gov:(rows[0].sector||"").trim(),reg:rows[0].region||"",id:out.length})});
+  out.sort((a,b)=>b.n-a.n||b.offs.length-a.offs.length);RP_C={k:ck,g:out,noLL:L.length-pts.length};return out}
+function rpHtml(L){const G=rpGroups(L),one=G.filter(g=>g.offs.length===1),multi=G.filter(g=>g.offs.length>1),sd=G.filter(g=>g.sameDay),nv=G.reduce((t,g)=>t+g.n,0);
+  const q=norm(HQRQ.trim());let S=HQRP==="one"?one:HQRP==="multi"?multi:HQRP==="day"?sd:G;if(q)S=S.filter(g=>norm([g.gov,g.reg].concat(g.offs.map(o=>o[0]),g.rows.map(r=>r.visit||r.vno)).join(" ")).includes(q));
+  const tile=(l,v,s,c)=>`<div class="hk" style="--tone:${c}"><div class="hk-h"><span class="hk-l">${l}</span></div><b class="hk-v">${hqF(v)}</b><div class="hk-s">${s}</div></div>`;
+  const ch=[["all","كل المواقع المكررة",G.length],["one","مأمور ضبط واحد",one.length],["multi","أكثر من مأمور ضبط",multi.length],["day","في نفس اليوم",sd.length]];
+  return `${insHtml([["b",`<b>${hqF(G.length)}</b> موقع رُصد أكثر من مرة، فيها <b>${hqF(nv)}</b> مخالفة (${hqP(nv,L.length)} من المرصود).`],["w",`<b>${hqF(one.length)}</b> موقع كرر رصده نفس مأمور الضبط، و<b>${hqF(multi.length)}</b> موقع رصده أكثر من مأمور ضبط.`],["w",`<b>${hqF(sd.length)}</b> موقع تكرر رصده في نفس اليوم.`]].concat(RP_C.noLL?[["b",`${hqF(RP_C.noLL)} مخالفة بدون إحداثيات صحيحة لم تدخل في الحساب.`]]:[]),"قراءة ذكية — تكرار الرصد")}
+    <div class="hq-kgrid">${tile("المواقع المكررة",G.length,"نفس الموقع (25 متر أو أقل)","#1F5BB0")}${tile("المخالفات في مواقع مكررة",nv,hqP(nv,L.length)+" من المرصود","#2F6FC0")}${tile("مأمور ضبط واحد",one.length,"كرر رصد نفس الموقع","#B7791F")}${tile("أكثر من مأمور ضبط",multi.length,"رصدوا نفس الموقع","#9B2C22")}${tile("في نفس اليوم",sd.length,"موقع تكرر رصده بنفس التاريخ","#6B46C1")}</div>
+    <div class="hq-card"><div class="hq-ch"><h3>المواقع المكررة</h3><span class="sub">اضغط على الموقع لعرض كل مخالفاته</span></div>
+      <div class="pill-row" style="margin-bottom:10px;gap:8px">${ch.map(([k,l,n])=>`<button type="button" class="pill" data-rp="${k}" aria-pressed="${HQRP===k}">${l} ${hqF(n)}</button>`).join("")}<input class="in" id="rpQ" placeholder="بحث بالمحافظة أو المأمور أو رقم الزيارة" value="${esc(HQRQ)}" style="flex:1;min-width:200px"><button type="button" class="btn2" id="rpX">${hqIc("xls",16)} Excel</button></div>
+      ${S.length?`<div class="tbl-wrap"><table class="tbl"><thead><tr><th>#</th><th>المحافظة</th><th>مرات الرصد</th><th>مأمورو الضبط</th><th>الفترة</th><th>الموقع</th></tr></thead><tbody>${S.slice(0,300).map((g,i)=>`<tr class="clk" data-rpg="${g.id}" style="cursor:pointer"><td>${i+1}</td><td>${esc(g.gov||"—")}<br><small class="sub">${esc(g.reg)}</small></td><td><b>${g.n}</b>${g.sameDay?' <span class="badge b-ret">نفس اليوم</span>':""}</td><td>${g.offs.length>1?`<span class="badge b-ret">${g.offs.length} مأمورين</span><br>`:""}${g.offs.map(([o,c])=>`${esc(o)} <small>(${c})</small>`).join("<br>")}</td><td>${g.d1!=null?(g.d1===g.d2?wkDay(g.d1):wkDay(g.d1)+" ← "+wkDay(g.d2)):"—"}</td><td><a href="https://www.google.com/maps?q=${g.lat.toFixed(6)},${g.lng.toFixed(6)}" target="_blank" rel="noopener" data-stop="1" dir="ltr">${g.lat.toFixed(5)}, ${g.lng.toFixed(5)}</a><br><button type="button" class="linkbtn" data-rpfly="${g.lat},${g.lng}">🗺️ على خريطة المنصة</button></td></tr>`).join("")}</tbody></table></div>${S.length>300?`<div class="sub" style="margin-top:6px">يظهر أعلى 300 موقع من ${hqF(S.length)} — نزّل Excel للقائمة كاملة</div>`:""}`:'<div class="empty">لا توجد مواقع مكررة ضمن هذا الاختيار</div>'}</div>`}
+function rpBind(L){const re=()=>renderHQ();$$("#hqBody [data-rp]").forEach(b=>b.onclick=()=>{HQRP=b.dataset.rp;re()});
+  const qi=$("#rpQ");if(qi)qi.onchange=e=>{HQRQ=e.target.value;re()};
+  $$("#hqBody [data-stop]").forEach(a=>a.onclick=e=>e.stopPropagation());
+  $$("#hqBody [data-rpfly]").forEach(b=>b.onclick=e=>{e.stopPropagation();HQFLY=b.dataset.rpfly.split(",").map(Number);HQRPM=true;HQV="map";re()});
+  $$("#hqBody [data-rpg]").forEach(tr=>tr.onclick=()=>{const g=RP_C.g.find(x=>x.id===+tr.dataset.rpg);if(g)rpSheet(g)});
+  const xb=$("#rpX");if(xb)xb.onclick=()=>{try{const G=rpGroups(L);const wb=XLSX.utils.book_new();wb.Workbook={Views:[{RTL:true}]};
+    const a=[["#","المنطقة","المحافظة","مرات الرصد","عدد مأموري الضبط","مأمورو الضبط","نفس اليوم","أول رصد","آخر رصد","الإحداثيات","أرقام الزيارات"]].concat(G.map((g,i)=>[i+1,g.reg,g.gov,g.n,g.offs.length,g.offs.map(([o,c])=>o+" ("+c+")").join("، "),g.sameDay?"نعم":"لا",g.d1!=null?wkDay(g.d1):"",g.d2!=null?wkDay(g.d2):"",g.lat.toFixed(6)+","+g.lng.toFixed(6),[...new Set(g.rows.map(r=>r.visit||r.vno))].join("، ")]));
+    const b=[["رقم الموقع","رقم الزيارة","معرف المخالفة","تاريخ بدء الزيارة","مأمور الضبط","المحافظة","البند","حالة الزيارة","الإحداثيات"]];G.forEach((g,i)=>g.rows.forEach(r=>b.push([i+1,r.visit||r.vno,r.vid||"",r.date||"",r.officer||"",r.sector||"",r.item||"",r.vvisit||"",r.loc||""])));
+    XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(a),"المواقع المكررة");XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(b),"التفاصيل");XLSX.writeFile(wb,"تكرار-الرصد.xlsx")}catch(e){toast("تعذر إنشاء ملف Excel")}}}
+function rpSheet(g){$("#sheet").innerHTML=`<div class="rd-h"><div><span class="er-tag">تكرار الرصد</span><h3>${esc(g.gov||"موقع")} — رُصد ${g.n} مرات</h3><div class="sub">${g.offs.length>1?g.offs.length+" مأموري ضبط":"مأمور ضبط واحد"} · <a href="https://www.google.com/maps?q=${g.lat.toFixed(6)},${g.lng.toFixed(6)}" target="_blank" rel="noopener" dir="ltr">${g.lat.toFixed(5)}, ${g.lng.toFixed(5)}</a></div></div><div class="rd-b"><button type="button" class="btn2" id="rpCl">إغلاق</button></div></div>
+  <div class="tbl-wrap"><table class="tbl"><thead><tr><th>رقم الزيارة</th><th>تاريخ بدء الزيارة</th><th>مأمور الضبط</th><th>البند</th><th>حالة الزيارة</th><th>الإحداثيات</th></tr></thead><tbody>${g.rows.map(r=>`<tr><td><b>${esc(r.visit||r.vno)}</b></td><td>${esc(r.date||"—")}</td><td>${esc(r.officer||"—")}</td><td>${esc(r.item||"—")}</td><td>${esc(r.vvisit||"—")}</td><td dir="ltr">${esc(r.loc||"")}</td></tr>`).join("")}</tbody></table></div>`;
+  $("#sheet").classList.add("wide");openSheet();$("#rpCl").onclick=closeSheet}
 function renderHQ(){
   const el=$("#hqBody");if(!canHQ()){el.innerHTML='<section class="block"><div class="empty">🔒 هذه البوابة خاصة بموظفي المركز الرئيسي.</div></section>';return}
   const L=hqRows(),A=hqAgg(L),T=A.T,sc=hqScope(A),ys=hqYears();RD_BASE=hqRows;RD_SCOPE=`بوابة المركز الرئيسي — ${sc.sec}${sc.per?" — "+sc.per:""}`;HQ_CTX=HQSF?{s:HQSF}:{};
   const secs=HQ_SECS.filter(s=>A.S[s]);
   const allSecs=HQ_SECS;
   const note=(A.noPres||A.noDec)?`<div class="hq-alert">ℹ️ لتظهر أرقام قرارات الهيئة وأسماء مدراء الرقابة وقيم الغرامات بدقة، أعد رفع التقرير الشامل (استبدال).</div>`:"";
-  const V=[["ov","نظرة عامة"],["sec","القطاعات"],["trend","الاتجاه والمقارنات"],["vio","المخالفات"],["mgr","مدراء الرقابة"],["map","الخريطة"],["rasd","جودة الرصد"]];
+  const V=[["ov","نظرة عامة"],["sec","القطاعات"],["trend","الاتجاه والمقارنات"],["vio","المخالفات"],["mgr","مدراء الرقابة"],["map","الخريطة"],["rep","تكرار الرصد"],["rasd","جودة الرصد"]];
   const pk=[["all","كل الفترات"]].concat(ys.map(y=>["y"+y,String(y)]),[["q3","آخر 3 أشهر"],["cu","فترة مخصصة"]]);
   const sl=secs.map(s=>({k:s,o:A.S[s]}));
   let body="";
@@ -2987,6 +3028,7 @@ function renderHQ(){
   }else if(HQV==="vio"){
     body=`<div class="hq-grid"><div class="hq-card c-5"><div class="hq-ch"><h3>أعلى المخالفات المرسلة للهيئة</h3><span class="sub">${hqF(T.sent)} مخالفة</span></div>${hqBars(A.TY,10,null,k=>({c:"sent",it:k,s:HQSF}))}</div>
       <div class="hq-card c-7"><div class="hq-ch"><h3>المخالفات حسب القطاع والبند</h3></div>${hqHeat(A,secs)}</div></div>`;
+  }else if(HQV==="rep"){body=rpHtml(L);
   }else if(HQV==="map"){body=hqMapHtml(L);
   }else if(HQV==="rasd"){body=rsView("hq");
   }else{
@@ -3003,7 +3045,8 @@ function renderHQ(){
     <nav class="hq-nav" role="tablist">${V.map(([k,l])=>`<button type="button" role="tab" data-hv="${k}" aria-selected="${HQV===k}">${l}</button>`).join("")}</nav>
     <div class="hq-body">${L.length||HQV==="rasd"?body:'<div class="hq-card"><div class="empty">لا توجد مخالفات في هذه الفترة أو القطاع</div></div>'}</div></div>`;
   if(HQV==="rasd")rsBind("#hqBody");
-  if(HQV==="map"){hqMapInit(L);const mm=$("#hqMM");if(mm)mm.onchange=e=>{HQMM=e.target.value;renderHQ()}}
+  if(HQV==="rep")rpBind(L);
+  if(HQV==="map"){hqMapInit(L);const mm=$("#hqMM");if(mm)mm.onchange=e=>{HQMM=e.target.value;renderHQ()};const rc=$("#hqRpm");if(rc)rc.onchange=e=>{HQRPM=e.target.checked;renderHQ()}}
   const re=()=>renderHQ();
   $$("#hqBody [data-hv]").forEach(b=>b.onclick=()=>{HQV=b.dataset.hv;re()});
   $$("#hqBody [data-per]").forEach(b=>b.onclick=()=>{HQP.k=b.dataset.per;if(HQP.k==="cu"&&!HQP.d1){const m=hqMaxDay();if(m!=null){HQP.d2=m;HQP.d1=m-29}}re()});
