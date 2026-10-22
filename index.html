@@ -671,6 +671,12 @@ header.top .lg.lg3d{height:80px!important;padding:0!important;background:none!im
 @media (max-width:520px){header.top .lg.lg3d{height:58px!important}}
 /* محاذاة النسبة تحت الرقم بالضبط في الجداول المتوسطة */
 .tbl.mtx td{vertical-align:middle}.tbl.mtx td .pp{margin:3px auto 0}.tbl.mtx td:first-child .pp{margin-inline:0}
+.pm-t td,.pm-t th{text-align:center;vertical-align:middle}.pm-t td:first-child,.pm-t th:first-child{text-align:right;min-width:240px}
+.pm-s{min-width:120px;padding:6px 8px;font-size:13px}.pm-s.set{border-color:var(--navy);background:var(--soft);font-weight:700}
+.pm-s.vw{border-color:#B7791F;background:#FDF5E6;color:#8A5A00}
+#roPill{position:fixed;z-index:60;bottom:84px;left:50%;transform:translateX(-50%);background:#8A5A00;color:#fff;font-weight:700;font-size:13px;padding:8px 16px;border-radius:999px;box-shadow:0 6px 20px rgba(0,0,0,.25);pointer-events:none}
+body:has(#roPill:not([hidden])) #auditBar .act{display:none}
+body:has(#roPill:not([hidden])) .pg:not([hidden]) :is(button,select,input,textarea,a,.qrow,[data-rd],[role=button]){cursor:not-allowed}
 </style>
 </head>
 <body>
@@ -1032,7 +1038,7 @@ function renderQueue(){
     if(qFilter==="ret"&&s!=="ret")return false;if(qFilter==="inc"&&s!=="inc")return false; if(qFilter==="ok"&&s!=="ok")return false;
     if(qSearch){const h=r._h||norm([r.vno,r.vid,r.officer,r.item,r.region,r.sector,r.name].join(" "));return h.includes(norm(qSearch))||r.vno.toLowerCase().includes(qSearch.toLowerCase())}
     return true});
-  const canRes=canEditAudit(),resN=list.filter(r=>!reserved(audits[r.vno])).length;
+  const canRes=permOv("reserve",canEditAudit),resN=list.filter(r=>!reserved(audits[r.vno])).length;
   body.innerHTML=`<div class="queue-tools"><input class="in" id="qSearch" placeholder="بحث برقم الزيارة أو المفتش أو المحافظة" value="${esc(qSearch)}"></div>
    ${canRes?`<div class="pill-row" style="margin-bottom:10px;gap:8px"><label class="btn2" style="cursor:pointer" title="ملف إكسل فيه أرقام الزيارات أو معرفات المخالفات">📥 حجز من ملف إكسل<input type="file" id="resXl" accept=".xlsx,.xls,.csv" hidden></label>${qSearch.trim()&&resN?`<button type="button" class="btn2" id="resSr">📌 حجز نتائج البحث (${resN.toLocaleString("en-US")})</button>`:""}<span class="sub">احجز مخالفاتك قبل العمل بدون اتصال، فتظهر لغيرك «محجوزة» باسمك</span></div>`:""}
    <div class="pill-row" style="margin-bottom:10px">${fl.map(([k,t])=>`<button type="button" class="pill" data-qf="${k}" aria-pressed="${qFilter===k}">${t} ${counts[k].toLocaleString("en-US")}${k!=="all"&&k!=="mine"?` · ${pc(k)}`:""}</button>`).join("")}</div>
@@ -1052,7 +1058,7 @@ async function resXl(e){const f=e.target.files&&e.target.files[0];e.target.value
     const ids=[];rows.forEach(r=>{if([r.vno,r.visit,r.vid].some(x=>x&&vals.has(String(x).trim().toLowerCase())))ids.push(r.vno)});
     if(!ids.length){toast("لم أجد في الملف أي رقم زيارة أو معرف مخالفة من الملف الشامل");return}
     await reserveMany(ids,vals.size)}catch(err){console.warn(err);toast("تعذرت قراءة الملف، تأكد أنه ملف إكسل")}}
-async function reserveMany(ids,given){if(!canEditAudit())return;if(isOff()||!sb){toast("الحجز يحتاج اتصال بالإنترنت — احجز قبل فصل النت");return}
+async function reserveMany(ids,given){if(!permOv("reserve",canEditAudit))return;if(isOff()||!sb){toast("الحجز يحتاج اتصال بالإنترنت — احجز قبل فصل النت");return}
   ids=[...new Set(ids)];const mine=[],other=[],todo=[];
   ids.forEach(v=>{const a=audits[v];if(a&&a._id){(a._owner===me.id?mine:other).push(v)}else todo.push(v)});
   if(todo.length>2000){toast("الحد الأعلى للحجز دفعة واحدة 2000 مخالفة");return}
@@ -1608,20 +1614,66 @@ const isHQ=u=>!!u&&!!u.sector&&gcl(u.sector)===gcl(ORG.hq||"");
 /* صلاحية استثنائية: كل البوابات والتقارير والطباعة — ما عدا الإدارة والهيكل (لمدير النظام فقط) */
 const VIP_LIST=["لمى صالح العنزي","بدر عوض المطيري","حسين علي الرمضان"];
 const isVIP=u=>{if(!u||!u.full_name)return false;const t=norm(u.full_name).split(" ");return VIP_LIST.some(n=>norm(n).split(" ").every(w=>t.includes(w)))};
-const seesAll=()=>!!me&&(["admin","exec","viewer"].includes(me.role)||isHQ(me)||isVIP(me));
+const seesAll=()=>permOv("seeall",()=>!!me&&(["admin","exec","viewer"].includes(me.role)||isHQ(me)||isVIP(me)));
 const isHQU=u=>!!u&&(u.role==="exec"||isHQ(u)||isVIP(u));
-const canHQ=()=>!!me&&(me.role==="admin"||isHQU(me));
+const canHQ=()=>!!me&&(me.role==="admin"||isHQU(me)||(typeof permGet==="function"&&!!permGet("pg","hq")));
 /* الإدارة والهيكل التنظيمي: لمدير النظام ناجي عبدالله المطيري فقط */
 const isSysAdmin=u=>{if(!u||u.role!=="admin")return false;const t=norm(u.full_name||"");if(t.includes(norm("ناجي")))return true;if(/naji/i.test((u.username||"")+" "+(u.email||"")))return true;
   const ad=(users||[]).filter(x=>x.role==="admin"&&x.active!==false);return ad.length<=1};
-function pageOK(p){if(!me)return false;if(p[0]==="users")return isSysAdmin(me);if(p[0]==="hq")return canHQ();if(p[0]==="south")return southOK();if(p[0]==="north")return northOK();if(p[0]==="acad")return acadOK()&&(isAcadTeam(me)||p[2].includes(me.role)||isHQU(me));if(p[2].includes(me.role))return true;return isHQU(me)&&p[0]!=="users"}
+/* ===================== المهام والصلاحيات — يعدّلها مدير النظام ===================== */
+let PERMS={r:{},u:{}},PERM_OFF=false;
+try{const c=JSON.parse(localStorage.getItem("jawda-perms")||"null");if(c&&c.r)PERMS=c}catch(e){}
+const PERM_ROLES=[["exec","مدير الجودة"],["hqstaff","أخصائي جودة (المركز الرئيسي)"],["manager","رئيس الجودة بالوحدة"],["staff","موظف الجودة (الوحدات)"],["clerk","إداري"],["viewer","مطّلع"],["trainee","متدرب"]];
+const PERM_ACTS=[["audit","تدقيق المخالفات وتعبئة المستند الداعم وطباعته"],["reserve","حجز المخالفات"],["upload","رفع التقرير الشامل (ملف المخالفات)"],["seeall","رؤية جميع المناطق والوحدات"],["rsev","تقييم جودة الرصد"],["about","تعديل محتوى الصفحة الرئيسية"]];
+const permRK=u=>!u?"":u.role==="staff"&&isHQ(u)?"hqstaff":u.role;
+function permGet(kind,key,u){u=u||me;if(PERM_OFF||!u||u.role==="admin")return undefined;const x=(PERMS.u||{})[u.id];const nv=v=>v==="v"?"v":!!v;if(x&&x[kind]&&key in x[kind])return nv(x[kind][key]);const r=(PERMS.r||{})[permRK(u)];if(r&&r[kind]&&key in r[kind])return nv(r[kind][key]);return undefined}
+/* «تصفح فقط»: البوابة تظهر للاطلاع، وتتعطل فيها مهام التعديل */
+const permView=pg=>{pg=pg||(typeof page!=="undefined"?page:"");return !PERM_FIXED.includes(pg)&&permGet("pg",pg)==="v"};
+const permOv=(key,def)=>{if(key!=="seeall"&&!PERM_OFF&&me&&me.role!=="admin"&&permView())return false;const o=permGet("ac",key);return o===undefined?def():o};
+const PERM_MSG="👁 أنت في وضع التصفح — هذه الخدمة تحتاج صلاحية من مدير النظام";
+const permFree=t=>!!(t&&t.closest&&t.closest("#tabs,.home-nav,.userbar,#roPill,header.top,#authView,#pwView"));
+let _pmT=0;["click","mousedown","pointerdown","touchstart","input","change","keydown","submit","dblclick","contextmenu"].forEach(ev=>document.addEventListener(ev,e=>{if(!me||me.role==="admin"||!permView())return;const t=e.target;if(permFree(t))return;if(ev==="keydown"&&!(t&&t.closest&&t.closest("input,select,textarea,button,[contenteditable]")))return;
+  e.preventDefault();e.stopImmediatePropagation();if(t&&t.blur)try{t.blur()}catch(x){}if((ev==="click"||ev==="touchstart"||ev==="keydown"||ev==="submit")&&Date.now()-_pmT>1500){_pmT=Date.now();toast(PERM_MSG)}},{capture:true,passive:false}));
+document.addEventListener("focusin",e=>{if(!me||me.role==="admin"||!permView()||permFree(e.target))return;if(e.target&&e.target.matches&&e.target.matches("input,select,textarea"))try{e.target.blur()}catch(x){}},true);
+function permPill(){let el=document.getElementById("roPill");const on=!!me&&permView();if(!el){if(!on)return;el=document.createElement("div");el.id="roPill";el.textContent="👁 وضع التصفح فقط — مشاهدة الصفحة بدون استخدام خدماتها";document.body.appendChild(el)}el.hidden=!on}
+async function loadPerms(){try{const {data}=await sb.from("quality_settings").select("value").eq("key","perms").maybeSingle();PERMS=data&&data.value&&data.value.r?data.value:{r:{},u:{}};try{localStorage.setItem("jawda-perms",JSON.stringify(PERMS))}catch(e){}}catch(e){}}
+function permDef(kind,key,fake){const keep=me;PERM_OFF=true;try{me=fake;if(kind==="pg"){const p=PAGES.find(x=>x[0]===key);return !!p&&pageOK(p)}
+    return key==="audit"||key==="reserve"?canEditAudit():key==="upload"?canUpload():key==="seeall"?seesAll():key==="about"?abOK():key==="rsev"?(fake.role==="admin"||!!rsTeamOf(fake)||rsIsEv(fake)):false}catch(e){return false}finally{me=keep;PERM_OFF=false}}
+function permFake(rk){const u0=(ORG.units||[])[0];return {id:"_perm_"+rk,role:rk==="hqstaff"?"staff":rk,sector:rk==="hqstaff"||rk==="exec"?ORG.hq:(u0?u0.name:""),full_name:"—",active:true}}
+let PERM_U="";
+const PERM_FIXED=["users","south","north"];
+function permItems(){return PAGES.filter(p=>!PERM_FIXED.includes(p[0])).map(p=>["pg",p[0],"بوابة: "+p[1]]).concat(PERM_ACTS.map(([k,l])=>["ac",k,"مهمة: "+l]))}
+function permCell(kind,key,cur,def,attr){return `<select class="in pm-s${cur===undefined?"":" set"}${cur==="v"?" vw":""}" ${attr}><option value=""${cur===undefined?" selected":""}>افتراضي (${def?"✓":"✕"})</option><option value="1"${cur===true?" selected":""}>✓ ${kind==="pg"?"دخول كامل":"مسموح"}</option>${kind==="pg"?`<option value="v"${cur==="v"?" selected":""}>👁 تصفح فقط</option>`:""}<option value="0"${cur===false?" selected":""}>✕ ممنوع</option></select>`}
+function permBlock(){if(!isSysAdmin(me))return "";const I=permItems(),R=PERMS.r||{};
+  const uo=users.filter(u=>u.role!=="admin"&&u.active!==false).sort((a,b)=>a.full_name.localeCompare(b.full_name,"ar"));const pu=users.find(u=>u.id===PERM_U);const UX=(PERMS.u||{})[PERM_U]||{};
+  const ovN=Object.values(PERMS.u||{}).filter(x=>Object.keys(x.pg||{}).length+Object.keys(x.ac||{}).length).length;
+  return `<section class="block" id="permBlock"><h2>المهام والصلاحيات <span class="sub">مدير النظام فقط</span></h2>
+  <div class="sub" style="margin-bottom:10px">«افتراضي» يعني حسب إعداد المنصة الحالي (✓ أو ✕ بين القوسين). اختر «دخول كامل» أو «👁 تصفح فقط» (يشاهد شكل الصفحة فقط، ولا يستخدم الفلاتر أو الطباعة أو أي خدمة) أو «ممنوع». بوابات الوحدات لا تُمنح هنا: تظهر لمدير النظام وموظفي الوحدة فقط. الاستثناء الخاص بشخص يتقدّم على صلاحيته. مدير النظام له كل الصلاحيات دائماً.</div>
+  <h3 class="sec">حسب الصلاحية</h3>
+  <div class="tbl-wrap"><table class="tbl pm-t"><thead><tr><th>البوابة / المهمة</th>${PERM_ROLES.map(([k,l])=>`<th>${esc(l)}</th>`).join("")}</tr></thead><tbody>${I.map(([kind,key,l])=>`<tr><td>${esc(l)}</td>${PERM_ROLES.map(([rk])=>{const c=R[rk]&&R[rk][kind]&&key in R[rk][kind]?(R[rk][kind][key]==="v"?"v":!!R[rk][kind][key]):undefined;return `<td>${permCell(kind,key,c,permDef(kind,key,permFake(rk)),`data-pr="${rk}" data-pk="${kind}" data-pi="${key}"`)}</td>`}).join("")}</tr>`).join("")}</tbody></table></div>
+  <h3 class="sec" style="margin-top:14px">استثناءات لشخص معيّن ${ovN?`<span class="sub">${ovN} شخص له استثناء</span>`:""}</h3>
+  <label class="f" style="max-width:420px">الموظف<select class="in" id="pmU"><option value="">— اختر موظفاً —</option>${uo.map(u=>{const x=(PERMS.u||{})[u.id];const n=x?Object.keys(x.pg||{}).length+Object.keys(x.ac||{}).length:0;return `<option value="${u.id}"${u.id===PERM_U?" selected":""}>${esc(u.full_name)} — ${esc(roleLabel(u))}${n?` (${n} استثناء)`:""}</option>`}).join("")}</select></label>
+  ${pu?`<div class="tbl-wrap" style="margin-top:8px"><table class="tbl pm-t"><thead><tr><th>البوابة / المهمة</th><th>${esc(pu.full_name)}</th></tr></thead><tbody>${I.map(([kind,key,l])=>{const c=UX[kind]&&key in UX[kind]?(UX[kind][key]==="v"?"v":!!UX[kind][key]):undefined;const keep=PERMS.u;PERMS.u={};const d=(()=>{const k2=me;me=pu;try{return kind==="pg"?(()=>{const p=PAGES.find(x=>x[0]===key);return !!p&&pageOK(p)})():(key==="audit"||key==="reserve"?canEditAudit():key==="upload"?canUpload():key==="seeall"?seesAll():key==="about"?abOK():(!!rsTeamOf(pu)||rsIsEv(pu)))}catch(e){return false}finally{me=k2}})();PERMS.u=keep;return `<tr><td>${esc(l)}</td><td>${permCell(kind,key,c,d,`data-pu="${pu.id}" data-pk="${kind}" data-pi="${key}"`)}</td></tr>`}).join("")}</tbody></table></div>`:""}
+  <div class="btns" style="margin-top:12px"><button type="button" class="btn2 pri" id="pmSave">حفظ الصلاحيات</button><button type="button" class="btn2" id="pmReset">إرجاع الكل للافتراضي</button></div>
+  <div class="sub" style="margin-top:6px">بعض المهام محمية أيضاً في قاعدة البيانات (مثل رفع التقرير الشامل واعتماد الطلبات)، فإن فتحتها لصلاحية لا تملكها في قاعدة البيانات قد تظهر رسالة «غير مصرح» عند التنفيذ.</div></section>`}
+function bindPerms(){if(!$("#permBlock"))return;
+  const setv=(o,kind,key,v)=>{o[kind]=o[kind]||{};if(v==="")delete o[kind][key];else o[kind][key]=v==="v"?"v":v==="1"};
+  $$("#permBlock [data-pr]").forEach(s=>s.onchange=()=>{PERMS.r=PERMS.r||{};const o=PERMS.r[s.dataset.pr]=PERMS.r[s.dataset.pr]||{};setv(o,s.dataset.pk,s.dataset.pi,s.value);s.classList.toggle("set",s.value!=="");s.classList.toggle("vw",s.value==="v")});
+  $$("#permBlock [data-pu]").forEach(s=>s.onchange=()=>{PERMS.u=PERMS.u||{};const o=PERMS.u[s.dataset.pu]=PERMS.u[s.dataset.pu]||{};setv(o,s.dataset.pk,s.dataset.pi,s.value);s.classList.toggle("set",s.value!=="");s.classList.toggle("vw",s.value==="v")});
+  $("#pmU").onchange=e=>{PERM_U=e.target.value;renderUsers();setTimeout(()=>{const b=$("#permBlock");if(b)b.scrollIntoView({block:"start"})},30)};
+  $("#pmReset").onclick=()=>{if(!confirm("إرجاع كل الصلاحيات والاستثناءات للإعداد الافتراضي؟"))return;PERMS={r:{},u:{}};renderUsers()};
+  $("#pmSave").onclick=async()=>{const b=$("#pmSave");b.disabled=true;Object.keys(PERMS.u||{}).forEach(k=>{const x=PERMS.u[k];if(!Object.keys(x.pg||{}).length&&!Object.keys(x.ac||{}).length)delete PERMS.u[k]});
+    const {error}=await sb.from("quality_settings").upsert({key:"perms",value:PERMS,updated_at:new Date().toISOString()});b.disabled=false;
+    if(error){toast("تعذر الحفظ: "+error.message);return}try{localStorage.setItem("jawda-perms",JSON.stringify(PERMS))}catch(e){}buildTabs();toast("تم حفظ الصلاحيات — تُطبّق على كل مستخدم عند فتحه المنصة أو ضغط «تحديث»")}}
+
+function pageOK(p){if(!me)return false;if(p[0]==="users")return isSysAdmin(me);if(!PERM_FIXED.includes(p[0])){const o=permGet("pg",p[0]);if(o!==undefined)return o!==false}if(p[0]==="hq")return canHQ();if(p[0]==="south")return southOK();if(p[0]==="north")return northOK();if(p[0]==="acad")return acadOK()&&(isAcadTeam(me)||p[2].includes(me.role)||isHQU(me));if(p[2].includes(me.role))return true;return isHQU(me)&&p[0]!=="users"}
 const needUsers=()=>!!me&&(["admin","exec","manager","viewer"].includes(me.role)||isHQU(me));
 const TITLE_EXEC="المدير التنفيذي لإدارة المخالفات والجودة";const isAid=u=>!!u&&u.role==="exec"&&/عايض/.test(norm(u.full_name))&&/القحطاني/.test(norm(u.full_name));
 function roleLabel(u){if(isAid(u))return TITLE_EXEC;if(u&&u.role==="trainee")return ROLE[roleKey(u)];return u.role==="staff"&&isHQ(u)?"أخصائي جودة":(ROLE[u.role]||u.role)}
-const canEditAudit=()=>!!me&&["admin","exec","manager","staff"].includes(me.role);
+const canEditAudit=()=>permOv("audit",()=>!!me&&["admin","exec","manager","staff"].includes(me.role));
 /* تزويد المنصة بالتقرير الشامل (رفع/استبدال/حذف): مدير النظام + نايف البقمي فقط */
 const isFeeder=u=>{if(!u||u.role==="trainee")return false;if(u.role==="admin")return true;const t=norm(u.full_name||"").split(" ");return ["نايف","البقمي"].every(w=>t.includes(norm(w)))};
-const canUpload=()=>isFeeder(me);
+const canUpload=()=>permOv("upload",()=>isFeeder(me));
 /* ----- الهيكل التنظيمي ----- */
 const ORG_DEFAULT={hq:"المركز الرئيسي - الرياض",units:[
   {name:"الوحدة الشمالية",sector:"القطاع الشرقي",govs:["محافظة حفر الباطن","محافظة الخفجي","محافظة النعيرية","محافظة قرية العليا"]},
@@ -1744,7 +1796,7 @@ function mapAudits(q,ro){const keep=audits.manual;audits={};
   if(keep)audits.manual=keep;
 }
 async function loadUsers(){const {data}=await sb.from("quality_users").select("*").order("created_at");users=data||[]}
-let LD_ERR=false;async function loadData(){try{await Promise.all([loadOrg(),loadSouthCfg(),loadAbout(),loadQueue(),loadAudits(),loadRefs(),loadApprovers(),loadAttIdx()]);loadReportCols()}catch(e){LD_ERR=true;if(netErr(e)){NET_DOWN=true;netPill()}else toast("تعذر تحميل البيانات: "+(e.message||""))}try{buildFilters()}catch(e){}}
+let LD_ERR=false;async function loadData(){try{await Promise.all([loadPerms(),loadOrg(),loadSouthCfg(),loadAbout(),loadQueue(),loadAudits(),loadRefs(),loadApprovers(),loadAttIdx()]);loadReportCols()}catch(e){LD_ERR=true;if(netErr(e)){NET_DOWN=true;netPill()}else toast("تعذر تحميل البيانات: "+(e.message||""))}try{buildFilters()}catch(e){}}
 
 /* ----- الحفظ ----- */
 let saveT=null;const dirty=new Set();
@@ -1856,7 +1908,7 @@ function buildTabs(){$("#tabs").innerHTML=PAGES.filter(pageOK).map(p=>`<button t
 const PG_HERO={audit:["المخالفات والتدقيق","اختر مخالفة من القائمة وابدأ تدقيقها وفق دليل دراسة المخالفات وآلية ضبطها","check"],report:["تقارير التدقيق","مؤشرات جودة التدقيق حسب الوحدة والموظف وبند اللائحة","xls"],team:["أداء الموظفين","إنجاز موظفي الجودة ونتائج تدقيقهم","clock"],users:["الإدارة والهيكل","الحسابات والصلاحيات والهيكل التنظيمي","search"]};
 function pgHero(p){const h=PG_HERO[p],el=$("#pgHero");if(!el)return;if(!h){el.hidden=true;return}el.hidden=false;el.innerHTML=`<span class="ic">${hqIc(h[2],24)}</span><div><h2>${h[0]}</h2><p>${h[1]}</p></div>`}
 (function(){const pg=document.querySelector('.pg[data-pg="audit"]');if(!pg||pg.querySelector(".aud-side"))return;const side=document.createElement("div");side.className="aud-side";const main=document.createElement("div");main.className="aud-main";[...pg.children].forEach(c=>{(c.id==="queueBlock"||c.id==="doneBlock"?side:main).appendChild(c)});pg.appendChild(side);pg.appendChild(main)})();
-function go(p){if(!PAGES.find(x=>x[0]===p&&pageOK(x)))p=isTrainee(me)?"acad":"dash";page=p;try{localStorage.setItem("vv:page",p)}catch(e){}
+function go(p){if(!PAGES.find(x=>x[0]===p&&pageOK(x)))p=isTrainee(me)?"acad":"dash";page=p;try{localStorage.setItem("vv:page",p)}catch(e){}try{permPill();const vw=permView(p);if(p==="audit"&&vw!==go._vw&&typeof renderAll==="function")renderAll();go._vw=p==="audit"?vw:go._vw}catch(e){}
   $$(".pg").forEach(x=>x.hidden=x.dataset.pg!==p);$$("[data-go]").forEach(b=>b.setAttribute("aria-current",String(b.dataset.go===p)));
   $("#auditBar").hidden=p!=="audit";$("#upBtn").hidden=p!=="audit"||!canUpload();
   if(p==="dash")renderDash();if(p==="report")renderReport();if(p==="team")renderTeam();if(p==="users")renderUsers();document.body.classList.toggle("hqwide",p==="hq"||p==="perf"||p==="acad"||p==="south"||p==="north"||p==="dash");document.body.classList.toggle("home-on",p==="dash");RD_BASE=null;RD_SCOPE="";pgHero(p);if(p==="hq")renderHQ();if(p==="perf")renderPerf();if(p==="acad")renderAcad();if(p==="south"){stUse(SOUTH_CX);renderSouth();if(STV==="reg")stLoadReg()}if(p==="north"){stUse(NORTH_CX);renderSouth();if(STV==="reg")stLoadReg()}window.scrollTo(0,0)}
@@ -2078,7 +2130,7 @@ const ABOUT_DEF={title:"إدارة المخالفات والتعديات",tag:"�
     ["كيف أرفع شكوى أو اقتراحاً؟","من هذه الصفحة: نموذج «الشكاوى والاقتراحات» أدناه، وتتابع الرد من «طلباتي»."]]};
 let ABOUT=null,HOMEV="about";
 async function loadAbout(){try{const {data}=await sb.from("quality_settings").select("value").eq("key","about").maybeSingle();ABOUT=data&&data.value&&data.value.title?data.value:null;if(ABOUT&&typeof ABOUT.tag==="string")ABOUT.tag=ABOUT.tag.replace("ونصون البنية التحتية","ونحافظ على البنية التحتية")}catch(e){ABOUT=null}}
-const abOK=()=>isFeeder(me);
+const abOK=()=>permOv("about",()=>isFeeder(me));
 const HOME_IC={dash:"home",hq:"bldg",audit:"check",report:"xls",team:"clock",perf:"chart",south:"map",north:"map",acad:"cap",users:"user"};
 function homeStats(){let n=0,sent=0,iss=0,ret=0,fine=0;const G=new Set(),M=new Set();(rows||[]).forEach(r=>{n++;const c=r._hc||(r._hc=hqCls(r));if(c==="iss"||c==="ret"||c==="auth")sent++;if(c==="iss")iss++;if(c==="ret")ret++;const f=parseFloat(String(r.fine||"").replace(/[^\d.]/g,""));if(f>0)fine+=f;if(r.sector)G.add(r.sector.trim());const d=dayOfRow(r);if(d!=null)M.add(Math.floor(d/30))});
   return {n,sent,iss,ret,q:sent?Math.round((1-ret/sent)*1000)/10:null,g:G.size,fine}}
@@ -2509,7 +2561,7 @@ const RS_TEAM=[["نايف تركي البقمي","مدير الجودة"],["تر
 const rsNm=n=>norm(String(n||"")).split(/\s+/).filter(Boolean);
 const rsSame=(a,b)=>{const x=rsNm(a),y=rsNm(b);if(!x.length||!y.length)return false;if(x.join(" ")===y.join(" "))return true;return x[0]===y[0]&&x[x.length-1]===y[y.length-1]&&(x.length<3||y.length<3||x[1]===y[1])};
 const rsTeamOf=u=>u?RS_TEAM.find(t=>rsSame(t[0],u.full_name||u.eval_name||"")):null;
-const rsCanEv=x=>!!me&&!!x&&(me.role==="admin"||!!rsTeamOf(me)||(rsIsEv(me)&&rsInMine(x)));
+const rsCanEv=x=>!!me&&!!x&&permOv("rsev",()=>me.role==="admin"||!!rsTeamOf(me)||(rsIsEv(me)&&rsInMine(x)));
 const rsTgEd=()=>isFeeder(me);
 const rsTgOf=k=>{const t=(RS_CFG.evalT||{})[k];return +t>0?+t:(+RS_CFG.evalTarget||30)};
 let RS_RPC=true;
@@ -2991,8 +3043,8 @@ function stApprove(r){const un0=String(r.email||"").split("@")[0].toLowerCase().
     [["stN",nm],["stU",un],["stP",pw]].forEach(([i,v])=>$("#"+i).classList.toggle("bad",!v));if(!nm||!un||!pw){toast("أكمل الحقول الإلزامية المميّزة بالأحمر");return}
     const b=$("#stGo");b.disabled=true;const {error}=await sb.rpc(ST_CX.rpc+"_approve",{p_req:r.id,p_username:un,p_full_name:nm,p_role:rl,p_password:pw,p_email:em||null});b.disabled=false;
     if(error){toast("تعذر الاعتماد: "+error.message);return}showCred(nm,un,pw,"تم اعتماد الطلب وإنشاء الحساب",em);stLoadReg()}}
-const SOUTH_CX={desc:"محافظة الأحساء (الهفوف والمبرز والقرى والهجر التابعة) ومحافظة بقيق",tot:"الأحساء وبقيق",k:"south",el:"#southBody",u:SOUTH_U,t:SOUTH_T,gov:g=>isSouthGov(g),adm:()=>southAdmin(),ok:()=>southOK(),gr:()=>SOUTH_GR,rpc:"q_south",sql:"south-setup.sql",self:u=>isHussein(u)||u.role==="admin"};
-const NORTH_CX={desc:"محافظات حفر الباطن والقيصومة والخفجي والنعيرية وقرية العليا ومليجة",tot:"محافظات الوحدة الشمالية",k:"north",el:"#northBody",u:NORTH_U,t:NORTH_T,gov:g=>isNorthGov(g),adm:()=>northAdmin(),ok:()=>northOK(),gr:()=>NORTH_GR,rpc:"q_north",sql:"north-setup.sql",self:u=>isNorthStaff(u)||u.role==="admin"};
+const SOUTH_CX={desc:"محافظة الأحساء (الهفوف والمبرز والقرى والهجر التابعة) ومحافظة بقيق",tot:"الأحساء وبقيق",k:"south",el:"#southBody",u:SOUTH_U,t:SOUTH_T,gov:g=>isSouthGov(g),adm:()=>!permView("south")&&southAdmin(),ok:()=>southOK(),gr:()=>SOUTH_GR,rpc:"q_south",sql:"south-setup.sql",self:u=>isHussein(u)||u.role==="admin"};
+const NORTH_CX={desc:"محافظات حفر الباطن والقيصومة والخفجي والنعيرية وقرية العليا ومليجة",tot:"محافظات الوحدة الشمالية",k:"north",el:"#northBody",u:NORTH_U,t:NORTH_T,gov:g=>isNorthGov(g),adm:()=>!permView("north")&&northAdmin(),ok:()=>northOK(),gr:()=>NORTH_GR,rpc:"q_north",sql:"north-setup.sql",self:u=>isNorthStaff(u)||u.role==="admin"};
 let ST_CX=SOUTH_CX;
 function stUse(cx){if(ST_CX!==cx){ST_CX=cx;STV="rep";STG="";STQ="";ST_REQ=null;ST_USERS=null;ST_LOG=null;ST_ERR=""}}
 /* ===================== تكرار الرصد — نفس الموقع (25 متر أو أقل) في أي وقت ===================== */
@@ -3863,10 +3915,10 @@ function renderUsers(){
     <label class="f full">كلمة مرور مؤقتة<input class="in" id="nuPass" dir="ltr" value="${tempPass()}"></label>
   </div>
   <div class="btns" style="margin-top:12px"><button type="button" class="btn2 pri" id="nuCreate">إنشاء الحساب</button></div><div id="nuResult"></div></section>
-  ${orgEditor()}<section class="block"><h2>الحسابات <span class="sub">${users.length}</span></h2><div class="ulist">${users.map(u=>`
+  ${permBlock()}${orgEditor()}<section class="block"><h2>الحسابات <span class="sub">${users.length}</span></h2><div class="ulist">${users.map(u=>`
     <div class="urow ${u.active?"":"off"}"><div class="uinfo"><b>${esc(u.full_name)}</b><span dir="ltr">${esc(u.username)}${u.email?" · "+esc(u.email):""}</span>${u.email?"":`<small style="color:var(--warn)">بدون بريد إلكتروني — اضغط «تعديل» لإضافته</small>`}<small>${esc(roleLabel(u))}${u.sector?" — "+esc(u.sector):""}${u.active?"":" — موقوف"}${u.must_change_password?" — لم يغيّر كلمة المرور المؤقتة":""}</small></div>
     <div class="uact">${u.id===me.id?`<span class="sub">حسابك</span>`:`<button type="button" class="btn2" data-act="toggle" data-id="${u.id}">${u.active?"إيقاف":"تفعيل"}</button><button type="button" class="btn2" data-act="edit" data-id="${u.id}">تعديل</button><button type="button" class="btn2" data-act="reset" data-id="${u.id}">كلمة مرور جديدة</button>`}</div></div>`).join("")}</div></section>`;
-  bindOrg();bindPwReq();bindSignups();
+  bindOrg();bindPwReq();bindSignups();bindPerms();
   $("#nuCreate").onclick=async()=>{
     const name=$("#nuName").value.trim(),un=$("#nuUser").value.trim().toLowerCase(),role=$("#nuRole").value,sec=$("#nuSector").value.trim(),pw=$("#nuPass").value.trim();
     if(!name||!un||!pw){toast("أكمل الاسم واسم المستخدم وكلمة المرور");return}
