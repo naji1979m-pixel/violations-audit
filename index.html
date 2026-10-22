@@ -1649,6 +1649,19 @@ let PERM_U="";
 const PERM_FIXED=["users","south","north"];
 function permItems(){return PAGES.filter(p=>!PERM_FIXED.includes(p[0])).map(p=>["pg",p[0],"بوابة: "+p[1]]).concat(PERM_ACTS.map(([k,l])=>["ac",k,"مهمة: "+l]))}
 function permCell(kind,key,cur,def,attr){return `<select class="in pm-s${cur===undefined?"":" set"}${cur==="v"?" vw":""}" ${attr}><option value=""${cur===undefined?" selected":""}>افتراضي (${def?"✓":"✕"})</option><option value="1"${cur===true?" selected":""}>✓ ${kind==="pg"?"دخول كامل":"مسموح"}</option>${kind==="pg"?`<option value="v"${cur==="v"?" selected":""}>👁 تصفح فقط</option>`:""}<option value="0"${cur===false?" selected":""}>✕ ممنوع</option></select>`}
+/* ===== إيقاف المنصة للتحديث ===== */
+let MAINT=null;
+async function loadMaint(){try{const {data}=await sb.from("quality_settings").select("value").eq("key","maint").maybeSingle();MAINT=data&&data.value||null}catch(e){}return MAINT}
+const maintOn=()=>!!(MAINT&&MAINT.on);
+const maintMsg=()=>"🛠️ المنصة تحت التحديث"+(MAINT&&MAINT.msg?" — "+MAINT.msg:"")+"، نعتذر عن الإزعاج. حاول الدخول لاحقاً.";
+function maintKick(){if(me&&me.role!=="admin"&&maintOn()){blockMsg(maintMsg());const h=$("#blockView h1");if(h)h.textContent="المنصة تحت التحديث";return true}return false}
+function maintBlock(){if(!isSysAdmin(me))return "";const on=maintOn();return `<section class="block" id="maintBlock" style="${on?"border-color:var(--bad);box-shadow:0 0 0 2px var(--bad-bg)":""}"><h2>حالة المنصة <span class="sub">${on?"🛠️ متوقفة للتحديث":"🟢 تعمل"}</span></h2>
+  <div class="sub" style="margin-bottom:8px">عند الإيقاف لا يدخل أحد غير مدير النظام، ويظهر لكل من يحاول الدخول «المنصة تحت التحديث». الموجودون داخلها يخرجون خلال دقيقة.</div>
+  <label class="f full">رسالة إضافية (اختياري)<input class="in" id="mtMsg" maxlength="160" placeholder="مثال: نعود الساعة 8 مساءً" value="${esc(MAINT&&MAINT.msg||"")}"></label>
+  <div class="btns" style="margin-top:10px">${on?`<button type="button" class="btn2 pri" id="mtGo" data-on="0">🟢 تشغيل المنصة</button>`:`<button type="button" class="btn2" id="mtGo" data-on="1" style="background:var(--bad);color:#fff;border-color:var(--bad)">🛠️ إيقاف المنصة للتحديث</button>`}</div></section>`}
+function bindMaint(){const b=$("#mtGo");if(!b)return;b.onclick=async()=>{const on=b.dataset.on==="1";if(on&&!confirm("إيقاف المنصة لكل المستخدمين؟"))return;b.disabled=true;
+  const v={on,msg:$("#mtMsg").value.trim(),by:me.full_name,at:new Date().toISOString()};const {error}=await sb.from("quality_settings").upsert({key:"maint",value:v,updated_at:new Date().toISOString()});b.disabled=false;
+  if(error){toast("تعذر الحفظ: "+error.message);return}MAINT=v;renderUsers();toast(on?"🛠️ أُوقفت المنصة — تظهر للمستخدمين «تحت التحديث»":"🟢 عادت المنصة للعمل")}}
 function permBlock(){if(!isSysAdmin(me))return "";const I=permItems(),R=PERMS.r||{};
   const uo=users.filter(u=>u.role!=="admin"&&u.active!==false).sort((a,b)=>a.full_name.localeCompare(b.full_name,"ar"));const pu=users.find(u=>u.id===PERM_U);const UX=(PERMS.u||{})[PERM_U]||{};
   const ovN=Object.values(PERMS.u||{}).filter(x=>Object.keys(x.pg||{}).length+Object.keys(x.ac||{}).length).length;
@@ -1761,6 +1774,7 @@ function obSheet(){const L=Object.entries(OUTBOX).map(([k,o])=>`<tr><td><b>${esc
     ${L?`<div class="tbl-wrap"><table class="tbl"><thead><tr><th>رقم الزيارة</th><th>العنصر</th><th>وقت الحفظ</th><th>الحالة / آخر خطأ</th></tr></thead><tbody>${L}</tbody></table></div>`:'<div class="empty">لا يوجد شيء بانتظار الرفع ✓</div>'}`;
   $("#sheet").classList.add("wide");openSheet();$("#obCl").onclick=closeSheet;$("#obGo").onclick=async()=>{NET_DOWN=false;SYNCING=false;await obSync();obSheet()}}
 document.addEventListener("click",e=>{if(e.target&&e.target.closest&&e.target.closest("#netPill"))obSheet()});
+setInterval(()=>{if(me&&me.role!=="admin"&&sb&&!isOff()&&!$("#appView").hidden)loadMaint().then(()=>maintKick())},45000);
 window.addEventListener("online",()=>{NET_DOWN=false;try{if(page==="audit")updateBar()}catch(e){}netPill();setTimeout(obSync,800)});window.addEventListener("offline",()=>{netPill();try{if(page==="audit")updateBar()}catch(e){}});setInterval(()=>{if(!navOff()&&obCount())obSync();else if(NET_DOWN&&!navOff()&&sb){sb.from("quality_settings").select("key").limit(1).then(r=>{if(!r.error){NET_DOWN=false;netPill()}}).catch(()=>{})}},45000);
 async function dataVer(){try{const {data}=await sb.from("quality_settings").select("value").eq("key","data_ver").maybeSingle();return data&&data.value&&data.value.v||null}catch(e){return null}}
 async function bumpVer(){try{await sb.from("quality_settings").upsert({key:"data_ver",value:{v:new Date().toISOString()+"-"+Math.random().toString(36).slice(2,7)},updated_at:new Date().toISOString()})}catch(e){}}
@@ -1801,7 +1815,7 @@ function mapAudits(q,ro){const keep=audits.manual;audits={};
   if(keep)audits.manual=keep;
 }
 async function loadUsers(){const {data}=await sb.from("quality_users").select("*").order("created_at");users=data||[]}
-let LD_ERR=false;async function loadData(){try{await Promise.all([loadPerms(),loadOrg(),loadSouthCfg(),loadAbout(),loadQueue(),loadAudits(),loadRefs(),loadApprovers(),loadAttIdx()]);loadReportCols()}catch(e){LD_ERR=true;if(netErr(e)){NET_DOWN=true;netPill()}else toast("تعذر تحميل البيانات: "+(e.message||""))}try{buildFilters()}catch(e){}}
+let LD_ERR=false;async function loadData(){try{await Promise.all([loadMaint(),loadPerms(),loadOrg(),loadSouthCfg(),loadAbout(),loadQueue(),loadAudits(),loadRefs(),loadApprovers(),loadAttIdx()]);loadReportCols()}catch(e){LD_ERR=true;if(netErr(e)){NET_DOWN=true;netPill()}else toast("تعذر تحميل البيانات: "+(e.message||""))}try{buildFilters()}catch(e){}}
 
 /* ----- الحفظ ----- */
 let saveT=null;const dirty=new Set();
@@ -1884,6 +1898,7 @@ async function bootLoad(){try{const c=await QDB.get(BOOT_K()),q=await QDB.get("q
 async function bootLoadAll(){LD_ERR=false;await Promise.all([loadData(),needUsers()?loadUsers():null,loadPwReq(),loadSignups()]);if(!LD_ERR)bootSave()}
 function bootBadge(on){const b=$("#refreshBtn");if(!b)return;b.disabled=on;b.textContent=on?"⏳ جارٍ التحديث…":"↻ تحديث"}
 async function enterApp(){
+  if(sb&&!isOff()&&me&&me.role!=="admin"){await Promise.race([loadMaint(),new Promise(r=>setTimeout(r,4000))]);if(maintKick())return}
   show("appView");$("#whoName").textContent=me.full_name;$("#whoRole").textContent=roleLabel(me);
   if(isTrainee(me)&&!acadOK()){blockMsg("أكاديمية إدارة المخالفات قيد التجهيز، وسيتم إشعارك عند افتتاحها.");return}
   if(isTrainee(me)){buildTabs();page="acad";go("acad");{const f=$("#aiFab");if(f)f.hidden=true}["#upBtn","#auditBar"].forEach(q=>{const x=$(q);if(x)x.hidden=true});return}
@@ -3955,7 +3970,7 @@ function bindOrg(){
 }
 function renderUsers(){
   const secs=sectorOptions();
-  $("#usersBody").innerHTML=`${signupBlock()}${pwReqBlock()}<section class="block"><h2>إنشاء حساب جديد</h2>
+  $("#usersBody").innerHTML=`${maintBlock()}${signupBlock()}${pwReqBlock()}<section class="block"><h2>إنشاء حساب جديد</h2>
   <div class="grid">
     <label class="f">الاسم الكامل<input class="in" id="nuName"></label>
     <label class="f">اسم المستخدم (بالإنجليزي)<input class="in" id="nuUser" dir="ltr" autocapitalize="off" autocomplete="off" placeholder="ahmed.ali"></label>
@@ -3967,8 +3982,8 @@ function renderUsers(){
   <div class="btns" style="margin-top:12px"><button type="button" class="btn2 pri" id="nuCreate">إنشاء الحساب</button></div><div id="nuResult"></div></section>
   ${permBlock()}${orgEditor()}<section class="block"><h2>الحسابات <span class="sub">${users.length}</span></h2><div class="ulist">${users.map(u=>`
     <div class="urow ${u.active?"":"off"}"><div class="uinfo"><b>${esc(u.full_name)}</b><span dir="ltr">${esc(u.username)}${u.email?" · "+esc(u.email):""}</span>${u.email?"":`<small style="color:var(--warn)">بدون بريد إلكتروني — اضغط «تعديل» لإضافته</small>`}<small>${esc(roleLabel(u))}${u.sector?" — "+esc(u.sector):""}${u.active?"":" — موقوف"}${u.must_change_password?" — لم يغيّر كلمة المرور المؤقتة":""}</small></div>
-    <div class="uact">${u.id===me.id?`<span class="sub">حسابك</span>`:`<button type="button" class="btn2" data-act="toggle" data-id="${u.id}">${u.active?"إيقاف":"تفعيل"}</button><button type="button" class="btn2" data-act="edit" data-id="${u.id}">تعديل</button><button type="button" class="btn2" data-act="reset" data-id="${u.id}">كلمة مرور جديدة</button>`}</div></div>`).join("")}</div></section>`;
-  bindOrg();bindPwReq();bindSignups();bindPerms();
+    <div class="uact">${u.id===me.id?`<span class="sub">حسابك</span>`:`${u.active?`<button type="button" class="btn2" data-act="toggle" data-id="${u.id}">🔒 قفل</button>`:`<button type="button" class="btn2 pri" data-act="toggle" data-id="${u.id}">✓ تفعيل</button>`}<button type="button" class="btn2" data-act="del" data-id="${u.id}" style="color:var(--bad)">✕ إلغاء الحساب</button><button type="button" class="btn2" data-act="edit" data-id="${u.id}">تعديل</button><button type="button" class="btn2" data-act="reset" data-id="${u.id}">كلمة مرور جديدة</button>`}</div></div>`).join("")}</div></section>`;
+  bindOrg();bindPwReq();bindSignups();bindPerms();bindMaint();
   $("#nuCreate").onclick=async()=>{
     const name=$("#nuName").value.trim(),un=$("#nuUser").value.trim().toLowerCase(),role=$("#nuRole").value,sec=$("#nuSector").value.trim(),pw=$("#nuPass").value.trim();
     if(!name||!un||!pw){toast("أكمل الاسم واسم المستخدم وكلمة المرور");return}
@@ -3979,7 +3994,11 @@ function renderUsers(){
     {const before=(ORG.pending||[]).length;ORG.pending=(ORG.pending||[]).filter(p=>gcl(p.name)!==gcl(name));if(ORG.pending.length!==before){try{await saveOrg()}catch(e){}}}
     await loadUsers();renderUsers();showCred(name,un,pw,"تم إنشاء الحساب");};
   $$("[data-act]").forEach(b=>b.onclick=async()=>{const u=users.find(x=>x.id===b.dataset.id);if(!u)return;
-    if(b.dataset.act==="toggle"){const r=await sb.rpc("q_set_active",{p_user:u.id,p_active:!u.active});if(r.error){toast(r.error.message);return}await loadUsers();renderUsers();toast(u.active?"تم إيقاف الحساب":"تم تفعيل الحساب")}
+    if(b.dataset.act==="toggle"){if(u.active&&!confirm(`قفل حساب ${u.full_name}؟ لن يستطيع الدخول حتى تفعّله.`))return;const r=await sb.rpc("q_set_active",{p_user:u.id,p_active:!u.active});if(r.error){toast(r.error.message);return}await loadUsers();renderUsers();toast(u.active?"🔒 تم قفل الحساب":"✓ تم تفعيل الحساب")}
+    if(b.dataset.act==="del"){if(!confirm(`إلغاء حساب ${u.full_name} (${u.username}) نهائياً؟\nلا يمكن التراجع. إن كان له معاملات تدقيق مسجّلة يُقفل بدل الحذف للحفاظ على السجلات.`))return;
+      const r=await sb.rpc("q_delete_user",{p_user:u.id});if(r.error){toast(/q_delete_user|function|schema cache/i.test(r.error.message)?"⚙️ إلغاء الحسابات يحتاج تشغيل ملف users-admin.sql في Supabase مرة واحدة":r.error.message);return}
+      try{if(PERMS.u&&PERMS.u[u.id]){delete PERMS.u[u.id];await sb.from("quality_settings").upsert({key:"perms",value:PERMS,updated_at:new Date().toISOString()})}}catch(e){}
+      await loadUsers();renderUsers();toast(r.data==="archived"?"له معاملات تدقيق مسجّلة — قُفل الحساب وحُفظت سجلاته بدل الحذف":"✕ تم إلغاء الحساب نهائياً")}
     if(b.dataset.act==="reset"){if(!confirm("إنشاء كلمة مرور مؤقتة جديدة لـ "+u.full_name+"؟"))return;const pw=tempPass();const r=await sb.rpc("q_reset_password",{p_user:u.id,p_password:pw});if(r.error){toast(r.error.message);return}await loadUsers();renderUsers();showCred(u.full_name,u.username,pw,"تم تعيين كلمة مرور مؤقتة",u.email)}
     if(b.dataset.act==="edit")editUser(u)});
 }
