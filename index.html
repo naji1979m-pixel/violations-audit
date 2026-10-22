@@ -677,6 +677,11 @@ header.top .lg.lg3d{height:80px!important;padding:0!important;background:none!im
 #roPill{position:fixed;z-index:60;bottom:84px;left:50%;transform:translateX(-50%);background:#8A5A00;color:#fff;font-weight:700;font-size:13px;padding:8px 16px;border-radius:999px;box-shadow:0 6px 20px rgba(0,0,0,.25);pointer-events:none}
 body:has(#roPill:not([hidden])) #auditBar .act{display:none}
 body:has(#roPill:not([hidden])) .pg:not([hidden]) :is(button,select,input,textarea,a,.qrow,[data-rd],[role=button]){cursor:not-allowed}
+.prq-f{display:flex;flex-direction:column;gap:6px}.prq-o{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:8px 10px;border:1px solid var(--line);border-radius:12px;background:var(--paper)}
+.prq-o span{flex:1;font-size:13.5px}.prq-o select{max-width:140px;padding:5px 8px}.prq-o.has{opacity:.6}.prq-o.has small{color:var(--ok);font-weight:700}
+.prq-ch{display:flex;flex-wrap:wrap;align-items:center;gap:6px;margin:8px 0}.prq-ch i{color:var(--muted);font-style:normal}
+.prq-s{display:inline-flex;flex-direction:column;padding:4px 10px;border-radius:10px;background:var(--soft);color:var(--muted);font-size:12px;font-weight:700}
+.prq-s small{font-weight:400;font-size:11px}.prq-s.ok{background:var(--ok-bg);color:var(--ok)}.prq-s.no{background:var(--bad-bg);color:var(--bad)}.prq-s.cur{background:#FDF1DC;color:#8A5A00;box-shadow:0 0 0 1px #E0A11B}
 </style>
 </head>
 <body>
@@ -2134,14 +2139,59 @@ const abOK=()=>permOv("about",()=>isFeeder(me));
 const HOME_IC={dash:"home",hq:"bldg",audit:"check",report:"xls",team:"clock",perf:"chart",south:"map",north:"map",acad:"cap",users:"user"};
 function homeStats(){let n=0,sent=0,iss=0,ret=0,fine=0;const G=new Set(),M=new Set();(rows||[]).forEach(r=>{n++;const c=r._hc||(r._hc=hqCls(r));if(c==="iss"||c==="ret"||c==="auth")sent++;if(c==="iss")iss++;if(c==="ret")ret++;const f=parseFloat(String(r.fine||"").replace(/[^\d.]/g,""));if(f>0)fine+=f;if(r.sector)G.add(r.sector.trim());const d=dayOfRow(r);if(d!=null)M.add(Math.floor(d/30))});
   return {n,sent,iss,ret,q:sent?Math.round((1-ret/sent)*1000)/10:null,g:G.size,fine}}
+/* ===================== طلب الصلاحيات بالتسلسل الإداري ===================== */
+let PRQ=null,PRQ_ERR="";
+const PRQ_ST={unit:"رئيس الجودة بالوحدة",exec:"مدير الجودة",aid:"المدير التنفيذي",admin:"مدير النظام (الاعتماد)"};
+function prqChain(u){if(isHQ(u)||u.role==="exec")return (u.role==="exec"?[]:["exec"]).concat(isAid(u)?[]:["aid"],["admin"]);if(u.role==="manager")return ["admin"];return ["unit","admin"]}
+const prqSame=(a,b)=>{a=a||"";b=b||"";if(!a||!b)return false;if(gcl(a)===gcl(b))return true;const ua=unitOf(a)||((ORG.units||[]).find(x=>gcl(x.name)===gcl(a))||{}).name,ub=unitOf(b)||((ORG.units||[]).find(x=>gcl(x.name)===gcl(b))||{}).name;if(ua&&ua===ub)return true;
+  if(typeof isNorthGov==="function"&&isNorthGov(a)&&isNorthGov(b))return true;if(typeof isSouthGov==="function"&&isSouthGov(a)&&isSouthGov(b))return true;return false};
+function prqMyTurn(r){if(!me||r.status!=="pending"||r.user_id===me.id)return false;const st=(r.chain||[])[r.step];if(!st)return false;if(isSysAdmin(me))return true;
+  if(st.r==="unit")return me.role==="manager"&&prqSame(me.sector,r.user_sector);if(st.r==="exec")return me.role==="exec"&&!isAid(me);if(st.r==="aid")return isAid(me);return false}
+async function prqLoad(){try{const {data,error}=await sb.from("quality_perm_requests").select("*").order("created_at",{ascending:false}).limit(300);if(error)throw error;PRQ=data||[];PRQ_ERR=""}catch(e){PRQ=[];PRQ_ERR=/quality_perm_requests|relation|schema cache/i.test(e.message||"")?"setup":(e.message||"")}}
+const prqLab=it=>{const p=PAGES.find(x=>x[0]===it.key),a=PERM_ACTS.find(x=>x[0]===it.key);return it.kind==="pg"?`بوابة ${p?p[1]:it.key} — ${it.val==="v"?"تصفح فقط":"دخول كامل"}`:`مهمة: ${a?a[1]:it.key}`};
+function prqView(r,act){const ch=r.chain||[];const sb2=r.status==="approved"?'<span class="cp-s s-done">معتمد</span>':r.status==="rejected"?'<span class="cp-s s-new" style="background:var(--bad-bg);color:var(--bad)">مرفوض</span>':`<span class="cp-s s-prog">بانتظار ${esc(PRQ_ST[(ch[r.step]||{}).r]||"")}</span>`;
+  return `<div class="cp-i"><div class="cp-h"><span class="cp-k k-q">طلب صلاحيات</span><b>${esc(r.user_name||"")}</b>${sb2}</div>
+  <small>${esc([r.user_role,r.user_sector].filter(Boolean).join(" — "))} · ${esc(new Date(r.created_at).toLocaleString("ar-SA-u-nu-latn-ca-gregory"))}</small>
+  <ul class="ab-ul" style="margin:6px 0">${(r.items||[]).map(it=>`<li>${esc(prqLab(it))}</li>`).join("")}</ul>${r.reason?`<p>السبب: ${esc(r.reason)}</p>`:""}
+  <div class="prq-ch">${ch.map((s,i)=>`<span class="prq-s ${s.ok===true?"ok":s.ok===false?"no":i===r.step&&r.status==="pending"?"cur":""}">${s.ok===true?"✓":s.ok===false?"✕":i+1} ${esc(PRQ_ST[s.r]||s.r)}${s.by?`<small>${esc(s.by)}${s.note?" — "+esc(s.note):""}</small>`:""}</span>`).join('<i>←</i>')}</div>
+  ${act?`<div class="cp-a"><input class="in" data-prn="${r.id}" placeholder="ملاحظة (اختياري)"><button type="button" class="btn2 pri" data-prok="${r.id}">${(ch[r.step]||{}).r==="admin"||isSysAdmin(me)&&r.step===ch.length-1?"اعتماد وتفعيل":"موافقة"}</button><button type="button" class="btn2" data-prno="${r.id}">رفض</button></div>`:""}</div>`}
+function renderPrq(ab){if(PRQ==null){ab.innerHTML='<div class="ab-sec"><div class="empty">جارٍ التحميل…</div></div>';prqLoad().then(()=>{if(HOMEV==="preq")renderPrq(ab)});return}
+  const mine=PRQ.filter(r=>r.user_id===me.id),todo=PRQ.filter(prqMyTurn),admin=me.role==="admin";
+  const I=permItems(),ch=prqChain(me);
+  ab.innerHTML=`<section class="ab-hero sm"><div class="ab-hx"><span class="ab-k">لكل موظف</span><h1>طلب الصلاحيات</h1><p>اطلب البوابات والمهام اللي تحتاجها، ويمر طلبك على تسلسلك الإداري حتى اعتماد مدير النظام.</p></div></section>
+  ${PRQ_ERR==="setup"?`<section class="ab-sec"><div class="empty">⚙️ طلبات الصلاحيات تحتاج تجهيز قاعدة البيانات مرة واحدة${admin?" — شغّل ملف <b>perm-requests.sql</b> في Supabase":" — تواصل مع مدير النظام"}.</div></section>`:`
+  ${todo.length?`<section class="ab-sec rv"><h2>${hqIc("clock",22)} طلبات بانتظار موافقتك <span class="sub">${hqF(todo.length)}</span></h2><div class="cp-l">${todo.map(r=>prqView(r,true)).join("")}</div></section>`:""}
+  <section class="ab-two">${admin?"":`<div class="ab-sec rv"><h2>${hqIc("send",22)} طلب جديد</h2>
+    <div class="sub" style="margin-bottom:8px">مسار طلبك: ${ch.map(x=>esc(PRQ_ST[x])).join(" ← ")}</div>
+    <div class="prq-f">${I.map(([kind,key,l])=>{const has=kind==="pg"?(()=>{const p=PAGES.find(x=>x[0]===key);return !!p&&pageOK(p)&&!permView(key)})():(key==="audit"||key==="reserve"?canEditAudit():key==="upload"?canUpload():key==="seeall"?seesAll():key==="about"?abOK():(!!rsTeamOf(me)||rsIsEv(me)));
+      return `<label class="prq-o${has?" has":""}"><span>${esc(l)}</span>${has?'<small>متاحة لك</small>':kind==="pg"?`<select class="in" data-rqk="pg" data-rqi="${key}"><option value="">—</option><option value="1">دخول كامل</option><option value="v">تصفح فقط</option></select>`:`<input type="checkbox" data-rqk="ac" data-rqi="${key}">`}</label>`}).join("")}</div>
+    <textarea class="in" id="prqWhy" rows="3" maxlength="1000" placeholder="سبب الطلب (يساعد المعتمدين على الموافقة)" style="margin-top:8px;width:100%"></textarea>
+    <button type="button" class="btn2 pri" id="prqSend" style="margin-top:8px">إرسال الطلب</button></div>`}
+    <div class="ab-sec rv"><h2>${hqIc("user",22)} ${admin?"كل الطلبات":"طلباتي"} <span class="sub">${hqF((admin?PRQ:mine).length)}</span></h2><div class="cp-l">${(admin?PRQ.filter(r=>!prqMyTurn(r)):mine).map(r=>prqView(r,false)).join("")||'<div class="empty">لا توجد طلبات</div>'}</div></div></section>`}`;
+  const sb3=$("#prqSend");if(sb3)sb3.onclick=async()=>{const items=[];ab.querySelectorAll("[data-rqk]").forEach(x=>{if(x.tagName==="SELECT"){if(x.value)items.push({kind:"pg",key:x.dataset.rqi,val:x.value==="v"?"v":true})}else if(x.checked)items.push({kind:"ac",key:x.dataset.rqi,val:true})});
+    if(!items.length){toast("اختر بوابة أو مهمة واحدة على الأقل");return}sb3.disabled=true;
+    const {error}=await sb.from("quality_perm_requests").insert({user_name:me.full_name,user_role:roleLabel(me),user_sector:me.sector||ORG.hq||"",items,reason:$("#prqWhy").value.trim()||null,chain:ch.map(r=>({r})),step:0,status:"pending"});sb3.disabled=false;
+    if(error){toast("تعذر الإرسال: "+error.message);return}toast("✓ أُرسل طلبك إلى "+PRQ_ST[ch[0]]);await prqLoad();renderPrq(ab)};
+  const act=async(id,ok)=>{const r=PRQ.find(x=>x.id===id);if(!r)return;const note=(ab.querySelector(`[data-prn="${id}"]`)||{}).value||"";if(!ok&&!confirm("رفض الطلب؟"))return;
+    const ch2=(r.chain||[]).map(x=>Object.assign({},x));const fin=isSysAdmin(me);let step=r.step,status=r.status;
+    if(!ok){ch2[step]=Object.assign(ch2[step]||{},{ok:false,by:me.full_name,at:new Date().toISOString(),note});status="rejected"}
+    else if(fin){for(let i=step;i<ch2.length;i++){if(ch2[i].ok==null)ch2[i]=Object.assign(ch2[i],{ok:true,by:me.full_name,at:new Date().toISOString(),note:i===ch2.length-1?note:"اعتمدها مدير النظام مباشرة"})}step=ch2.length-1;status="approved"}
+    else{ch2[step]=Object.assign(ch2[step],{ok:true,by:me.full_name,at:new Date().toISOString(),note});step++;if(step>=ch2.length)status="approved"}
+    if(ok&&fin){PERMS.u=PERMS.u||{};const o=PERMS.u[r.user_id]=PERMS.u[r.user_id]||{};(r.items||[]).forEach(it=>{o[it.kind]=o[it.kind]||{};o[it.kind][it.key]=it.val==="v"?"v":true});
+      const s1=await sb.from("quality_settings").upsert({key:"perms",value:PERMS,updated_at:new Date().toISOString()});if(s1.error){toast("تعذر تفعيل الصلاحيات: "+s1.error.message);return}try{localStorage.setItem("jawda-perms",JSON.stringify(PERMS))}catch(e){}}
+    const {error}=await sb.from("quality_perm_requests").update({chain:ch2,step,status,updated_at:new Date().toISOString()}).eq("id",id);if(error){toast("تعذر الحفظ: "+error.message);return}
+    toast(!ok?"رُفض الطلب":status==="approved"?"✓ اعتُمد الطلب وفُعّلت الصلاحيات":"✓ تمت الموافقة، وانتقل الطلب إلى "+PRQ_ST[ch2[step].r]);await prqLoad();renderPrq(ab);renderDash()};
+  ab.querySelectorAll("[data-prok]").forEach(b=>b.onclick=()=>act(b.dataset.prok,true));ab.querySelectorAll("[data-prno]").forEach(b=>b.onclick=()=>act(b.dataset.prno,false));
+  abAnim(ab)}
+
 function renderDash(){const nav=$("#homeNav");if(!nav)return;
   const HID=["south","north","acad","users"],LOC={};
-  const items=[["about","الرئيسية","home"]].concat(PAGES.filter(p=>p[0]!=="dash"&&(pageOK(p)||!HID.includes(p[0]))).map(p=>{if(!pageOK(p))LOC[p[0]]=1;return [p[0],p[1],HOME_IC[p[0]]||"eye"]}),[["mine","ملخص أعمالي","user"],["faq","الأسئلة الشائعة والشكاوى","help"]]);
-  const LV=["about","mine","faq"];
+  const items=[["about","الرئيسية","home"]].concat(PAGES.filter(p=>p[0]!=="dash"&&(pageOK(p)||!HID.includes(p[0]))).map(p=>{if(!pageOK(p))LOC[p[0]]=1;return [p[0],p[1],HOME_IC[p[0]]||"eye"]}),[["mine","ملخص أعمالي","user"],["preq","طلب الصلاحيات"+(PRQ&&PRQ.filter(prqMyTurn).length?` (${PRQ.filter(prqMyTurn).length})`:""),"lock"],["faq","الأسئلة الشائعة والشكاوى","help"]]);
+  const LV=["about","mine","preq","faq"];if(PRQ==null&&sb&&!isOff())prqLoad().then(()=>{if(PRQ&&PRQ.some(prqMyTurn)&&page==="dash")renderDash()});
   nav.innerHTML=items.map(([k,l,ic])=>`<button type="button" data-hn="${k}" aria-current="${LV.includes(k)&&HOMEV===k}"${LOC[k]?' class="lk" title="لا تملك صلاحية الدخول"':""}><span class="hn-i">${hqIc(LOC[k]?"lock":ic,22)}</span><span class="hn-l">${esc(l)}</span></button>`).join("");
   nav.querySelectorAll("[data-hn]").forEach(b=>b.onclick=()=>{const k=b.dataset.hn;if(LOC[k]){toast("ليس لديك صلاحية الدخول لهذه البوابة — تواصل مع مدير النظام");return}if(LV.includes(k)){HOMEV=k;renderDash();$("#homeMain").scrollIntoView({block:"start"})}else go(k)});
   const ab=$("#aboutBody"),db=$("#dashBody");ab.hidden=HOMEV==="mine";db.hidden=HOMEV!=="mine";
-  if(HOMEV==="mine"){renderMine();return}if(HOMEV==="faq"){renderFaq(ab);return}
+  if(HOMEV==="mine"){renderMine();return}if(HOMEV==="faq"){renderFaq(ab);return}if(HOMEV==="preq"){renderPrq(ab);return}
   const A=Object.assign({},ABOUT_DEF,ABOUT||{}),S=homeStats(),ed=abOK();
   const cnt=(v,l,sub,ic,suf)=>`<div class="hs-c rv"><span class="hs-i">${hqIc(ic,22)}</span><b data-cnt="${v==null?"":v}" data-suf="${suf||""}">${v==null?"—":(v%1?v.toFixed(1):hqF(v))+(suf||"")}</b><span>${l}</span>${sub?`<small>${sub}</small>`:""}</div>`;
   const ach=(A.ach||[]).filter(a=>ed||String(a[0]||"").trim());
@@ -4042,13 +4092,21 @@ function approveSignup(r){
    <label class="f full">الجهة (المركز الرئيسي أو الوحدة)${sectorSelect("saSec",unit0)}${r.gov?`<span class="sub">المحافظة التي اختارها المتقدم: ${esc(r.gov)}</span>`:""}</label>
    <label class="f full">البريد الإلكتروني<input class="in" id="saMail" dir="ltr" value="${esc(r.email||"")}"></label>
    <label class="f full">كلمة مرور مؤقتة<input class="in" id="saPass" dir="ltr" value="${tempPass()}"></label></div>
-   <div class="btns" style="margin-top:12px"><button type="button" class="btn2 pri" id="saGo">إنشاء الحساب وتفعيله</button><button type="button" class="btn2" id="closeSh">إلغاء</button></div>`;
+   <div id="saMsg"></div><div class="btns" style="margin-top:12px"><button type="button" class="btn2 pri" id="saGo">إنشاء الحساب وتفعيله</button><button type="button" class="btn2" id="closeSh">إلغاء</button></div>`;
   openSheet();$("#closeSh").onclick=closeSheet;
+  const saErr=t=>{$("#saMsg").innerHTML=t?`<div class="alert" style="margin-top:10px">${t}</div>`:"";if(t)$("#saMsg").scrollIntoView({block:"nearest"})};
+  {const em=String(r.email||"").toLowerCase(),byU=users.find(u=>String(u.username||"").toLowerCase()===un0),byE=em&&users.find(u=>String(u.email||"").toLowerCase()===em);
+    if(byE)saErr(`⚠️ هذا البريد مسجّل مسبقاً لحساب <b>${esc(byE.full_name)}</b> (${esc(byE.username)}). غالباً الطلب مكرر — ارفضه، أو غيّر اسم المستخدم إن كان شخصاً آخر.`);
+    else if(byU)saErr(`⚠️ اسم المستخدم «${esc(un0)}» مستخدم مسبقاً لحساب <b>${esc(byU.full_name)}</b>. غيّره قبل الإنشاء.`);
+    if(byU){let k=2;while(users.some(u=>String(u.username||"").toLowerCase()===un0+k))k++;$("#saUser").value=un0+k}}
   $("#saGo").onclick=async()=>{const name=$("#saName").value.trim(),un=$("#saUser").value.trim().toLowerCase(),role=$("#saRole").value,sec=$("#saSec").value.trim(),pw=$("#saPass").value.trim(),em=$("#saMail").value.trim();
-    if(!name||!un||!pw){toast("أكمل الاسم واسم المستخدم وكلمة المرور");return}
+    if(!name||!un||!pw){saErr("أكمل الاسم واسم المستخدم وكلمة المرور");return}
+    if(users.some(u=>String(u.username||"").toLowerCase()===un)){saErr(`اسم المستخدم «${esc(un)}» مستخدم مسبقاً — اختر اسماً آخر.`);return}
+    if(!/^[a-z0-9._-]{3,30}$/.test(un)){saErr("اسم المستخدم بالأحرف الإنجليزية الصغيرة والأرقام فقط (3 أحرف على الأقل)");return}
+    if(pw.length<8){saErr("كلمة المرور 8 أحرف على الأقل");return}saErr("");
     const btn=$("#saGo");btn.disabled=true;const baseRole=["admin","manager","staff"].includes(role)?role:"staff";
     const c=await sb.rpc("q_create_user",{p_username:un,p_full_name:name,p_role:baseRole,p_password:pw,p_sector:sec||null});
-    if(c.error){btn.disabled=false;toast("تعذر الإنشاء: "+c.error.message);return}
+    if(c.error){btn.disabled=false;saErr("تعذر الإنشاء: "+esc(c.error.message));return}
     if(baseRole!==role){const r3=await qUpd({p_user:c.data,p_role:role,p_sector:sec||"",p_full_name:name});if(r3.error)toast("أُنشئ الحساب لكن تعذر تعيين الدور: "+r3.error.message)}
     if(em)await sb.rpc("q_set_email",{p_user:c.data,p_email:em});
     await sb.from("quality_signup_requests").update({status:"approved",handled_by:me.full_name,handled_at:new Date().toISOString()}).eq("id",r.id);
