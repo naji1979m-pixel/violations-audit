@@ -702,7 +702,8 @@ header.top .upload{background:rgba(11,42,94,.82)!important;color:#fff!important;
 }
 
 /* الصفحة تتحرك كلها مع بعض: إلغاء تثبيت الفلاتر والتبويبات والقائمة الجانبية أثناء التمرير */
-.fbar,.hq-nav,.st-nav,.aud-side{position:static!important;top:auto!important;max-height:none!important;overflow:visible!important}
+.fbar,.hq-nav,.st-nav,.aud-side{position:static!important;top:auto!important}
+.aud-side{max-height:none!important;overflow:visible!important}
 
 /* ===== شريط التنقل الأفقي بقوائم منسدلة (يلغي العمود الطولي) ===== */
 @media screen{
@@ -727,6 +728,23 @@ body.home-on #tabs,#tabs,body:not(.home-on) #tabs{position:relative!important;z-
 #tabs .nv-i:hover{background:#EEF3FC}#tabs .nv-i.lk{color:#8A9BB4}
 }
 @media screen and (max-width:860px){#tabs .tab.nv-b{padding:9px 11px!important;font-size:13px!important}#tabs .nv-m{position:absolute;min-width:200px}}
+.ex-g{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px}.ex-k{padding:18px 18px 14px!important;cursor:pointer}.ex-k .hk-v{font-size:34px}.ex-k .hk-l{font-size:15px;font-weight:800}
+.ex-q{margin-top:14px;font-size:15px}.ex-q b{font-size:20px;color:var(--navy)}.ex-t{width:100%;display:table!important}.ex-t td,.ex-t th{text-align:center;white-space:nowrap}.ex-t td:first-child,.ex-t th:first-child{text-align:right}.ex-t td[data-rd]{cursor:pointer}
+@media(max-width:860px){.ex-g{grid-template-columns:repeat(2,minmax(0,1fr))}.ex-k .hk-v{font-size:26px}}
+/* الملخص التنفيذي بهوية شركة المياه الوطنية */
+.ex-ban{position:relative;display:flex;align-items:center;justify-content:space-between;gap:16px;min-height:170px;padding:24px 28px;border-radius:24px;overflow:hidden;color:#fff;
+  background:linear-gradient(270deg,rgba(6,20,51,.75) 0%,rgba(11,42,94,.45) 50%,rgba(6,20,51,.35) 100%),var(--pgimg,linear-gradient(135deg,#0B2A5E,#1E5BC6)) center 55%/cover no-repeat;box-shadow:0 0 0 1px rgba(92,200,255,.3),0 16px 40px rgba(6,20,51,.35)}
+.ex-ban::after{content:"";position:absolute;inset:auto 24px 0 24px;height:3px;border-radius:3px;background:linear-gradient(90deg,transparent,#5CC8FF,#fff,#5CC8FF,transparent);box-shadow:0 0 14px rgba(92,200,255,.9)}
+.ex-bt h2{margin:6px 0 4px;font-size:32px;font-weight:800;color:#fff}.ex-bt p{margin:0;font-weight:700;opacity:.95}.ex-bt small{display:block;margin-top:6px;opacity:.85}
+.ex-tag{display:inline-block;background:rgba(255,255,255,.16);border:1px solid rgba(255,255,255,.35);border-radius:999px;padding:3px 12px;font-size:12.5px;font-weight:700}
+.ex-lg{flex:none;background:#fff;border-radius:18px;padding:10px 18px;box-shadow:0 0 0 1px rgba(255,255,255,.8),0 0 22px rgba(92,200,255,.45)}.ex-lg img{display:block;height:58px;width:auto}
+.ex-k{position:relative;overflow:hidden;border-top:4px solid var(--tone)!important;background:linear-gradient(180deg,#fff 0%,#F3F8FF 100%)!important}
+.ex-k::after{content:"";position:absolute;left:-18px;bottom:-26px;width:110px;height:110px;border-radius:50% 50% 50% 0;transform:rotate(-45deg);background:radial-gradient(circle at 40% 40%,rgba(30,91,198,.10),rgba(30,91,198,0) 70%);pointer-events:none}
+.ex-k .hk-v{color:#0B2A5E}.ex-k .hk-i{background:#E7F0FD!important;color:#1E5BC6!important}
+.ex-q{display:flex;align-items:center;gap:8px;flex-wrap:wrap;background:linear-gradient(90deg,#E7F0FD,#F6FAFF);border:1px solid #CFE0F7;border-radius:14px;padding:10px 14px}.ex-qi{color:#1E5BC6;display:flex}
+.ex-t thead th{background:linear-gradient(180deg,#123B9E,#0B2A5E)!important;color:#fff!important}.ex-t tbody tr:nth-child(even) td{background:#F5F9FF}.ex-t tr.hqtot td{background:#E7F0FD!important;color:#0B2A5E}
+.ex-ft{display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;padding:10px 16px;border-radius:14px;background:#0B2A5E;color:#D6E4F7;font-size:12.5px}.ex-ft span{display:flex;align-items:center;gap:6px}
+@media(max-width:860px){.ex-ban{flex-direction:column-reverse;align-items:flex-start;padding:18px}.ex-bt h2{font-size:24px}.ex-lg img{height:44px}}
 </style>
 </head>
 <body>
@@ -1971,9 +1989,10 @@ async function boot(){
 const PAGES=[["dash","الرئيسية",["admin","exec","manager","staff","clerk","viewer"]],["hq","المركز الرئيسي",[]],["audit","المخالفات والتدقيق",["admin","exec","manager","staff","clerk","viewer"]],["report","تقارير التدقيق",["admin","exec","manager","viewer","clerk"]],["team","أداء الموظفين",["admin","exec","manager","viewer"]],["perf","تقييم الأداء",["admin","exec","manager","staff","viewer"]],["north","الوحدة الشمالية – القطاع الشرقي",[]],["south","الوحدة الجنوبية – القطاع الشرقي",[]],["acad","أكاديمية إدارة المخالفات",["admin","exec","manager","staff","clerk","viewer","trainee"]],["users","الإدارة والهيكل",["admin"]]];
 /* شريط تنقل أفقي بقوائم منسدلة — مثل موقع شركة المياه الوطنية */
 const NAV_HID=["south","north","acad","users"];
-const NAV_HQ=[["ov","نظرة عامة"],["sec","القطاعات"],["trend","الاتجاه والمقارنات"],["vio","المخالفات"],["mgr","مدراء الرقابة"],["map","الخريطة"],["rep","تكرار الرصد"],["rasd","جودة الرصد"]];
+const NAV_HQ=[["exec","الملخص التنفيذي"],["ov","نظرة عامة"],["sec","القطاعات"],["trend","الاتجاه والمقارنات"],["vio","المخالفات"],["mgr","مدراء الرقابة"],["map","الخريطة"],["rep","تكرار الرصد"],["rasd","جودة الرصد"]];
 function navGroups(){const P=k=>PAGES.find(x=>x[0]===k),lbl=k=>(P(k)||[k,k])[1],ok=k=>{const p=P(k);return !!p&&pageOK(p)},vis=k=>ok(k)||(!!P(k)&&!NAV_HID.includes(k));
   const G=[{k:"dash",l:"الرئيسية",it:[["h","about","نبذة عن الإدارة"],["h","mine","ملخص أعمالي"],["h","preq","طلب الصلاحيات"],["h","faq","الأسئلة الشائعة والشكاوى"]]}];
+  if(ok("hq"))G.push({k:"_exec",l:"الملخص التنفيذي"});
   if(vis("hq"))G.push({k:"hq",l:lbl("hq"),it:ok("hq")?NAV_HQ.map(([k,l])=>["v",k,l]):null});
   if(vis("audit"))G.push({k:"audit",l:lbl("audit")});
   const rp=["report","team","perf"].filter(vis);if(rp.length)G.push({k:"_rep",l:"التقارير والأداء",it:rp.map(k=>["p",k,lbl(k)])});
@@ -1983,9 +2002,9 @@ function navGo(t,k){const p=PAGES.find(x=>x[0]===k);if(t==="p"&&p&&!pageOK(p)){t
   navClose();if(t==="h"){HOMEV=k;go("dash");return}if(t==="v"){HQV=k;go("hq");return}go(k)}
 function navClose(){$$("#tabs .nv-g.open").forEach(g=>g.classList.remove("open"))}
 function buildTabs(){const {G,ok}=navGroups();
-  $("#tabs").innerHTML=G.map(g=>{const lk=!g.it&&!g.k.startsWith("_")&&!ok(g.k);const ic=HOME_IC[g.k]||(g.k==="_rep"?"chart":g.k==="_unit"?"map":"eye");
+  $("#tabs").innerHTML=G.map(g=>{const lk=!g.it&&!g.k.startsWith("_")&&!ok(g.k);const ic=HOME_IC[g.k]||(g.k==="_rep"?"chart":g.k==="_unit"?"map":g.k==="_exec"?"star":"eye");
     return `<div class="nv-g" data-grp="${g.k}"><button type="button" class="tab nv-b${lk?" lk":""}" ${g.it?`data-nvt="${g.k}" aria-haspopup="true"`:`data-go="${g.k}"`}><span class="hn-i">${hqIc(lk?"lock":ic,18)}</span><span class="hn-l">${esc(g.l)}</span>${g.it?'<i class="nv-c">⌄</i>':""}</button>${g.it?`<div class="nv-m">${g.it.map(([t,k,l])=>{const plk=t==="p"&&!ok(k);return `<button type="button" class="nv-i${plk?" lk":""}" data-nvi="${t}:${k}">${plk?"🔒 ":""}${esc(l)}</button>`}).join("")}</div>`:""}</div>`}).join("");
-  $$("#tabs [data-go]").forEach(b=>b.onclick=()=>{const k=b.dataset.go;if(!PAGES.find(x=>x[0]===k&&pageOK(x))){toast("ليس لديك صلاحية الدخول لهذه البوابة — يمكنك طلبها من «طلب الصلاحيات»");return}navClose();go(k)});
+  $$("#tabs [data-go]").forEach(b=>b.onclick=()=>{const k=b.dataset.go;if(k==="_exec"){navClose();HQV="exec";go("hq");return}if(!PAGES.find(x=>x[0]===k&&pageOK(x))){toast("ليس لديك صلاحية الدخول لهذه البوابة — يمكنك طلبها من «طلب الصلاحيات»");return}navClose();go(k)});
   $$("#tabs [data-nvt]").forEach(b=>b.onclick=e=>{e.stopPropagation();const g=b.parentNode,o=g.classList.contains("open");navClose();if(!o)g.classList.add("open")});
   $$("#tabs [data-nvi]").forEach(b=>b.onclick=e=>{e.stopPropagation();const [t,k]=b.dataset.nvi.split(":");navGo(t,k)})}
 document.addEventListener("click",e=>{if(!(e.target.closest&&e.target.closest("#tabs")))navClose()});
@@ -1994,7 +2013,7 @@ const PG_HERO={audit:["المخالفات والتدقيق","اختر مخالف
 function pgHero(p){const h=PG_HERO[p],el=$("#pgHero");if(!el)return;if(!h){el.hidden=true;return}el.hidden=false;el.innerHTML=`<span class="ic">${hqIc(h[2],24)}</span><div><h2>${h[0]}</h2><p>${h[1]}</p></div>`}
 (function(){const pg=document.querySelector('.pg[data-pg="audit"]');if(!pg||pg.querySelector(".aud-side"))return;const side=document.createElement("div");side.className="aud-side";const main=document.createElement("div");main.className="aud-main";[...pg.children].forEach(c=>{(c.id==="queueBlock"||c.id==="doneBlock"?side:main).appendChild(c)});pg.appendChild(side);pg.appendChild(main)})();
 function go(p){if(!PAGES.find(x=>x[0]===p&&pageOK(x)))p=isTrainee(me)?"acad":"dash";page=p;try{localStorage.setItem("vv:page",p)}catch(e){}try{permPill();const vw=permView(p);if(p==="audit"&&vw!==go._vw&&typeof renderAll==="function")renderAll();go._vw=p==="audit"?vw:go._vw}catch(e){}
-  $$(".pg").forEach(x=>x.hidden=x.dataset.pg!==p);$$("[data-go]").forEach(b=>b.setAttribute("aria-current",String(b.dataset.go===p)));try{$$("#tabs .nv-g").forEach(g=>{const k=g.dataset.grp,on=k===p||(k==="_rep"&&["report","team","perf"].includes(p))||(k==="_unit"&&["north","south"].includes(p));const b=g.querySelector(".nv-b");if(b)b.setAttribute("aria-current",String(on))})}catch(e){}
+  $$(".pg").forEach(x=>x.hidden=x.dataset.pg!==p);$$("[data-go]").forEach(b=>b.setAttribute("aria-current",String(b.dataset.go===p)));try{$$("#tabs .nv-g").forEach(g=>{const k=g.dataset.grp,on=(k===p&&!(p==="hq"&&HQV==="exec"))||(k==="_exec"&&p==="hq"&&HQV==="exec")||(k==="_rep"&&["report","team","perf"].includes(p))||(k==="_unit"&&["north","south"].includes(p));const b=g.querySelector(".nv-b");if(b)b.setAttribute("aria-current",String(on))})}catch(e){}
   $("#auditBar").hidden=p!=="audit";$("#upBtn").hidden=p!=="audit"||!canUpload();
   if(p==="dash")renderDash();if(p==="report")renderReport();if(p==="team")renderTeam();if(p==="users")renderUsers();document.body.classList.toggle("hqwide",p==="hq"||p==="perf"||p==="acad"||p==="south"||p==="north"||p==="dash");document.body.classList.toggle("home-on",p==="dash");RD_BASE=null;RD_SCOPE="";pgHero(p);if(p==="hq")renderHQ();if(p==="perf")renderPerf();if(p==="acad")renderAcad();if(p==="south"){stUse(SOUTH_CX);renderSouth();if(STV==="reg")stLoadReg()}if(p==="north"){stUse(NORTH_CX);renderSouth();if(STV==="reg")stLoadReg()}window.scrollTo(0,0)}
 $("#logoutBtn").onclick=logout;
@@ -3233,11 +3252,28 @@ function renderHQ(){
   const secs=HQ_SECS.filter(s=>A.S[s]);
   const allSecs=HQ_SECS;
   const note=(A.noPres||A.noDec)?`<div class="hq-alert">ℹ️ لتظهر أرقام قرارات الهيئة وأسماء مدراء الرقابة وقيم الغرامات بدقة، أعد رفع التقرير الشامل (استبدال).</div>`:"";
-  const V=[["ov","نظرة عامة"],["sec","القطاعات"],["trend","الاتجاه والمقارنات"],["vio","المخالفات"],["mgr","مدراء الرقابة"],["map","الخريطة"],["rep","تكرار الرصد"],["rasd","جودة الرصد"]];
+  const V=[["exec","الملخص التنفيذي"],["ov","نظرة عامة"],["sec","القطاعات"],["trend","الاتجاه والمقارنات"],["vio","المخالفات"],["mgr","مدراء الرقابة"],["map","الخريطة"],["rep","تكرار الرصد"],["rasd","جودة الرصد"]];
   const pk=[["all","كل الفترات"]].concat(ys.map(y=>["y"+y,String(y)]),[["q3","آخر 3 أشهر"],["cu","فترة مخصصة"]]);
   const sl=secs.map(s=>({k:s,o:A.S[s]}));
   let body="";
-  if(HQV==="ov"){
+  if(HQV==="exec"){
+    const q=o=>o.sent?Math.round((o.sent-o.ret)/o.sent*1000)/10:null,qs=v=>v==null?"—":v+"%";
+    const big=(ic,l,v,sub,c,k)=>`<div class="hk rdk ex-k" style="--tone:${c}"${rdA(Object.assign(k?{c:k}:{},HQ_CTX))}><div class="hk-h"><span class="hk-i">${hqIc(ic)}</span><span class="hk-l">${l}</span></div><b class="hk-v">${v}</b><div class="hk-s">${sub}</div></div>`;
+    const lg=window.NWC_LOGO||LOGO||"";
+    body=`<div class="ex-ban"><div class="ex-bt"><span class="ex-tag">شركة المياه الوطنية · إدارة المخالفات والجودة</span><h2>الملخص التنفيذي</h2><p>${esc(sc.sec)}${sc.per?" — "+esc(sc.per):""}</p><small>آخر تاريخ في البيانات: ${(()=>{const m=hqMaxDay();return m!=null?wkDay(m):"—"})()} · اضغط أي رقم لتفاصيله</small></div>${lg?`<div class="ex-lg"><img src="${lg}" alt="شركة المياه الوطنية"></div>`:""}</div>
+    <div class="hq-card ex-hd">
+      <div class="ex-g">${big("eye","المرصود",hqF(T.n),"كل المخالفات في التقرير الشامل","#1F5BB0","n")}
+      ${big("send","المرسل للهيئة",hqF(T.sent),hqP(T.sent,T.n)+" من المرصود","#2F6FC0","sent")}
+      ${big("check","القرارات الصادرة",hqF(T.iss),hqP(T.iss,T.sent)+" من المرسل",HQC.iss,"iss")}
+      ${big("search","قيد التدقيق لدى الهيئة",hqF(T.auth),hqP(T.auth,T.sent)+" من المرسل",HQC.auth,"auth")}
+      ${big("undo","المسترجع",hqF(T.ret),hqP(T.ret,T.sent)+" من المرسل"+retSplit(T,HQ_CTX),HQC.ret,"ret")}
+      ${big("star","قيمة الغرامات",hqF(Math.round(T.fine||0))+' <small>ريال</small>',"للمخالفات التي صدر لها قرار","#B7791F",null)}</div>
+      <div class="ex-q"><span class="ex-qi">${hqIc("drop",20)}</span>نسبة الجودة <b>${qs(q(T))}</b> <span class="sub">(المرسل − المسترجع) ÷ المرسل</span></div></div>
+    <div class="hq-card"><div class="hq-ch"><h3>حسب القطاع</h3></div><div class="tbl-wrap"><table class="tbl ex-t"><thead><tr><th>القطاع</th><th>المرصود</th><th>المرسل للهيئة</th><th>القرارات الصادرة</th><th>قيد التدقيق لدى الهيئة</th><th>المسترجع</th><th>قيمة الغرامات (ريال)</th><th>نسبة الجودة</th></tr></thead><tbody>
+      ${secs.map(k=>{const o=A.S[k];return `<tr><td><b>${esc(k)}</b></td><td${rdA({s:k})}>${hqF(o.n)}</td><td${rdA({s:k,c:"sent"})}>${hqF(o.sent)}</td><td${rdA({s:k,c:"iss"})}>${hqF(o.iss)}</td><td${rdA({s:k,c:"auth"})}>${hqF(o.auth)}</td><td${rdA({s:k,c:"ret"})}>${hqF(o.ret)}</td><td>${hqF(Math.round(o.fine||0))}</td><td><b>${qs(q(o))}</b></td></tr>`}).join("")}
+      <tr class="hqtot"><td>الإجمالي</td><td>${hqF(T.n)}</td><td>${hqF(T.sent)}</td><td>${hqF(T.iss)}</td><td>${hqF(T.auth)}</td><td>${hqF(T.ret)}</td><td>${hqF(Math.round(T.fine||0))}</td><td>${qs(q(T))}</td></tr></tbody></table></div></div>
+    <div class="ex-ft"><span>${hqIc("drop",16)} شركة المياه الوطنية — National Water Company</span><span>المصدر: التقرير الشامل (منصة مكين) · منصة الجودة والتدقيق</span></div>`;
+  }else if(HQV==="ov"){
     const tp=Object.entries(A.TY).sort((a,b)=>b[1]-a[1]).slice(0,5);const tmx=Math.max(1,...tp.map(x=>x[1]));
     body=`${insHtml(hqInsights(A,secs),"قراءة ذكية للمؤشرات")}<div class="hq-kgrid">
       ${hqTile("eye","إجمالي المخالفات المرصودة",hqF(T.n),sc.per,"#1F5BB0",null,"كل المخالفات في التقرير الشامل ضمن الفترة")}
@@ -3292,7 +3328,7 @@ function renderHQ(){
   if(HQV==="rep")rpBind(L);
   if(HQV==="map"){hqMapInit(L);const mm=$("#hqMM");if(mm)mm.onchange=e=>{HQMM=e.target.value;renderHQ()};const rc=$("#hqRpm");if(rc)rc.onchange=e=>{HQRPM=e.target.checked;renderHQ()}}
   const re=()=>renderHQ();
-  $$("#hqBody [data-hv]").forEach(b=>b.onclick=()=>{HQV=b.dataset.hv;re()});
+  $$("#hqBody [data-hv]").forEach(b=>b.onclick=()=>{HQV=b.dataset.hv;re();try{const ex=HQV==="exec",e1=$('#tabs [data-grp="_exec"] .nv-b'),e2=$('#tabs [data-grp="hq"] .nv-b');if(e1)e1.setAttribute("aria-current",String(ex));if(e2)e2.setAttribute("aria-current",String(!ex))}catch(e){}});
   $$("#hqBody [data-per]").forEach(b=>b.onclick=()=>{HQP.k=b.dataset.per;if(HQP.k==="cu"&&!HQP.d1){const m=hqMaxDay();if(m!=null){HQP.d2=m;HQP.d1=m-29}}re()});
   const dd=id=>{const v=$("#"+id).value;return v?Math.floor(Date.parse(v+"T00:00:00Z")/864e5):0};
   if($("#hqD1"))$("#hqD1").onchange=()=>{HQP.d1=dd("hqD1");re()};if($("#hqD2"))$("#hqD2").onchange=()=>{HQP.d2=dd("hqD2");re()};
