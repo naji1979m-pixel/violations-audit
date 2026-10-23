@@ -3318,13 +3318,34 @@ function execPdf(){const {A,T,sc,secs}=execData(),lg=window.NWC_LOGO||LOGO||"",q
    <tr class="t"><td>الإجمالي</td><td>${f(T.n)}</td><td>${f(T.sent)}</td><td>${f(T.iss)}</td><td>${f(T.auth)}</td><td>${f(T.ret)}</td><td>${f(Math.round(T.fine||0))}</td><td>${qs(exQ(T))}</td></tr></tbody></table>
    <div class="ft"><span>شركة المياه الوطنية — National Water Company</span><span>المصدر: التقرير الشامل (منصة مكين) · أُعدّ ${esc(new Date().toLocaleString("ar-SA-u-nu-latn-ca-gregory",{timeZone:"Asia/Riyadh"}))}</span></div></div>`;
   setTimeout(()=>{try{window.print()}catch(e){toast("الطباعة غير متاحة هنا")}},150)}
-function execXls(){try{if(typeof XLSX==="undefined"){toast("تعذر تحميل مكتبة Excel");return}const {A,T,sc,secs}=execData(),wb=XLSX.utils.book_new();wb.Workbook={Views:[{RTL:true}]};const pc=(a,b)=>b?Math.round(a/b*1000)/10:null;
-    const s1=[["الملخص التنفيذي — شركة المياه الوطنية · إدارة المخالفات والجودة"],["النطاق",sc.sec],["الفترة",sc.per||"كل الفترات"],["تاريخ الإعداد",new Date().toLocaleString("ar-SA-u-nu-latn-ca-gregory",{timeZone:"Asia/Riyadh"})],[],["المؤشر","العدد","النسبة %","أساس النسبة"],
-      ["المرصود",T.n,"",""],["المرسل للهيئة",T.sent,pc(T.sent,T.n),"من المرصود"],["القرارات الصادرة",T.iss,pc(T.iss,T.sent),"من المرسل"],["قيد التدقيق لدى الهيئة",T.auth,pc(T.auth,T.sent),"من المرسل"],["المسترجع",T.ret,pc(T.ret,T.sent),"من المرسل"],["قيمة الغرامات (ريال)",Math.round(T.fine||0),"",""],["نسبة الجودة %",exQ(T),"","(المرسل − المسترجع) ÷ المرسل"]];
-    const w1=XLSX.utils.aoa_to_sheet(s1);w1["!cols"]=[{wch:30},{wch:18},{wch:12},{wch:30}];XLSX.utils.book_append_sheet(wb,w1,"الملخص");
-    const s2=[["القطاع","المرصود","المرسل للهيئة","القرارات الصادرة","قيد التدقيق لدى الهيئة","المسترجع","قيمة الغرامات (ريال)","نسبة الجودة %"]].concat(secs.map(k=>{const o=A.S[k];return [k,o.n,o.sent,o.iss,o.auth,o.ret,Math.round(o.fine||0),exQ(o)]}),[["الإجمالي",T.n,T.sent,T.iss,T.auth,T.ret,Math.round(T.fine||0),exQ(T)]]);
-    const w2=XLSX.utils.aoa_to_sheet(s2);w2["!cols"]=s2[0].map(()=>({wch:20}));XLSX.utils.book_append_sheet(wb,w2,"حسب القطاع");
-    XLSX.writeFile(wb,"الملخص-التنفيذي-"+new Date().toISOString().slice(0,10)+".xlsx");toast("تم تنزيل تقرير Excel")}catch(e){console.warn(e);toast("تعذر إنشاء ملف Excel")}}
+async function execXls(){const b=$("#exXls"),old=b?b.innerHTML:"";if(b){b.disabled=true;b.textContent="جارٍ التجهيز…"}
+  try{const EX=await exceljs(),{A,T,sc,secs}=execData(),wb=new EX.Workbook();wb.creator="منصة الجودة والتدقيق";
+    const NAVY="FF0B2A5E",BLUE="FF1E5BC6",LT="FFE7F0FD",ST="FFF5F9FF",W="FFFFFFFF",font="Arial";
+    const bd={top:{style:"thin",color:{argb:"FFCFE0F7"}},bottom:{style:"thin",color:{argb:"FFCFE0F7"}},left:{style:"thin",color:{argb:"FFCFE0F7"}},right:{style:"thin",color:{argb:"FFCFE0F7"}}};
+    const fill=c=>({type:"pattern",pattern:"solid",fgColor:{argb:c}});
+    const head=(ws,cols,title)=>{ws.views=[{rightToLeft:true,showGridLines:false}];ws.columns=cols.map(w=>({width:w}));
+      ws.mergeCells(1,1,1,cols.length);const t=ws.getCell(1,1);t.value=title;t.font={name:font,size:16,bold:true,color:{argb:W}};t.fill=fill(NAVY);t.alignment={horizontal:"center",vertical:"middle"};ws.getRow(1).height=34;
+      ws.mergeCells(2,1,2,cols.length);const u=ws.getCell(2,1);u.value="شركة المياه الوطنية · إدارة المخالفات والجودة";u.font={name:font,size:11,color:{argb:W}};u.fill=fill(BLUE);u.alignment={horizontal:"center"};ws.getRow(2).height=20;
+      ws.mergeCells(3,1,3,cols.length);const m=ws.getCell(3,1);m.value=`النطاق: ${sc.sec}   |   الفترة: ${sc.per||"كل الفترات"}   |   أُعدّ: ${new Date().toLocaleString("ar-SA-u-nu-latn-ca-gregory",{timeZone:"Asia/Riyadh"})}`;m.font={name:font,size:10,color:{argb:"FF4A5E80"}};m.alignment={horizontal:"center"};ws.getRow(3).height=18};
+    const th=(row)=>{row.eachCell(c=>{c.font={name:font,bold:true,color:{argb:W}};c.fill=fill(NAVY);c.alignment={horizontal:"center",vertical:"middle",wrapText:true};c.border=bd});row.height=28};
+    const pc=(a,b)=>b?a/b:null,q=o=>o.sent?(o.sent-o.ret)/o.sent:null;
+    /* ورقة الملخص */
+    const w1=wb.addWorksheet("الملخص التنفيذي");head(w1,[34,18,14,26],"الملخص التنفيذي");
+    th(w1.addRow(["المؤشر","العدد","النسبة","أساس النسبة"]));
+    const R=[["المرصود",T.n,null,"كل المخالفات في التقرير الشامل"],["المرسل للهيئة",T.sent,pc(T.sent,T.n),"من المرصود"],["القرارات الصادرة",T.iss,pc(T.iss,T.sent),"من المرسل"],["قيد التدقيق لدى الهيئة",T.auth,pc(T.auth,T.sent),"من المرسل"],["المسترجع",T.ret,pc(T.ret,T.sent),"من المرسل"],["قيمة الغرامات (ريال)",Math.round(T.fine||0),null,"للمخالفات التي صدر لها قرار"]];
+    R.forEach((r,i)=>{const row=w1.addRow(r);row.height=22;row.eachCell({includeEmpty:true},(c,n)=>{c.border=bd;c.font={name:font,size:11,bold:n===1||n===2,color:{argb:NAVY}};c.fill=fill(i%2?ST:W);c.alignment={horizontal:n===1||n===4?"right":"center",vertical:"middle"}});row.getCell(2).numFmt="#,##0";row.getCell(3).numFmt="0.0%"});
+    const qr=w1.addRow(["نسبة الجودة",q(T),null,"(المرسل − المسترجع) ÷ المرسل"]);qr.height=26;qr.eachCell({includeEmpty:true},(c,n)=>{c.border=bd;c.fill=fill(LT);c.font={name:font,size:12,bold:true,color:{argb:BLUE}};c.alignment={horizontal:n===1||n===4?"right":"center",vertical:"middle"}});qr.getCell(2).numFmt="0.0%";
+    /* ورقة القطاعات */
+    const w2=wb.addWorksheet("حسب القطاع");head(w2,[20,14,16,16,20,14,20,14],"الملخص التنفيذي — حسب القطاع");
+    th(w2.addRow(["القطاع","المرصود","المرسل للهيئة","القرارات الصادرة","قيد التدقيق لدى الهيئة","المسترجع","قيمة الغرامات (ريال)","نسبة الجودة"]));
+    const put=(row,i,tot)=>{row.height=22;row.eachCell({includeEmpty:true},(c,n)=>{c.border=bd;c.fill=fill(tot?LT:i%2?ST:W);c.font={name:font,size:11,bold:tot||n===1,color:{argb:tot?BLUE:NAVY}};c.alignment={horizontal:n===1?"right":"center",vertical:"middle"};if(n>1&&n<8)c.numFmt="#,##0";if(n===8)c.numFmt="0.0%"})};
+    secs.forEach((k,i)=>{const o=A.S[k];put(w2.addRow([k,o.n,o.sent,o.iss,o.auth,o.ret,Math.round(o.fine||0),q(o)]),i,false)});
+    put(w2.addRow(["الإجمالي",T.n,T.sent,T.iss,T.auth,T.ret,Math.round(T.fine||0),q(T)]),0,true);
+    [w1,w2].forEach(ws=>{ws.pageSetup={orientation:"landscape",fitToPage:true,fitToWidth:1,fitToHeight:0,paperSize:9};ws.headerFooter={oddFooter:"&Lشركة المياه الوطنية&Rالمصدر: التقرير الشامل (منصة مكين)"}});
+    const buf=await wb.xlsx.writeBuffer();
+    await deliver(new Blob([buf],{type:"application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"}),"الملخص-التنفيذي-"+new Date().toISOString().slice(0,10)+".xlsx","application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");toast("تم تنزيل تقرير Excel")}
+  catch(e){console.warn(e);toast("تعذر إنشاء ملف Excel: "+(e.message||""))}
+  if(b){b.disabled=false;b.innerHTML=old}}
 function renderHQ(){
   const el=$("#hqBody");if(!canHQ()){el.innerHTML='<section class="block"><div class="empty">🔒 هذه البوابة خاصة بموظفي المركز الرئيسي.</div></section>';return}
   const L=hqRows(),A=hqAgg(L),T=A.T,sc=hqScope(A),ys=hqYears();RD_BASE=hqRows;RD_SCOPE=`بوابة المركز الرئيسي — ${sc.sec}${sc.per?" — "+sc.per:""}`;HQ_CTX=HQSF?{s:HQSF}:{};
