@@ -759,6 +759,7 @@ body.home-on:has(.home-only) .wrap{padding-bottom:0}
 /* القائمة المنسدلة تثبت: جسر بين الزر والقائمة + بقاء مفتوحة عند المرور */
 #tabs .nv-m::before{content:"";position:absolute;left:0;right:0;top:-12px;height:12px}
 #tabs .nv-g.hov .nv-m{display:block}#tabs .nv-g.hov .nv-c{transform:rotate(180deg)}
+.ex-dr{display:flex;align-items:center;gap:6px}.ex-dr span{font-weight:700;color:var(--muted)}.ex-dr .in{width:auto;padding:6px 8px}
 </style>
 </head>
 <body>
@@ -3290,13 +3291,14 @@ function renderExec(){const el=$("#execBody");if(!el)return;if(!canHQ()){el.inne
   const ys=hqYears(),pk=[["all","كل الفترات"]].concat(ys.map(y=>["y"+y,String(y)]),[["q3","آخر 3 أشهر"],["cu","فترة مخصصة"]]);
   el.innerHTML=`<div class="hq ex-pg">
     <div class="ex-bar"><div class="hq-chips">${pk.map(([k,l])=>`<button type="button" class="hq-chip" data-xper="${k}" aria-pressed="${HQP.k===k}">${l}</button>`).join("")}</div>
-      ${HQP.k==="cu"?`<div class="hq-cu"><input type="date" class="in" id="exD1" value="${HQP.d1?new Date(HQP.d1*864e5).toISOString().slice(0,10):""}" aria-label="من"><span>إلى</span><input type="date" class="in" id="exD2" value="${HQP.d2?new Date(HQP.d2*864e5).toISOString().slice(0,10):""}" aria-label="إلى"></div>`:""}
+      ${(()=>{const [a,b]=hqRange(),iso=d=>d!=null&&d!==0?new Date(d*864e5).toISOString().slice(0,10):"",mx=hqMaxDay();const lo=(A.d1!=null?A.d1:null),f=a||(HQP.k==="all"?lo:0),t=b||(HQP.k==="all"?mx:0);
+        return `<div class="hq-cu ex-dr"><span>من</span><input type="date" class="in" id="exD1" value="${iso(f)}" aria-label="من تاريخ"><span>إلى</span><input type="date" class="in" id="exD2" value="${iso(t)}" aria-label="إلى تاريخ"></div>`})()}
       <label class="hq-sel"><span>القطاع</span><select id="exSec"><option value="">جميع القطاعات</option>${HQ_SECS.map(s=>`<option${HQSF===s?" selected":""}>${s}</option>`).join("")}</select></label>
       <span class="ex-sp"></span><button type="button" class="btn2 pri" id="exPdf">${hqIc("pdf",16)} تقرير PDF</button><button type="button" class="btn2" id="exXls">${hqIc("xls",16)} تقرير Excel</button></div>
     <div class="hq-body">${L.length?execHtml(A,T,sc,secs):'<div class="hq-card"><div class="empty">لا توجد مخالفات في هذه الفترة أو القطاع</div></div>'}</div></div>`;
   const re=()=>renderExec(),dd=id=>{const v=$("#"+id).value;return v?Math.floor(Date.parse(v+"T00:00:00Z")/864e5):0};
   $$("#execBody [data-xper]").forEach(b=>b.onclick=()=>{HQP.k=b.dataset.xper;if(HQP.k==="cu"&&!HQP.d1){const m=hqMaxDay();if(m!=null){HQP.d2=m;HQP.d1=m-29}}re()});
-  if($("#exD1"))$("#exD1").onchange=()=>{HQP.d1=dd("exD1");re()};if($("#exD2"))$("#exD2").onchange=()=>{HQP.d2=dd("exD2");re()};
+  const setR=()=>{const a=dd("exD1"),b=dd("exD2");HQP.k="cu";HQP.d1=a;HQP.d2=b;if(a&&b&&a>b){HQP.d1=b;HQP.d2=a}re()};if($("#exD1"))$("#exD1").onchange=setR;if($("#exD2"))$("#exD2").onchange=setR;
   $("#exSec").onchange=e=>{HQSF=e.target.value;HQG=[];re()};
   $("#exPdf").onclick=()=>execPdf();$("#exXls").onclick=()=>execXls()}
 function execPdf(){const {A,T,sc,secs}=execData(),lg=window.NWC_LOGO||LOGO||"",qs=v=>v==null?"—":v+"%",f=v=>hqF(v);
