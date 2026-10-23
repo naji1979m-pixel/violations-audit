@@ -263,7 +263,7 @@ body:has(#auditBar:not([hidden])) .ai-fab{bottom:88px}
 .ai-bot{align-self:flex-end;background:var(--paper);border:1px solid var(--line);border-end-end-radius:4px}
 .ai-t{font-size:12.5px;min-width:0}.ai-t th{white-space:normal}
 .ai-acts{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}.ai-acts .btn2{font-size:12.5px;padding:5px 10px}
-.ai-tools{display:flex;justify-content:flex-start;margin-top:4px}.ai-copy{border:0;background:none;color:var(--muted);font:inherit;font-size:12px;cursor:pointer;padding:0}
+.ai-tools{display:flex;justify-content:flex-start;gap:14px;margin-top:4px}.ai-copy{border:0;background:none;color:var(--muted);font:inherit;font-size:12px;cursor:pointer;padding:0}
 .ai-wait{display:flex;gap:5px;padding:14px}.ai-wait span{width:8px;height:8px;border-radius:50%;background:#2F6FC0;animation:aiD 1s infinite ease-in-out}.ai-wait span:nth-child(2){animation-delay:.15s}.ai-wait span:nth-child(3){animation-delay:.3s}
 @keyframes aiD{0%,80%,100%{opacity:.25;transform:scale(.8)}40%{opacity:1;transform:scale(1)}}
 .ai-sug{display:flex;gap:6px;overflow-x:auto;padding:8px 12px 0;scrollbar-width:none}.ai-s{flex:none;border:1px solid var(--line);background:var(--field);color:var(--ink);border-radius:99px;padding:6px 12px;font:inherit;font-size:12.5px;cursor:pointer}.ai-s:hover{border-color:#2F6FC0}
@@ -3470,9 +3470,30 @@ function aiMd(t){const e=esc(String(t||""));const lines=e.split("\n"),out=[];let
     if(l.trim())out.push("<p>"+fmt(l)+"</p>")}
   if(inT)out.push("</tbody></table></div>");if(inL)out.push("</ul>");return out.join("")}
 function aiMsg(role,text){const box=$("#aiLog");const acts=[];const clean=String(text||"").replace(/\[\[افتح\|([mogs])\|([^\]]+)\]\]/g,(m,t,n)=>{acts.push([t,n.trim()]);return ""}).trim();
-  const d=document.createElement("div");d.className="ai-m ai-"+role;d.innerHTML=(role==="user"?`<p>${esc(clean)}</p>`:aiMd(clean))+(acts.length?`<div class="ai-acts">${acts.map(([t,n])=>`<button type="button" class="btn2"${erA(t,n)}>📄 تقرير ${ER_T[t][0]}: ${esc(n)}</button>`).join("")}</div>`:"")+(role==="bot"?`<div class="ai-tools"><button type="button" class="ai-copy" title="نسخ">⧉ نسخ</button></div>`:"");
-  box.appendChild(d);box.scrollTop=box.scrollHeight;const cp=d.querySelector(".ai-copy");if(cp)cp.onclick=()=>copy(clean);return d}
-async function aiAsk(q){q=String(q||"").trim();if(!q||AI_BUSY)return;AI_BUSY=true;$("#aiQ").value="";aiMsg("user",q);
+  const d=document.createElement("div");d.className="ai-m ai-"+role;d.innerHTML=(role==="user"?`<p>${esc(clean)}</p>`:aiMd(clean))+(acts.length?`<div class="ai-acts">${acts.map(([t,n])=>`<button type="button" class="btn2"${erA(t,n)}>📄 تقرير ${ER_T[t][0]}: ${esc(n)}</button>`).join("")}</div>`:"")+(role==="bot"?`<div class="ai-tools"><button type="button" class="ai-copy" title="نسخ">⧉ نسخ</button>${/^⚠️/.test(clean)?"":`<button type="button" class="ai-copy ai-pdf" title="طباعة / حفظ PDF">📄 PDF</button><button type="button" class="ai-copy ai-xls" title="تنزيل Excel">📊 Excel</button>`}</div>`:"");
+  box.appendChild(d);box.scrollTop=box.scrollHeight;const cp=d.querySelector(".ai-copy");if(cp)cp.onclick=()=>copy(clean);
+  const q=AI_LASTQ;const pb=d.querySelector(".ai-pdf");if(pb)pb.onclick=()=>aiPdf(clean,q);const xb=d.querySelector(".ai-xls");if(xb)xb.onclick=()=>aiXls(clean,q);return d}
+/* تصدير رد المساعد: PDF (طباعة) و Excel (الجداول كأوراق) */
+let AI_LASTQ="";
+function aiHead(q){const now=new Date();return {q:q||"",who:me?me.full_name+" — "+roleLabel(me):"",at:now.toLocaleString("ar-SA-u-nu-latn-ca-gregory",{timeZone:"Asia/Riyadh"})}}
+function aiPdf(text,q){const h=aiHead(q);
+  $("#printDoc").innerHTML=`<div class="pd aip"><style>.aip{font-family:"IBM Plex Sans Arabic",Tahoma,Arial,sans-serif;color:#000;direction:rtl;font-size:13px;line-height:1.8;max-width:780px;margin:0 auto;padding:8px}
+   .aip .hd{display:flex;justify-content:space-between;align-items:flex-end;border-bottom:2px solid #1C437E;padding-bottom:8px;margin-bottom:12px}.aip h1{font-size:18px;margin:0;color:#1C437E}.aip .m{font-size:11px;color:#444}
+   .aip .q{background:#E9F0FA;border:1px solid #9AA8B5;border-radius:6px;padding:6px 10px;margin-bottom:12px}.aip table{width:100%;border-collapse:collapse;margin:8px 0}.aip th,.aip td{border:1px solid #9AA8B5;padding:4px 8px;text-align:right}.aip th{background:#1C437E;color:#fff}
+   .aip ul{margin:4px 0;padding-inline-start:20px}.aip .ft{margin-top:16px;border-top:1px solid #9AA8B5;padding-top:6px;font-size:10.5px;color:#555;text-align:center}@page{size:A4;margin:14mm}</style>
+   <div class="hd"><div><h1>تقرير مساعد الجودة</h1><div class="m">منصة الجودة والتدقيق — شركة المياه الوطنية</div></div>${typeof LOGO!=="undefined"&&LOGO?`<img src="${LOGO}" alt="" style="height:56px">`:""}</div>
+   <div class="m" style="margin-bottom:6px">أعدّه: ${esc(h.who)} · ${esc(h.at)}</div>${h.q?`<div class="q"><b>السؤال:</b> ${esc(h.q)}</div>`:""}
+   <div>${aiMd(text)}</div><div class="ft">أُنشئ آلياً من أرقام المنصة حسب صلاحية المستخدم والفلتر وقت الطلب.</div></div>`;
+  setTimeout(()=>{try{window.print()}catch(e){toast("الطباعة غير متاحة هنا")}},150)}
+function aiXls(text,q){try{if(typeof XLSX==="undefined"){toast("تعذر تحميل مكتبة Excel");return}const h=aiHead(q),wb=XLSX.utils.book_new();wb.Workbook={Views:[{RTL:true}]};
+    const lines=String(text||"").split("\n"),tables=[],other=[];let cur=null;
+    const strip=x=>String(x||"").replace(/\*\*|__|`/g,"").trim(),num=x=>{const v=strip(x).replace(/,/g,"");return /^-?\d+(\.\d+)?$/.test(v)?+v:strip(x)};
+    lines.forEach(l=>{const t=l.trim();if(/^\|.*\|$/.test(t)){if(/^\|[\s:|-]+\|$/.test(t))return;const cells=t.slice(1,-1).split("|").map(c=>c.trim());if(!cur){cur=[];tables.push(cur)}cur.push(cells)}else{cur=null;if(t)other.push(strip(t.replace(/^[-*•]\s+/,"• ").replace(/^#+\s*/,"")))}});
+    const info=[["تقرير مساعد الجودة"],["السؤال",h.q],["أعدّه",h.who],["التاريخ",h.at],[]].concat(other.map(x=>[x]));
+    const ws0=XLSX.utils.aoa_to_sheet(info);ws0["!cols"]=[{wch:90},{wch:60}];XLSX.utils.book_append_sheet(wb,ws0,"الرد");
+    tables.forEach((T,i)=>{const aoa=T.map((r,j)=>r.map(c=>j?num(c):strip(c)));const ws=XLSX.utils.aoa_to_sheet(aoa);ws["!cols"]=(T[0]||[]).map(()=>({wch:22}));XLSX.utils.book_append_sheet(wb,ws,("جدول "+(i+1)).slice(0,31))});
+    XLSX.writeFile(wb,"تقرير-مساعد-الجودة-"+new Date().toISOString().slice(0,10)+".xlsx");toast(tables.length?`تم تنزيل Excel (${tables.length} جدول)`:"تم تنزيل Excel")}catch(e){console.warn(e);toast("تعذر إنشاء ملف Excel")}}
+async function aiAsk(q){q=String(q||"").trim();if(!q||AI_BUSY)return;AI_BUSY=true;AI_LASTQ=q;$("#aiQ").value="";aiMsg("user",q);
   const w=document.createElement("div");w.className="ai-m ai-bot ai-wait";w.innerHTML="<span></span><span></span><span></span>";$("#aiLog").appendChild(w);$("#aiLog").scrollTop=1e9;$("#aiSend").disabled=true;
   try{const {data:{session}}=await sb.auth.getSession();const tok=session&&session.access_token;
     const ctl=new AbortController(),to=setTimeout(()=>ctl.abort(),60000);
