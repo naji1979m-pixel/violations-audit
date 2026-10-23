@@ -1994,11 +1994,11 @@ const PAGES=[["dash","الرئيسية",["admin","exec","manager","staff","clerk
 const NAV_HID=["south","north","acad","users"];
 const NAV_HQ=[["ov","نظرة عامة"],["sec","القطاعات"],["trend","الاتجاه والمقارنات"],["vio","المخالفات"],["mgr","مدراء الرقابة"],["map","الخريطة"],["rep","تكرار الرصد"],["rasd","جودة الرصد"]];
 function navGroups(){const P=k=>PAGES.find(x=>x[0]===k),lbl=k=>(P(k)||[k,k])[1],ok=k=>{const p=P(k);return !!p&&pageOK(p)},vis=k=>ok(k)||(!!P(k)&&!NAV_HID.includes(k));
-  const G=[{k:"dash",l:"الرئيسية",it:[["h","about","نبذة عن الإدارة"],["h","mine","ملخص أعمالي"],["h","preq","طلب الصلاحيات"],["h","faq","الأسئلة الشائعة والشكاوى"]]}];
+  const G=[{k:"dash",l:"الرئيسية",it:[["h","about","نبذة عن الإدارة"],["h","preq","طلب الصلاحيات"],["h","faq","الأسئلة الشائعة والشكاوى"]]}];
   if(ok("exec"))G.push({k:"exec",l:lbl("exec")});
   if(vis("hq"))G.push({k:"hq",l:lbl("hq"),it:ok("hq")?NAV_HQ.map(([k,l])=>["v",k,l]):null});
   if(vis("audit"))G.push({k:"audit",l:lbl("audit")});
-  const rp=["report","team","perf"].filter(vis);if(rp.length)G.push({k:"_rep",l:"التقارير والأداء",it:rp.map(k=>["p",k,lbl(k)])});
+  const rp=["report","team","perf"].filter(vis);G.push({k:"_rep",l:"التقارير والأداء",it:[["h","mine","ملخص أعمالي"]].concat(rp.map(k=>["p",k,lbl(k)]))});
   const un=["north","south"].filter(vis);if(un.length)G.push({k:"_unit",l:"بوابات الوحدات",it:un.map(k=>["p",k,lbl(k)])});
   ["acad","users"].filter(vis).forEach(k=>G.push({k,l:lbl(k)}));return {G,ok}}
 function navGo(t,k){const p=PAGES.find(x=>x[0]===k);if(t==="p"&&p&&!pageOK(p)){toast("ليس لديك صلاحية الدخول لهذه البوابة — يمكنك طلبها من «طلب الصلاحيات»");return}
@@ -2016,7 +2016,7 @@ const PG_HERO={audit:["المخالفات والتدقيق","اختر مخالف
 function pgHero(p){const h=PG_HERO[p],el=$("#pgHero");if(!el)return;if(!h){el.hidden=true;return}el.hidden=false;el.innerHTML=`<span class="ic">${hqIc(h[2],24)}</span><div><h2>${h[0]}</h2><p>${h[1]}</p></div>`}
 (function(){const pg=document.querySelector('.pg[data-pg="audit"]');if(!pg||pg.querySelector(".aud-side"))return;const side=document.createElement("div");side.className="aud-side";const main=document.createElement("div");main.className="aud-main";[...pg.children].forEach(c=>{(c.id==="queueBlock"||c.id==="doneBlock"?side:main).appendChild(c)});pg.appendChild(side);pg.appendChild(main)})();
 function go(p){if(!PAGES.find(x=>x[0]===p&&pageOK(x)))p=isTrainee(me)?"acad":"dash";page=p;try{localStorage.setItem("vv:page",p)}catch(e){}try{permPill();const vw=permView(p);if(p==="audit"&&vw!==go._vw&&typeof renderAll==="function")renderAll();go._vw=p==="audit"?vw:go._vw}catch(e){}
-  $$(".pg").forEach(x=>x.hidden=x.dataset.pg!==p);$$("[data-go]").forEach(b=>b.setAttribute("aria-current",String(b.dataset.go===p)));try{$$("#tabs .nv-g").forEach(g=>{const k=g.dataset.grp,on=k===p||(k==="_rep"&&["report","team","perf"].includes(p))||(k==="_unit"&&["north","south"].includes(p));const b=g.querySelector(".nv-b");if(b)b.setAttribute("aria-current",String(on))})}catch(e){}
+  $$(".pg").forEach(x=>x.hidden=x.dataset.pg!==p);$$("[data-go]").forEach(b=>b.setAttribute("aria-current",String(b.dataset.go===p)));try{$$("#tabs .nv-g").forEach(g=>{const k=g.dataset.grp,on=(k===p&&!(k==="dash"&&HOMEV==="mine"))||(k==="_rep"&&(["report","team","perf"].includes(p)||(p==="dash"&&HOMEV==="mine")))||(k==="_unit"&&["north","south"].includes(p));const b=g.querySelector(".nv-b");if(b)b.setAttribute("aria-current",String(on))})}catch(e){}
   $("#auditBar").hidden=p!=="audit";$("#upBtn").hidden=p!=="audit"||!canUpload();
   if(p==="dash")renderDash();if(p==="report")renderReport();if(p==="team")renderTeam();if(p==="users")renderUsers();document.body.classList.toggle("hqwide",p==="hq"||p==="exec"||p==="perf"||p==="acad"||p==="south"||p==="north"||p==="dash");document.body.classList.toggle("home-on",p==="dash");RD_BASE=null;RD_SCOPE="";pgHero(p);if(p==="hq")renderHQ();if(p==="exec")renderExec();if(p==="perf")renderPerf();if(p==="acad")renderAcad();if(p==="south"){stUse(SOUTH_CX);renderSouth();if(STV==="reg")stLoadReg()}if(p==="north"){stUse(NORTH_CX);renderSouth();if(STV==="reg")stLoadReg()}window.scrollTo(0,0)}
 $("#logoutBtn").onclick=logout;
