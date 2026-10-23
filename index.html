@@ -1714,7 +1714,8 @@ function permGet(kind,key,u){u=u||me;if(PERM_OFF||!u||u.role==="admin")return un
 const permView=pg=>{pg=pg||(typeof page!=="undefined"?page:"");return !PERM_FIXED.includes(pg)&&permGet("pg",pg)==="v"};
 const permOv=(key,def)=>{if(key!=="seeall"&&!PERM_OFF&&me&&me.role!=="admin"&&permView())return false;const o=permGet("ac",key);return o===undefined?def():o};
 const PERM_MSG="👁 أنت في وضع التصفح — هذه الخدمة تحتاج صلاحية من مدير النظام";
-const permFree=t=>!!(t&&t.closest&&t.closest("#tabs,.home-nav,.userbar,#roPill,header.top,#authView,#pwView"));
+const permPdfBtn=t=>{const b=t&&t.closest&&t.closest("button,a");if(!b)return false;return /PDF|طباعة/i.test(b.textContent||"")||/pdf|print/i.test(b.id||"")||b.classList.contains("ai-pdf")};
+const permFree=t=>!!(t&&t.closest&&(t.closest("#tabs,.home-nav,.userbar,#roPill,header.top,#authView,#pwView")||(typeof isFeeder==="function"&&isFeeder(me)&&permPdfBtn(t))));
 let _pmT=0;["click","mousedown","pointerdown","touchstart","input","change","keydown","submit","dblclick","contextmenu"].forEach(ev=>document.addEventListener(ev,e=>{if(!me||me.role==="admin"||!permView())return;const t=e.target;if(permFree(t))return;if(ev==="keydown"&&!(t&&t.closest&&t.closest("input,select,textarea,button,[contenteditable]")))return;
   e.preventDefault();e.stopImmediatePropagation();if(t&&t.blur)try{t.blur()}catch(x){}if((ev==="click"||ev==="touchstart"||ev==="keydown"||ev==="submit")&&Date.now()-_pmT>1500){_pmT=Date.now();toast(PERM_MSG)}},{capture:true,passive:false}));
 document.addEventListener("focusin",e=>{if(!me||me.role==="admin"||!permView()||permFree(e.target))return;if(e.target&&e.target.matches&&e.target.matches("input,select,textarea"))try{e.target.blur()}catch(x){}},true);
