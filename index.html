@@ -754,6 +754,8 @@ body.home-on #tabs,#tabs,body:not(.home-on) #tabs{position:relative!important;z-
 @media(max-width:860px){.home-ban.home-only img{height:auto!important;min-height:0}.home-ban.home-only::before{display:none}}
 .home-ban.home-only img{width:100%;height:calc(100vh - var(--hofs,300px));min-height:320px;max-height:none;aspect-ratio:auto;object-fit:contain;object-position:center}
 body.home-on:has(.home-only) .wrap{padding-bottom:0}
+/* الرئيسية: الصورة كاملة بعرض الشاشة من اليمين لليسار بدون قص */
+.home-ban.home-only::before{display:none!important}.home-ban.home-only img{width:100%!important;height:auto!important;min-height:0!important;object-fit:fill!important}
 </style>
 </head>
 <body>
