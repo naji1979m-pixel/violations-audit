@@ -3442,6 +3442,11 @@ function aiContext(q){const {L,scope}=aiBase();const A=hqAgg(L),T=A.T,r1=x=>Math
     else if(page==="perf"){const [a,b]=pfRange();F.الفترة=a||b?`${wkDay(a)} – ${wkDay(b)}`:"كل الفترات";F.القطاع=PFS||(seesAll()?"جميع القطاعات":(me.sector||""));F.المحافظات_المختارة=PFG.length?PFG:"كل المحافظات"}
     else F.التصفية=fLabel()}catch(e){}
   out.الفلتر_الفعلي=F;
+  /* إنجاز موظفي الجودة (المدققين) من سجلات التدقيق في المنصة */
+  try{const Q={};Object.entries(audits).forEach(([k,a])=>{if(k==="manual"||!a||!a._id)return;const nm=(a.auditor||userName(a._owner,"")||"").trim();if(!nm)return;const o=Q[nm]=Q[nm]||{الإجمالي:0,مكتملة:0,معادة:0,بانتظار_الاعتماد:0,قيد_التدقيق:0,آخر_نشاط:0};o.الإجمالي++;
+      const st=a.status;if(st==="ok")o.مكتملة++;else if(st==="ret")o.معادة++;else if(st==="pend")o.بانتظار_الاعتماد++;else o.قيد_التدقيق++;const t=a.updated||a.created||0;if(t>o.آخر_نشاط)o.آخر_نشاط=t});
+    out.موظفو_الجودة_المدققون=Object.entries(Q).sort((a,b)=>b[1].الإجمالي-a[1].الإجمالي).slice(0,60).map(([n,o])=>Object.assign({الاسم:n},o,{آخر_نشاط:o.آخر_نشاط?new Date(o.آخر_نشاط).toISOString().slice(0,10):""}));
+    out.حسابات_المنصة=(users||[]).filter(u=>u.active!==false).slice(0,80).map(u=>[u.full_name,roleLabel(u),u.sector||ORG.hq||""])}catch(e){}
   /* شهري لكل قطاع ولكل محافظة (آخر 12 شهراً) */
   const MK=Object.keys(mo).map(Number).sort().slice(-12),mkl=k=>`${Math.floor(k/100)}-${String(k%100).padStart(2,"0")}`,inM=new Set(MK);
   out.القطاعات_شهرياً=[];HQ_SECS.forEach(sc=>{const m=A.M[sc]||{};MK.forEach(k=>{if(m[k]&&m[k].n)out.القطاعات_شهرياً.push([sc,mkl(k)].concat(mk(m[k])))})});
@@ -3473,7 +3478,7 @@ async function aiAsk(q){q=String(q||"").trim();if(!q||AI_BUSY)return;AI_BUSY=tru
     const ctl=new AbortController(),to=setTimeout(()=>ctl.abort(),60000);
     const r=await fetch(SB_URL+"/functions/v1/ask-quality",{method:"POST",signal:ctl.signal,headers:{apikey:SB_KEY,"Content-Type":"application/json",Authorization:"Bearer "+(tok||SB_KEY)},body:JSON.stringify({question:q,context:aiContext(q),history:AI_H.slice(-6)})});
     clearTimeout(to);let d={};try{d=await r.json()}catch(e){}w.remove();
-    if(!r.ok||!d.text){aiMsg("bot","⚠️ "+(d.error||(r.status===404?"المساعد غير مفعّل بعد — ارفع الوظيفة السحابية ask-quality.":"تعذر الحصول على رد ("+r.status+")")));}
+    if(!r.ok||!d.text){aiMsg("bot","⚠️ "+(d.error||(r.status===404?"المساعد غير مفعّل بعد — ارفع الوظيفة السحابية ask-quality.":r.status===200?"لم يصل رد من الذكاء الاصطناعي — حدّث الوظيفة السحابية ask-quality بالنسخة الجديدة، ثم أعد المحاولة.":"تعذر الحصول على رد ("+r.status+")")));}
     else{aiMsg("bot",d.text);AI_H.push({role:"user",text:q},{role:"assistant",text:d.text});if(d.left!=null)$("#aiLeft").textContent=`متبقٍ اليوم: ${d.left}`}}
   catch(e){w.remove();aiMsg("bot","⚠️ "+(e.name==="AbortError"?"انتهت مهلة الانتظار، حاول مرة أخرى.":"تعذر الاتصال: "+(e.message||"")))}
   AI_BUSY=false;$("#aiSend").disabled=false;$("#aiQ").focus()}
