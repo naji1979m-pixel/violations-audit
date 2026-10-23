@@ -756,6 +756,9 @@ body.home-on #tabs,#tabs,body:not(.home-on) #tabs{position:relative!important;z-
 body.home-on:has(.home-only) .wrap{padding-bottom:0}
 /* الرئيسية: الصورة كاملة بعرض الشاشة من اليمين لليسار بدون قص */
 .home-ban.home-only::before{display:none!important}.home-ban.home-only img{width:100%!important;height:auto!important;min-height:0!important;object-fit:fill!important}
+/* القائمة المنسدلة تثبت: جسر بين الزر والقائمة + بقاء مفتوحة عند المرور */
+#tabs .nv-m::before{content:"";position:absolute;left:0;right:0;top:-12px;height:12px}
+#tabs .nv-g.hov .nv-m{display:block}#tabs .nv-g.hov .nv-c{transform:rotate(180deg)}
 </style>
 </head>
 <body>
@@ -2012,13 +2015,14 @@ function navGroups(){const P=k=>PAGES.find(x=>x[0]===k),lbl=k=>(P(k)||[k,k])[1],
   ["acad","users"].filter(vis).forEach(k=>G.push({k,l:lbl(k)}));return {G,ok}}
 function navGo(t,k){const p=PAGES.find(x=>x[0]===k);if(t==="p"&&p&&!pageOK(p)){toast("ليس لديك صلاحية الدخول لهذه البوابة — يمكنك طلبها من «طلب الصلاحيات»");return}
   navClose();if(t==="h"){HOMEV=k;go("dash");return}if(t==="v"){HQV=k;go("hq");return}go(k)}
-function navClose(){$$("#tabs .nv-g.open").forEach(g=>g.classList.remove("open"))}
+function navClose(){$$("#tabs .nv-g.open,#tabs .nv-g.hov").forEach(g=>g.classList.remove("open","hov"))}
 function buildTabs(){const {G,ok}=navGroups();
   $("#tabs").innerHTML=G.map(g=>{const lk=!g.it&&!g.k.startsWith("_")&&!ok(g.k);const ic=HOME_IC[g.k]||(g.k==="_rep"?"chart":g.k==="_unit"?"map":g.k==="_exec"?"star":"eye");
     return `<div class="nv-g" data-grp="${g.k}"><button type="button" class="tab nv-b${lk?" lk":""}" ${g.it?`data-nvt="${g.k}" aria-haspopup="true"`:`data-go="${g.k}"`}><span class="hn-i">${hqIc(lk?"lock":ic,18)}</span><span class="hn-l">${esc(g.l)}</span>${g.it?'<i class="nv-c">⌄</i>':""}</button>${g.it?`<div class="nv-m">${g.it.map(([t,k,l])=>{const plk=t==="p"&&!ok(k);return `<button type="button" class="nv-i${plk?" lk":""}" data-nvi="${t}:${k}">${plk?"🔒 ":""}${esc(l)}</button>`}).join("")}</div>`:""}</div>`}).join("");
   $$("#tabs [data-go]").forEach(b=>b.onclick=()=>{const k=b.dataset.go;if(!PAGES.find(x=>x[0]===k&&pageOK(x))){toast("ليس لديك صلاحية الدخول لهذه البوابة — يمكنك طلبها من «طلب الصلاحيات»");return}navClose();go(k)});
   $$("#tabs [data-nvt]").forEach(b=>b.onclick=e=>{e.stopPropagation();if(b.dataset.nvt==="dash"&&window.matchMedia&&matchMedia("(hover:hover)").matches){navGo("h","home");return}const g=b.parentNode,o=g.classList.contains("open");navClose();if(!o)g.classList.add("open")});
-  $$("#tabs [data-nvi]").forEach(b=>b.onclick=e=>{e.stopPropagation();const [t,k]=b.dataset.nvi.split(":");navGo(t,k)})}
+  $$("#tabs [data-nvi]").forEach(b=>b.onclick=e=>{e.stopPropagation();const [t,k]=b.dataset.nvi.split(":");navGo(t,k)});
+  $$("#tabs .nv-g").forEach(g=>{if(!g.querySelector(".nv-m"))return;let t=null;g.onmouseenter=()=>{clearTimeout(t);$$("#tabs .nv-g.hov").forEach(x=>{if(x!==g)x.classList.remove("hov")});g.classList.add("hov")};g.onmouseleave=()=>{clearTimeout(t);t=setTimeout(()=>g.classList.remove("hov"),450)}})}
 document.addEventListener("click",e=>{if(!(e.target.closest&&e.target.closest("#tabs")))navClose()});
 document.addEventListener("keydown",e=>{if(e.key==="Escape")navClose()});
 const PG_HERO={audit:["المخالفات والتدقيق","اختر مخالفة من القائمة وابدأ تدقيقها وفق دليل دراسة المخالفات وآلية ضبطها","check"],report:["تقارير التدقيق","مؤشرات جودة التدقيق حسب الوحدة والموظف وبند اللائحة","xls"],team:["أداء الموظفين","إنجاز موظفي الجودة ونتائج تدقيقهم","clock"],users:["الإدارة والهيكل","الحسابات والصلاحيات والهيكل التنظيمي","search"]};
