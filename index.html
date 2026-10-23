@@ -700,6 +700,9 @@ header.top .upload{background:rgba(11,42,94,.82)!important;color:#fff!important;
 .hq-top{background:linear-gradient(270deg,rgba(6,20,51,.62) 0%,rgba(6,20,51,.45) 45%,rgba(6,20,51,.6) 100%),var(--pgimg) center 55%/cover no-repeat!important}
 @media(max-width:860px){.pghero,.hq-top{background:linear-gradient(rgba(6,20,51,.6),rgba(6,20,51,.6)),var(--pgimg) 30% 55%/cover no-repeat!important}}
 }
+
+/* الصفحة تتحرك كلها مع بعض: إلغاء تثبيت الفلاتر والتبويبات والقائمة الجانبية أثناء التمرير */
+.fbar,.hq-nav,.st-nav,.aud-side{position:static!important;top:auto!important;max-height:none!important;overflow:visible!important}
 </style>
 </head>
 <body>
