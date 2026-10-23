@@ -747,7 +747,10 @@ body.home-on #tabs,#tabs,body:not(.home-on) #tabs{position:relative!important;z-
 @media(max-width:860px){.ex-ban{flex-direction:column-reverse;align-items:flex-start;padding:18px}.ex-bt h2{font-size:24px}.ex-lg img{height:44px}}
 .ex-pg{display:flex;flex-direction:column;gap:14px}.ex-bar{display:flex;flex-wrap:wrap;align-items:center;gap:10px;background:var(--paper);border:1px solid #DCE7F5;border-radius:16px;padding:10px 14px}.ex-sp{flex:1}
 .ex-bar .btn2{display:inline-flex;align-items:center;gap:6px}.ex-bar .hq-chip{background:#EEF3FC;color:#123B9E;border-color:#CFE0F7}.ex-bar .hq-chip[aria-pressed=true]{background:#123B9E;color:#fff}.ex-bar .hq-sel span{color:var(--muted)}
-.home-ban.home-only img{max-height:none;aspect-ratio:auto;object-fit:contain}
+.home-ban.home-only{margin:0 calc(50% - 50vw) 0;border-radius:0;box-shadow:none;width:100vw}
+.home-ban.home-only::after{display:none}
+.home-ban.home-only img{width:100%;height:calc(100vh - var(--hofs,300px));min-height:320px;max-height:none;aspect-ratio:auto;object-fit:cover;object-position:center 4%}
+body.home-on:has(.home-only) .wrap{padding-bottom:0}
 </style>
 </head>
 <body>
@@ -2295,7 +2298,7 @@ function renderDash(){const nav=$("#homeNav");if(!nav)return;
   nav.querySelectorAll("[data-hn]").forEach(b=>b.onclick=()=>{const k=b.dataset.hn;if(LOC[k]){toast("ليس لديك صلاحية الدخول لهذه البوابة — تواصل مع مدير النظام");return}if(LV.includes(k)){HOMEV=k;renderDash();$("#homeMain").scrollIntoView({block:"start"})}else go(k)});
   const ab=$("#aboutBody"),db=$("#dashBody");ab.hidden=HOMEV==="mine";db.hidden=HOMEV!=="mine";
   if(HOMEV==="mine"){renderMine();return}if(HOMEV==="faq"){renderFaq(ab);return}if(HOMEV==="preq"){renderPrq(ab);return}
-  if(HOMEV==="home"){ab.innerHTML=`<div class="home-ban home-only"><img src="${HOME_SHOW}" alt="شركة المياه الوطنية — مستقبل مائي مستدام" decoding="async" onerror="this.parentNode.remove()"></div>`;return}
+  if(HOMEV==="home"){ab.innerHTML=`<div class="home-ban home-only"><img src="${HOME_SHOW}" alt="شركة المياه الوطنية — مستقبل مائي مستدام" decoding="async" onerror="this.parentNode.remove()"></div>`;const fit=()=>{const b=ab.querySelector(".home-only");if(!b)return;b.style.setProperty("--hofs",Math.max(0,Math.round(b.getBoundingClientRect().top+scrollY))+"px")};fit();setTimeout(fit,60);if(!renderDash._rs){renderDash._rs=1;addEventListener("resize",()=>{if(page==="dash"&&HOMEV==="home"){const b=$(".home-only");if(b)b.style.setProperty("--hofs",Math.max(0,Math.round(b.getBoundingClientRect().top+scrollY))+"px")}})}return}
   const A=Object.assign({},ABOUT_DEF,ABOUT||{}),S=homeStats(),ed=abOK();
   const cnt=(v,l,sub,ic,suf)=>`<div class="hs-c rv"><span class="hs-i">${hqIc(ic,22)}</span><b data-cnt="${v==null?"":v}" data-suf="${suf||""}">${v==null?"—":(v%1?v.toFixed(1):hqF(v))+(suf||"")}</b><span>${l}</span>${sub?`<small>${sub}</small>`:""}</div>`;
   const ach=(A.ach||[]).filter(a=>ed||String(a[0]||"").trim());
