@@ -1802,6 +1802,53 @@ function txList(){const E=Object.entries(TXT).sort((a,b)=>a[0].localeCompare(b[0
 ["click","mousedown","dblclick","submit","change","input"].forEach(ev=>document.addEventListener(ev,e=>{if(!TX_MODE)return;const t=e.target;if(t&&t.closest&&t.closest("#txBar,#txDlg,#txBtn"))return;
   e.preventDefault();e.stopImmediatePropagation();if(ev!=="click")return;const p=txPick(e);if(!p||!p.o){toast("اضغط على عبارة مكتوبة");return}txEdit(p.o,p.c)},{capture:true,passive:false}));
 
+/* ===== سجل الدخول والتواجد — يشاهده مدير النظام ===== */
+let SESS_ID=null,SESS_T=0,SESS_PG="",SESS_D=null,SESS_P="d1",SESS_U="",SESS_ERR="";
+try{SESS_ID=sessionStorage.getItem("jawda-sess")||null}catch(e){}
+const sessDev=()=>{const u=navigator.userAgent||"";const os=/iPhone/.test(u)?"آيفون":/iPad/.test(u)?"آيباد":/Android/.test(u)?"أندرويد":/Windows/.test(u)?"ويندوز":/Mac/.test(u)?"ماك":"جهاز آخر";
+  const br=/Edg\//.test(u)?"Edge":/CriOS|Chrome\//.test(u)?"Chrome":/FxiOS|Firefox\//.test(u)?"Firefox":/Safari\//.test(u)?"Safari":"";return os+(br?" — "+br:"")};
+const sessPage=()=>{try{const p=(PAGES.find(x=>x[0]===page)||[])[1]||page||"";if(page==="hq"&&typeof HQV!=="undefined"){const h=(NAV_HQ.find(x=>x[0]===HQV)||[])[1];if(h)return p+" — "+h}return p}catch(e){return ""}};
+const sessKeep=id=>{SESS_ID=id;try{id?sessionStorage.setItem("jawda-sess",id):sessionStorage.removeItem("jawda-sess")}catch(e){}};
+async function sessNew(){try{const r=await sb.rpc("q_sess_start",{p_device:sessDev(),p_page:sessPage()});if(!r.error&&r.data)sessKeep(r.data)}catch(e){}}
+async function sessPing(){if(!sb||!me||isOff())return;try{if(!SESS_ID){await sessNew();return}const r=await sb.rpc("q_sess_ping",{p_id:SESS_ID,p_page:sessPage()});if(r.error)return;if(r.data===false){sessKeep(null);await sessNew()}}catch(e){}}
+function sessStart(){if(!sb||!me)return;sessPing();clearInterval(SESS_T);SESS_T=setInterval(()=>{if(document.visibilityState!=="hidden")sessPing()},60000)}
+document.addEventListener("visibilitychange",()=>{if(document.visibilityState==="visible"&&me&&SESS_T)sessPing()});
+async function sessEnd(){clearInterval(SESS_T);SESS_T=0;if(!SESS_ID||!sb)return;try{await Promise.race([sb.rpc("q_sess_end",{p_id:SESS_ID}),new Promise(r=>setTimeout(r,2500))])}catch(e){}sessKeep(null)}
+const sessPg=()=>{const p=sessPage();if(p!==SESS_PG&&me&&SESS_ID){SESS_PG=p;sessPing()}};
+/* ---- العرض ---- */
+const sessOn=s=>!s.ended_at&&Date.now()-new Date(s.last_seen).getTime()<3*60000;
+const sessDur=s=>Math.max(0,new Date(s.ended_at||s.last_seen).getTime()-new Date(s.started_at).getTime());
+const sessFmt=ms=>{const m=Math.round(ms/60000);if(m<1)return "أقل من دقيقة";const h=Math.floor(m/60),r=m%60;return (h?h+" س ":"")+(r||!h?r+" د":"")};
+const sessTm=t=>t?new Date(t).toLocaleString("ar-SA-u-ca-gregory-nu-latn",{year:"numeric",month:"2-digit",day:"2-digit",hour:"2-digit",minute:"2-digit"}):"—";
+const sessFrom=()=>{const d=new Date();d.setHours(0,0,0,0);if(SESS_P==="d7")d.setDate(d.getDate()-6);else if(SESS_P==="d30")d.setDate(d.getDate()-29);else if(SESS_P==="d90")d.setDate(d.getDate()-89);return d};
+async function loadSess(){SESS_ERR="";try{const {data,error}=await sb.from("quality_sessions").select("*").gte("started_at",sessFrom().toISOString()).order("started_at",{ascending:false}).limit(5000);
+  if(error){SESS_ERR=/relation|does not exist|schema cache/i.test(error.message)?"شغّل ملف sessions.sql في Supabase أولاً":error.message;SESS_D=[]}else SESS_D=data||[]}catch(e){SESS_ERR="تعذر التحميل";SESS_D=[]}}
+async function loadSessOnline(){try{const {data}=await sb.from("quality_sessions").select("*").is("ended_at",null).gte("last_seen",new Date(Date.now()-3*60000).toISOString()).order("last_seen",{ascending:false});return data||[]}catch(e){return []}}
+function sessBlock(){if(!isSysAdmin(me))return "";return `<section class="block" id="sessBlock"><h2>👥 المتواجدون الآن وسجل الدخول <span class="sub">مدير النظام فقط</span></h2><div id="sessIn"><div class="sub">جارٍ التحميل…</div></div></section>`}
+async function bindSess(){const box=$("#sessIn");if(!box)return;const [_,ON]=await Promise.all([loadSess(),loadSessOnline()]);if(!$("#sessIn"))return;
+  if(SESS_ERR){box.innerHTML=`<div class="hq-alert">⚠️ ${esc(SESS_ERR)}</div>`;return}
+  const onU={};ON.forEach(s=>{if(!onU[s.user_id]||new Date(s.last_seen)>new Date(onU[s.user_id].last_seen))onU[s.user_id]=s});const OL=Object.values(onU);
+  const L=SESS_D.filter(s=>!SESS_U||s.user_id===SESS_U);const names={};SESS_D.forEach(s=>names[s.user_id]=s.full_name);
+  const G={};L.forEach(s=>{const g=G[s.user_id]=G[s.user_id]||{n:s.full_name,c:0,t:0,last:s.last_seen};g.c++;g.t+=sessDur(s);if(new Date(s.last_seen)>new Date(g.last))g.last=s.last_seen});
+  const GS=Object.entries(G).sort((a,b)=>b[1].t-a[1].t);const per=[["d1","اليوم"],["d7","آخر 7 أيام"],["d30","آخر 30 يوم"],["d90","آخر 90 يوم"]];
+  const rl=id=>{const u=(users||[]).find(x=>x.id===id);return u?roleLabel(u):""};
+  box.innerHTML=`<h3 class="sec">🟢 داخل المنصة الآن <span class="sub">${OL.length}</span></h3>
+  ${OL.length?`<div class="tbl-wrap"><table class="tbl"><thead><tr><th>الاسم</th><th>الصفة</th><th>الصفحة الحالية</th><th>دخل الساعة</th><th>المدة حتى الآن</th><th>الجهاز</th></tr></thead><tbody>${OL.map(s=>`<tr><td><b>🟢 ${esc(s.full_name)}</b></td><td>${esc(rl(s.user_id))}</td><td>${esc(s.page||"—")}</td><td>${sessTm(s.started_at)}</td><td>${sessFmt(sessDur(s))}</td><td>${esc(s.device||"")}</td></tr>`).join("")}</tbody></table></div>`:'<div class="sub">لا يوجد أحد داخل المنصة الآن غيرك</div>'}
+  <div style="display:flex;gap:6px;flex-wrap:wrap;margin:14px 0 8px">${per.map(([k,l])=>`<button type="button" class="btn2${SESS_P===k?" pri":""}" data-sesp="${k}" aria-pressed="${SESS_P===k}">${l}</button>`).join("")}</div><div class="btns" style="margin:0 0 8px;align-items:center">
+   <select class="in" id="sessUsr" style="max-width:260px"><option value="">كل الموظفين</option>${Object.entries(names).sort((a,b)=>String(a[1]).localeCompare(String(b[1]),"ar")).map(([id,n])=>`<option value="${id}"${id===SESS_U?" selected":""}>${esc(n)}</option>`).join("")}</select>
+   <button type="button" class="btn2" id="sessRf">↻ تحديث</button><button type="button" class="btn2" id="sessXls">📊 Excel</button></div>
+  <h3 class="sec">ملخص لكل موظف <span class="sub">${GS.length}</span></h3>
+  ${GS.length?`<div class="tbl-wrap"><table class="tbl"><thead><tr><th>الاسم</th><th>مرات الدخول</th><th>إجمالي وقت التواجد</th><th>آخر ظهور</th></tr></thead><tbody>${GS.map(([id,g])=>`<tr><td>${onU[id]?"🟢 ":""}${esc(g.n)}</td><td>${g.c}</td><td>${sessFmt(g.t)}</td><td>${onU[id]?"متصل الآن":sessTm(g.last)}</td></tr>`).join("")}</tbody></table></div>`:'<div class="sub">لا توجد زيارات في هذه الفترة</div>'}
+  <h3 class="sec">سجل الدخول والخروج <span class="sub">${L.length}</span></h3>
+  ${L.length?`<div class="tbl-wrap" style="max-height:460px;overflow:auto"><table class="tbl"><thead><tr><th>الاسم</th><th>الدخول</th><th>الخروج</th><th>مدة التواجد</th><th>آخر صفحة</th><th>الجهاز</th></tr></thead><tbody>${L.slice(0,1500).map(s=>`<tr><td>${esc(s.full_name)}</td><td>${sessTm(s.started_at)}</td><td>${sessOn(s)?"<b>🟢 متصل الآن</b>":s.ended_at?sessTm(s.ended_at)+" (خروج)":sessTm(s.last_seen)+" (آخر نشاط)"}</td><td>${sessFmt(sessDur(s))}</td><td>${esc(s.page||"")}</td><td>${esc(s.device||"")}</td></tr>`).join("")}</tbody></table></div>`:""}
+  <div class="sub" style="margin-top:6px">يبدأ التسجيل من وقت تشغيل هذه الميزة. «خروج» = ضغط زر الخروج. «آخر نشاط» = أغلق الصفحة أو التطبيق بدون خروج، فيُحسب وقت الخروج من آخر نشاط له.</div>`;
+  $$("#sessIn [data-sesp]").forEach(b=>b.onclick=()=>{SESS_P=b.dataset.sesp;bindSess()});$("#sessUsr").onchange=e=>{SESS_U=e.target.value;bindSess()};$("#sessRf").onclick=()=>bindSess();
+  $("#sessXls").onclick=async e=>{const b=e.currentTarget;b.disabled=true;try{const EX=await exceljs();const wb=new EX.Workbook();
+    const H={type:"pattern",pattern:"solid",fgColor:{argb:"FF1C437E"}};const sh=(nm,hd,rows,w)=>{const ws=wb.addWorksheet(nm,{views:[{rightToLeft:true}]});ws.columns=w.map(x=>({width:x}));const r=ws.addRow(hd);r.eachCell(c=>{c.fill=H;c.font={bold:true,color:{argb:"FFFFFFFF"}};c.alignment={horizontal:"center"}});rows.forEach(x=>ws.addRow(x))};
+    sh("الملخص",["الاسم","مرات الدخول","إجمالي التواجد","آخر ظهور"],GS.map(([id,g])=>[g.n,g.c,sessFmt(g.t),onU[id]?"متصل الآن":sessTm(g.last)]),[30,14,20,22]);
+    sh("السجل",["الاسم","الدخول","الخروج","مدة التواجد","آخر صفحة","الجهاز"],L.map(s=>[s.full_name,sessTm(s.started_at),sessOn(s)?"متصل الآن":s.ended_at?sessTm(s.ended_at):sessTm(s.last_seen)+" (آخر نشاط)",sessFmt(sessDur(s)),s.page||"",s.device||""]),[30,22,26,16,22,22]);
+    const buf=await wb.xlsx.writeBuffer();await deliver(new Blob([buf],{type:"application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"}),"سجل-الدخول.xlsx")}catch(x){toast("تعذر التصدير: "+(x.message||x))}b.disabled=false}}
+
 /* ===== إيقاف المنصة للتحديث ===== */
 let MAINT=null;
 async function loadMaint(){try{const {data}=await sb.from("quality_settings").select("value").eq("key","maint").maybeSingle();MAINT=data&&data.value||null}catch(e){}return MAINT}
@@ -2040,7 +2087,7 @@ $("#pwForm").addEventListener("submit",async e=>{e.preventDefault();
   await sb.rpc("q_password_changed");const first=me.must_change_password;me.must_change_password=false;$("#pw1").value=$("#pw2").value="";
   toast("تم تغيير كلمة المرور");if(first)await enterApp();else{show("appView");go(page)}});
 $("#pwCancel").onclick=()=>{show("appView");go(page)};
-async function logout(){if(obCount()&&!confirm(`لديك ${obCount()} عنصر لم يُرفع بعد (عمل بدون اتصال). عند الخروج سيبقى محفوظاً في هذا الجهاز ويُرفع عند دخولك مرة أخرى. متابعة الخروج؟`))return;try{await flush()}catch(e){}try{await QDB.set(BOOT_K(),null)}catch(e){}await sb.auth.signOut();location.reload()}
+async function logout(){if(obCount()&&!confirm(`لديك ${obCount()} عنصر لم يُرفع بعد (عمل بدون اتصال). عند الخروج سيبقى محفوظاً في هذا الجهاز ويُرفع عند دخولك مرة أخرى. متابعة الخروج؟`))return;try{await flush()}catch(e){}try{await sessEnd()}catch(e){}try{await QDB.set(BOOT_K(),null)}catch(e){}await sb.auth.signOut();location.reload()}
 $("#blockLogout").onclick=logout;
 /* ===== الفتح الفوري: عرض آخر نسخة محفوظة في الجهاز ثم التحديث في الخلفية ===== */
 let BOOT_STALE=false;const BOOT_K=()=>"boot:"+(me&&me.id);
@@ -2052,7 +2099,7 @@ async function bootLoadAll(){LD_ERR=false;await Promise.all([loadData(),needUser
 function bootBadge(on){const b=$("#refreshBtn");if(!b)return;b.disabled=on;b.textContent=on?"⏳ جارٍ التحديث…":"↻ تحديث"}
 async function enterApp(){
   if(sb&&!isOff()&&me&&me.role!=="admin"){await Promise.race([loadMaint(),new Promise(r=>setTimeout(r,4000))]);if(maintKick())return}
-  show("appView");$("#whoName").textContent=me.full_name;$("#whoRole").textContent=roleLabel(me);
+  show("appView");try{sessStart()}catch(e){}$("#whoName").textContent=me.full_name;$("#whoRole").textContent=roleLabel(me);
   if(isTrainee(me)&&!acadOK()){blockMsg("أكاديمية إدارة المخالفات قيد التجهيز، وسيتم إشعارك عند افتتاحها.");return}
   if(isTrainee(me)){buildTabs();page="acad";go("acad");{const f=$("#aiFab");if(f)f.hidden=true}["#upBtn","#auditBar"].forEach(q=>{const x=$(q);if(x)x.hidden=true});return}
   buildTabs();
@@ -2136,7 +2183,7 @@ document.addEventListener("keydown",e=>{if(e.key==="Escape")navClose()});
 const PG_HERO={audit:["المخالفات والتدقيق","اختر مخالفة من القائمة وابدأ تدقيقها وفق دليل دراسة المخالفات وآلية ضبطها","check"],report:["تقارير التدقيق","مؤشرات جودة التدقيق حسب الوحدة والموظف وبند اللائحة","xls"],team:["أداء الموظفين","إنجاز موظفي الجودة ونتائج تدقيقهم","clock"],users:["الإدارة والهيكل","الحسابات والصلاحيات والهيكل التنظيمي","search"]};
 function pgHero(p){const h=PG_HERO[p],el=$("#pgHero");if(!el)return;if(!h){el.hidden=true;return}el.hidden=false;el.innerHTML=`<span class="ic">${hqIc(h[2],24)}</span><div><h2>${h[0]}</h2><p>${h[1]}</p></div>`}
 (function(){const pg=document.querySelector('.pg[data-pg="audit"]');if(!pg||pg.querySelector(".aud-side"))return;const side=document.createElement("div");side.className="aud-side";const main=document.createElement("div");main.className="aud-main";[...pg.children].forEach(c=>{(c.id==="queueBlock"||c.id==="doneBlock"?side:main).appendChild(c)});pg.appendChild(side);pg.appendChild(main)})();
-function go(p){if(!PAGES.find(x=>x[0]===p&&pageOK(x)))p=isTrainee(me)?"acad":"dash";page=p;try{localStorage.setItem("vv:page",p)}catch(e){}try{permPill();const vw=permView(p);if(p==="audit"&&vw!==go._vw&&typeof renderAll==="function")renderAll();go._vw=p==="audit"?vw:go._vw}catch(e){}
+function go(p){setTimeout(()=>{try{sessPg()}catch(e){}},60);if(!PAGES.find(x=>x[0]===p&&pageOK(x)))p=isTrainee(me)?"acad":"dash";page=p;try{localStorage.setItem("vv:page",p)}catch(e){}try{permPill();const vw=permView(p);if(p==="audit"&&vw!==go._vw&&typeof renderAll==="function")renderAll();go._vw=p==="audit"?vw:go._vw}catch(e){}
   $$(".pg").forEach(x=>x.hidden=x.dataset.pg!==p);$$("[data-go]").forEach(b=>b.setAttribute("aria-current",String(b.dataset.go===p)));try{$$("#tabs .nv-g").forEach(g=>{const k=g.dataset.grp,on=navActive(k,p);const b=g.querySelector(".nv-b");if(b)b.setAttribute("aria-current",String(on))})}catch(e){}
   $("#auditBar").hidden=p!=="audit";$("#upBtn").hidden=p!=="audit"||!canUpload();
   if(p==="dash")renderDash();if(p==="report")renderReport();if(p==="team")renderTeam();if(p==="users")renderUsers();document.body.classList.toggle("hqwide",p==="hq"||p==="exec"||p==="perf"||p==="acad"||p==="south"||p==="north"||p==="dash");document.body.classList.toggle("home-on",p==="dash");RD_BASE=null;RD_SCOPE="";pgHero(p);if(p==="hq")renderHQ();if(p==="exec")renderExec();if(p==="perf")renderPerf();if(p==="acad")renderAcad();if(p==="south"){stUse(SOUTH_CX);renderSouth();if(STV==="reg")stLoadReg()}if(p==="north"){stUse(NORTH_CX);renderSouth();if(STV==="reg")stLoadReg()}window.scrollTo(0,0)}
@@ -4307,7 +4354,7 @@ function bindOrg(){
 }
 function renderUsers(){
   const secs=sectorOptions();
-  $("#usersBody").innerHTML=`${maintBlock()}${signupBlock()}${pwReqBlock()}<section class="block"><h2>إنشاء حساب جديد</h2>
+  $("#usersBody").innerHTML=`${maintBlock()}${sessBlock()}${signupBlock()}${pwReqBlock()}<section class="block"><h2>إنشاء حساب جديد</h2>
   <div class="grid">
     <label class="f">الاسم الكامل<input class="in" id="nuName"></label>
     <label class="f">اسم المستخدم (بالإنجليزي)<input class="in" id="nuUser" dir="ltr" autocapitalize="off" autocomplete="off" placeholder="ahmed.ali"></label>
@@ -4321,7 +4368,7 @@ function renderUsers(){
   ${permBlock()}${navEdBlock()}${orgEditor()}<section class="block"><h2>الحسابات <span class="sub">${users.length}</span></h2><div class="ulist">${users.map(u=>`
     <div class="urow ${u.active?"":"off"}"><div class="uinfo"><b>${esc(u.full_name)}</b><span dir="ltr">${esc(u.username)}${u.email?" · "+esc(u.email):""}</span>${u.phone?`<span dir="ltr">📱 ${esc(u.phone)}</span>`:""}${u.email?"":`<small style="color:var(--warn)">بدون بريد إلكتروني — اضغط «تعديل» لإضافته</small>`}<small>${esc(roleLabel(u))}${u.sector?" — "+esc(u.sector):""}${u.active?"":" — موقوف"}${u.must_change_password?" — لم يغيّر كلمة المرور المؤقتة":""}</small></div>
     <div class="uact">${u.id===me.id?`<span class="sub">حسابك</span>`:`${u.active?`<button type="button" class="btn2" data-act="toggle" data-id="${u.id}">🔒 قفل</button>`:`<button type="button" class="btn2 pri" data-act="toggle" data-id="${u.id}">✓ تفعيل</button>`}<button type="button" class="btn2" data-act="del" data-id="${u.id}" style="color:var(--bad)">✕ إلغاء الحساب</button><button type="button" class="btn2" data-act="edit" data-id="${u.id}">تعديل</button><button type="button" class="btn2" data-act="reset" data-id="${u.id}">كلمة مرور جديدة</button>${u.active?`<button type="button" class="btn2" data-act="wa" data-id="${u.id}" style="color:#128C4A;border-color:#9AD8B5">📲 إشعار واتساب</button>`:""}`}</div></div>`).join("")}</div></section>`;
-  bindOrg();bindPwReq();bindSignups();bindPerms();bindMaint();bindNavEd();
+  bindOrg();bindPwReq();bindSignups();bindPerms();bindMaint();bindNavEd();bindSess();
   $("#nuCreate").onclick=async()=>{
     const name=$("#nuName").value.trim(),un=$("#nuUser").value.trim().toLowerCase(),role=$("#nuRole").value,sec=$("#nuSector").value.trim(),pw=$("#nuPass").value.trim();
     if(!name||!un||!pw){toast("أكمل الاسم واسم المستخدم وكلمة المرور");return}
