@@ -2023,41 +2023,43 @@ const PAGES=[["dash","الرئيسية",["admin","exec","manager","staff","clerk
 const NAV_HID=["south","north","acad","users"];
 const NAV_HQ=[["ov","نظرة عامة"],["sec","القطاعات"],["trend","الاتجاه والمقارنات"],["vio","المخالفات"],["mgr","مدراء الرقابة"],["map","الخريطة"],["rep","تكرار الرصد"],["rasd","جودة الرصد"]];
 /* ترتيب القوائم — يعدّله مدير النظام من «الإدارة والهيكل» */
-const NAV_GL={dash:"الرئيسية",_rep:"التقارير والأداء",_unit:"بوابات الوحدات",_top:"أيقونة مستقلة في الشريط"};
+const NAV_GL={dash:"الرئيسية",hq:"المركز الرئيسي",_rep:"التقارير والأداء",_unit:"بوابات الوحدات",_top:"أيقونة مستقلة في الشريط"};
 const NAV_HL={home:"الصفحة الرئيسية",about:"نبذة عن الإدارة",preq:"طلب الصلاحيات",faq:"الأسئلة الشائعة والشكاوى",mine:"ملخص أعمالي"};
-const NAV_DEF=[["h:home","dash"],["h:about","dash"],["h:preq","dash"],["h:faq","dash"],["p:exec","_top"],["p:hq","_hq"],["p:audit","_top"],["h:mine","_rep"],["p:report","_rep"],["p:team","_rep"],["p:perf","_rep"],["p:north","_unit"],["p:south","_unit"],["p:acad","_top"],["p:users","_top"]];
+const NAV_DEF=[["h:home","dash"],["h:about","dash"],["h:preq","dash"],["h:faq","dash"],["p:exec","_top"]].concat(NAV_HQ.map(([k])=>["v:"+k,"hq"]),[["p:audit","_top"]]).concat([["h:mine","_rep"],["p:report","_rep"],["p:team","_rep"],["p:perf","_rep"],["p:north","_unit"],["p:south","_unit"],["p:acad","_top"],["p:users","_top"]]);
 let NAV_CFG=null,NAV_LB={};try{const c=JSON.parse(localStorage.getItem("jawda-nav")||"null");if(Array.isArray(c))NAV_CFG=c;NAV_LB=JSON.parse(localStorage.getItem("jawda-navlb")||"{}")||{}}catch(e){}
 const navL=(key,def)=>{const v=(NAV_LB||{})[key];return v&&String(v).trim()?String(v).trim():def};
-async function loadNav(){try{const {data}=await sb.from("quality_settings").select("value").eq("key","nav").maybeSingle();NAV_CFG=data&&data.value&&Array.isArray(data.value.items)?data.value.items:null;NAV_LB=data&&data.value&&data.value.labels||{};try{localStorage.setItem("jawda-nav",JSON.stringify(NAV_CFG));localStorage.setItem("jawda-navlb",JSON.stringify(NAV_LB))}catch(e){}}catch(e){}}
+async function loadNav(){try{const {data}=await sb.from("quality_settings").select("value").eq("key","nav").maybeSingle();NAV_CFG=data&&data.value&&Array.isArray(data.value.items)?data.value.items:null;NAV_LB=data&&data.value&&data.value.labels||{};if(NAV_LB["p:hq"]&&!NAV_LB["g:hq"]){NAV_LB["g:hq"]=NAV_LB["p:hq"];delete NAV_LB["p:hq"]}try{localStorage.setItem("jawda-nav",JSON.stringify(NAV_CFG));localStorage.setItem("jawda-navlb",JSON.stringify(NAV_LB))}catch(e){}}catch(e){}}
 function navOrder(){const D=NAV_DEF.map(x=>x.slice());if(!Array.isArray(NAV_CFG)||!NAV_CFG.length)return D;const known=new Set(D.map(x=>x[0]));
-  const out=NAV_CFG.filter(x=>Array.isArray(x)&&known.has(x[0])).map(x=>[x[0],x[0]==="p:hq"?"_hq":(x[0].startsWith("h:")&&x[1]==="_top"?"dash":(NAV_GL[x[1]]?x[1]:"dash"))]);
-  D.forEach(d=>{if(!out.some(o=>o[0]===d[0]))out.push(d)});return out}
-function navLbl0(key){const [t,k]=key.split(":");if(t==="h")return NAV_HL[k]||k;const p=PAGES.find(x=>x[0]===k);return p?p[1]:k}
+  const out=NAV_CFG.filter(x=>Array.isArray(x)&&known.has(x[0])).map(x=>[x[0],!x[0].startsWith("p:")&&x[1]==="_top"?(x[0].startsWith("v:")?"hq":"dash"):(NAV_GL[x[1]]?x[1]:(x[0].startsWith("v:")?"hq":"dash"))]);
+  const hqAt=NAV_CFG.findIndex(x=>Array.isArray(x)&&x[0]==="p:hq");
+  D.forEach((d,di)=>{if(out.some(o=>o[0]===d[0]))return;let at=-1;if(d[0].startsWith("v:")&&hqAt>=0&&!out.some(o=>o[0].startsWith("v:"))){at=Math.min(hqAt,out.length);out.splice(at+D.slice(0,di).filter(x=>x[0].startsWith("v:")).length,0,d);return}
+    for(let j=di-1;j>=0;j--){const q=out.findIndex(o=>o[0]===D[j][0]);if(q>=0){at=q;break}}out.splice(at+1,0,d)});return out}
+if(NAV_LB&&NAV_LB["p:hq"]&&!NAV_LB["g:hq"]){NAV_LB["g:hq"]=NAV_LB["p:hq"];delete NAV_LB["p:hq"]}
+function navLbl0(key){const [t,k]=key.split(":");if(t==="h")return NAV_HL[k]||k;if(t==="v")return (NAV_HQ.find(x=>x[0]===k)||[k,k])[1];const p=PAGES.find(x=>x[0]===k);return p?p[1]:k}
 function navLbl(key){return navL(key,navLbl0(key))}
 function navGroups(){const P=k=>PAGES.find(x=>x[0]===k),lbl=k=>(P(k)||[k,k])[1],ok=k=>{const p=P(k);return !!p&&pageOK(p)},vis=k=>ok(k)||(!!P(k)&&!NAV_HID.includes(k));
   const G=[],grp={};
   navOrder().forEach(([key,gid])=>{const [t,k]=key.split(":");
-    if(t==="p"&&k==="hq"){if(vis("hq"))G.push({k:"hq",l:navL("p:hq",lbl("hq")),it:ok("hq")?NAV_HQ.map(([a,b])=>["v",a,navL("v:"+a,b)]):null});return}
+    if(t==="v"&&!ok("hq"))return;
     if(t==="p"&&!(k==="exec"?ok(k):vis(k)))return;
     if(gid==="_top"&&t==="p"){G.push({k,l:navLbl(key)});return}
     if(!grp[gid]){grp[gid]={k:gid,l:navL("g:"+gid,NAV_GL[gid]||gid),it:[]};G.push(grp[gid])}
     grp[gid].it.push([t,k,navLbl(key)])});
   return {G:G.filter(g=>!g.it||g.it.length||g.k==="hq"),ok}}
-function navActive(gk,p){if(gk===p&&gk!=="dash")return true;const ord=navOrder().filter(x=>x[1]===gk);return ord.some(([key])=>{const [t,k]=key.split(":");return t==="h"?(p==="dash"&&HOMEV===k):k===p})}
+function navActive(gk,p){const ord=navOrder().filter(x=>x[1]===gk);if(gk!=="dash"&&gk!=="hq"&&gk===p)return true;return ord.some(([key])=>{const [t,k]=key.split(":");return t==="h"?(p==="dash"&&HOMEV===k):t==="v"?(p==="hq"&&HQV===k):k===p})}
 /* محرر ترتيب القوائم */
-function navEdBlock(){if(!isSysAdmin(me))return "";const O=navOrder();const gopt=(key,cur)=>{const [t]=key.split(":");return Object.entries(NAV_GL).filter(([g])=>!(t==="h"&&g==="_top")).map(([g,l])=>`<option value="${g}"${g===cur?" selected":""}>${esc(l)}</option>`).join("")};
+function navEdBlock(){if(!isSysAdmin(me))return "";const O=navOrder();const gopt=(key,cur)=>{const [t]=key.split(":");return Object.entries(NAV_GL).filter(([g])=>!(t!=="p"&&g==="_top")).map(([g,l])=>`<option value="${g}"${g===cur?" selected":""}>${esc(l)}</option>`).join("")};
   return `<section class="block" id="navEdBlock"><h2>ترتيب وأسماء القوائم في الشريط العلوي <span class="sub">مدير النظام فقط</span></h2>
-  <div class="sub" style="margin-bottom:8px">اختر لكل أيقونة القائمة اللي تظهر فيها، ورتّبها بالأسهم. «المركز الرئيسي» ثابت بقائمته. الصلاحيات ما تتغير: كل موظف يشوف اللي يملك صلاحيته بس.</div>
-  <div class="tbl-wrap"><table class="tbl ne-t"><thead><tr><th>#</th><th>الاسم الظاهر</th><th>تظهر في</th><th>الترتيب</th></tr></thead><tbody>${O.map(([key,g],i)=>`<tr><td>${i+1}</td><td><input class="in" data-nel="${esc(key)}" value="${esc(navLbl(key))}" placeholder="${esc(navLbl0(key))}" title="الاسم الأصلي: ${esc(navLbl0(key))}"></td><td>${key==="p:hq"?'<span class="sub">ثابت — قائمة المركز الرئيسي</span>':`<select class="in" data-neg="${i}">${gopt(key,g)}</select>`}</td><td><button type="button" class="btn2" data-neu="${i}"${i?"":" disabled"}>▲</button> <button type="button" class="btn2" data-ned="${i}"${i<O.length-1?"":" disabled"}>▼</button></td></tr>`).join("")}</tbody></table></div>
-  <h3 class="sec" style="margin-top:14px">أسماء القوائم</h3><div class="grid">${["dash","_rep","_unit"].map(g=>`<label class="f">القائمة: ${esc(NAV_GL[g])}<input class="in" data-nel="g:${g}" value="${esc(navL("g:"+g,NAV_GL[g]))}" placeholder="${esc(NAV_GL[g])}"></label>`).join("")}</div>
-  <h3 class="sec" style="margin-top:14px">تبويبات المركز الرئيسي</h3><div class="grid">${NAV_HQ.map(([a,b])=>`<label class="f">${esc(b)}<input class="in" data-nel="v:${a}" value="${esc(navL("v:"+a,b))}" placeholder="${esc(b)}"></label>`).join("")}</div>
+  <div class="sub" style="margin-bottom:8px">اختر لكل أيقونة القائمة اللي تظهر فيها، ورتّبها بالأسهم، وغيّر اسمها. تقدر تنقل أي تبويب من المركز الرئيسي لقائمة ثانية. الصلاحيات ما تتغير: كل موظف يشوف اللي يملك صلاحيته بس.</div>
+  <div class="tbl-wrap"><table class="tbl ne-t"><thead><tr><th>#</th><th>الاسم الظاهر</th><th>تظهر في</th><th>الترتيب</th></tr></thead><tbody>${O.map(([key,g],i)=>`<tr><td>${i+1}</td><td><input class="in" data-nel="${esc(key)}" value="${esc(navLbl(key))}" placeholder="${esc(navLbl0(key))}" title="الاسم الأصلي: ${esc(navLbl0(key))}"></td><td><select class="in" data-neg="${i}">${gopt(key,g)}</select></td><td><button type="button" class="btn2" data-neu="${i}"${i?"":" disabled"}>▲</button> <button type="button" class="btn2" data-ned="${i}"${i<O.length-1?"":" disabled"}>▼</button></td></tr>`).join("")}</tbody></table></div>
+  <h3 class="sec" style="margin-top:14px">أسماء القوائم</h3><div class="grid">${["dash","hq","_rep","_unit"].map(g=>`<label class="f">القائمة: ${esc(NAV_GL[g])}<input class="in" data-nel="g:${g}" value="${esc(navL("g:"+g,NAV_GL[g]))}" placeholder="${esc(NAV_GL[g])}"></label>`).join("")}</div>
   <div class="sub" style="margin-top:6px">امسح الاسم لإرجاعه للاسم الأصلي.</div>
   <div class="btns" style="margin-top:10px"><button type="button" class="btn2 pri" id="neSave">حفظ الترتيب والأسماء</button><button type="button" class="btn2" id="neReset">الترتيب الافتراضي</button></div></section>`}
 function bindNavEd(){if(!$("#navEdBlock"))return;let O=navOrder();const redraw=()=>{NAV_CFG=O;buildTabs();renderUsers();setTimeout(()=>{const b=$("#navEdBlock");if(b)b.scrollIntoView({block:"start"})},20)};
   $$("#navEdBlock [data-neg]").forEach(sl=>sl.onchange=()=>{O[+sl.dataset.neg][1]=sl.value;redraw()});
   $$("#navEdBlock [data-neu]").forEach(b=>b.onclick=()=>{const i=+b.dataset.neu;[O[i-1],O[i]]=[O[i],O[i-1]];redraw()});
   $$("#navEdBlock [data-ned]").forEach(b=>b.onclick=()=>{const i=+b.dataset.ned;[O[i+1],O[i]]=[O[i],O[i+1]];redraw()});
-  $$("#navEdBlock [data-nel]").forEach(inp=>inp.onchange=()=>{const k=inp.dataset.nel,v=inp.value.trim();NAV_LB=Object.assign({},NAV_LB);const def=k.startsWith("g:")?NAV_GL[k.slice(2)]:k.startsWith("v:")?(NAV_HQ.find(x=>x[0]===k.slice(2))||[])[1]:navLbl0(k);if(!v||v===def)delete NAV_LB[k];else NAV_LB[k]=v.slice(0,40);buildTabs()});
+  $$("#navEdBlock [data-nel]").forEach(inp=>inp.onchange=()=>{const k=inp.dataset.nel,v=inp.value.trim();NAV_LB=Object.assign({},NAV_LB);const def=k.startsWith("g:")?NAV_GL[k.slice(2)]:navLbl0(k);if(!v||v===def)delete NAV_LB[k];else NAV_LB[k]=v.slice(0,40);buildTabs()});
   $("#neReset").onclick=()=>{if(!confirm("إرجاع ترتيب القوائم وأسمائها للافتراضي؟"))return;O=NAV_DEF.map(x=>x.slice());NAV_LB={};redraw()};
   $("#neSave").onclick=async()=>{const {error}=await sb.from("quality_settings").upsert({key:"nav",value:{items:navOrder(),labels:NAV_LB,by:me.full_name,at:new Date().toISOString()},updated_at:new Date().toISOString()});if(error){toast("تعذر الحفظ: "+error.message);return}try{localStorage.setItem("jawda-nav",JSON.stringify(navOrder()));localStorage.setItem("jawda-navlb",JSON.stringify(NAV_LB))}catch(e){}toast("✓ حُفظ ترتيب القوائم وأسماؤها — يظهر لكل الموظفين عند فتح المنصة أو «تحديث»")}}
 function navGo(t,k){const p=PAGES.find(x=>x[0]===k);if(t==="p"&&p&&!pageOK(p)){toast("ليس لديك صلاحية الدخول لهذه البوابة — يمكنك طلبها من «طلب الصلاحيات»");return}
@@ -2069,6 +2071,7 @@ function buildTabs(){const {G,ok}=navGroups();
   $$("#tabs [data-go]").forEach(b=>b.onclick=()=>{const k=b.dataset.go;if(!PAGES.find(x=>x[0]===k&&pageOK(x))){toast("ليس لديك صلاحية الدخول لهذه البوابة — يمكنك طلبها من «طلب الصلاحيات»");return}navClose();go(k)});
   $$("#tabs [data-nvt]").forEach(b=>b.onclick=e=>{e.stopPropagation();if(b.dataset.nvt==="dash"&&window.matchMedia&&matchMedia("(hover:hover)").matches&&navOrder().some(x=>x[0]==="h:home"&&x[1]==="dash")){navGo("h","home");return}const g=b.parentNode,o=g.classList.contains("open");navClose();if(!o)g.classList.add("open")});
   $$("#tabs [data-nvi]").forEach(b=>b.onclick=e=>{e.stopPropagation();const [t,k]=b.dataset.nvi.split(":");navGo(t,k)});
+  try{$$("#tabs .nv-g").forEach(g=>{const b=g.querySelector(".nv-b");if(b&&typeof page!=="undefined")b.setAttribute("aria-current",String(navActive(g.dataset.grp,page)))})}catch(e){}
   $$("#tabs .nv-g").forEach(g=>{if(!g.querySelector(".nv-m"))return;let t=null;g.onmouseenter=()=>{clearTimeout(t);$$("#tabs .nv-g.hov").forEach(x=>{if(x!==g)x.classList.remove("hov")});g.classList.add("hov")};g.onmouseleave=()=>{clearTimeout(t);t=setTimeout(()=>g.classList.remove("hov"),450)}})}
 document.addEventListener("click",e=>{if(!(e.target.closest&&e.target.closest("#tabs")))navClose()});
 document.addEventListener("keydown",e=>{if(e.key==="Escape")navClose()});
