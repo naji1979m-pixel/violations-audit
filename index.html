@@ -910,6 +910,7 @@ body.home-on:has(.home-only) .wrap{padding-bottom:0}
   <div class="pg" data-pg="team" hidden><div id="teamBody"></div></div>
   <div class="pg" data-pg="users" hidden><div id="usersBody"></div></div>
   <div class="pg" data-pg="exec" hidden><div id="execBody"></div></div>
+  <div class="pg" data-pg="flow" hidden><div id="flowBody"></div></div>
   <div class="pg" data-pg="hq" hidden><div id="hqBody"></div></div>
   <div class="pg" data-pg="perf" hidden><div id="perfBody"></div></div>
   <div class="pg" data-pg="acad" hidden><div id="acadBody"></div></div>
@@ -1458,7 +1459,7 @@ async function submitHq(){const m=missingFields();if(m.length){toast("أكمل �
   if(!confirm(again?"إعادة المعاملة بعد التصحيح إلى أخصائي الجودة بالمركز الرئيسي؟":"استكمال المعاملة وإحالتها إلى أخصائي الجودة بالمركز الرئيسي؟\nلن تتمكن من الطباعة أو التصدير قبل الاعتماد."))return;
   a.status="pend";a.auditor=a.auditor||me.full_name;
   a.f._ap={state:"pending",sec,reqBy:me.full_name,reqById:me.id,reqAt:Date.now(),firstAt:prev.firstAt||Date.now(),rev:again?prev.rev:null,revBy:again?prev.revBy:null};
-  a.f._rv=reviews(a).concat([{state:again?"resubmitted":"submitted",by:me.full_name,at:Date.now()}]);
+  a.f._rv=reviews(a).concat([{state:again?"resubmitted":"submitted",by:me.full_name,at:Date.now(),snap:{ans:JSON.parse(JSON.stringify(a.ans||{})),type:a.type,cas:a.cas||null}}]);
   logAct(a,again?"استكمل بعد التصحيح — إعادة لجودة المركز الرئيسي":"استكمل — إحالة لجودة المركز الرئيسي","القطاع: "+sec);
   save();await flush();renderAll();renderQueue();toast(again?"✅ أُعيدت المعاملة لنفس أخصائي الجودة لمراجعة التصحيحات":"✅ أُحيلت المعاملة إلى جودة المركز الرئيسي — قطاع "+sec)}
 function hqNotify(a,title,msg){const au=(users||[]).find(u=>u.id===a._owner);const ph=au&&au.phone?String(au.phone).replace(/\D/g,"").replace(/^0/,"966"):"";
@@ -1540,6 +1541,77 @@ function admActDlg(){const a=A();if(!a||!a._id||me.role!=="admin")return;const a
     const r=await sb.rpc("q_admin_audit",{p_visit:current,p_action:k,p_to:to,p_reason:why,p_sec:k==="tohq"?(audSec(a)||hqSecsOf(to)[0]||null):null});
     if(r.error){toast(/function|schema cache/i.test(r.error.message)?"⚙️ شغّل ملف admin-structure.sql في Supabase أولاً":"تعذر التنفيذ: "+r.error.message);return}
     closeSheet();ALOG=null;if(k==="release"){delete audits[current]}await loadAudits();renderAll();renderQueue();toast("✅ نُفّذ الإجراء وسُجّل في سجل الإجراءات")}}
+
+/* ===================== متابعة مسار المعاملات (التقارير) ===================== */
+let FL={sec:"",gov:"",aud:"",rev:"",st:"",d1:"",d2:"",q:""};
+const FL_ST={prog:"قيد التدقيق",pend:"منجزة ومرسلة لجودة المركز",resub:"معاد استكمالها — بانتظار إعادة المراجعة",hqret:"مسترجعة من الجودة",rdy:"معتمدة — لم تُرسل في ممتثل",sent:"مرسلة في ممتثل"};
+function flSt(a){const ap=a.f._ap||{};if(a.status==="ok")return a.f._sent?"sent":(ap.state==="approved"||ap.by?"rdy":"rdy");if(a.status==="pend")return hqRetN(a)?"resub":"pend";if(ap.state==="returned")return "hqret";return "prog"}
+function flScope(a){if(!me)return false;if(me.role==="admin"||me.role==="exec")return true;const S=hqSecsOf(me.id);if(S.length)return S.includes(audSec(a))||a._owner===me.id;if(me.role==="manager")return scopeOK(a.f.gov||a.sector,a.f.region||a.region);return a._owner===me.id}
+/* المدد: عند المدقق (من الحجز/الاسترجاع حتى الإحالة) وعند الأخصائي (من الإحالة حتى القرار) */
+function flTimes(a){const rv=reviews(a);let t0=a.created||(rv[0]&&rv[0].at)||Date.now(),aud=0,hq=0,sub=null,cur="aud";
+  rv.forEach(x=>{if(x.state==="submitted"||x.state==="resubmitted"){if(cur==="aud"){aud+=Math.max(0,x.at-t0)}sub=x.at;cur="hq"}else if(x.state==="returned"||x.state==="rejected"||x.state==="approved"){if(sub!=null&&cur==="hq")hq+=Math.max(0,x.at-sub);t0=x.at;cur=x.state==="approved"?"done":"aud";sub=null}});
+  if(cur==="aud"&&a.status!=="ok")aud+=Math.max(0,Date.now()-t0);if(cur==="hq"&&sub!=null)hq+=Math.max(0,Date.now()-sub);return {aud,hq}}
+const flDays=ms=>ms?(ms/864e5<1?Math.max(1,Math.round(ms/36e5))+" س":(Math.round(ms/864e5*10)/10)+" يوم"):"—";
+function flData(){const d1=FL.d1?Date.parse(FL.d1+"T00:00:00"):0,d2=FL.d2?Date.parse(FL.d2+"T23:59:59"):0,q=norm(FL.q);
+  return Object.entries(audits).filter(([id,a])=>a&&a.f&&a._id&&flScope(a)).map(([id,a])=>{const ap=a.f._ap||{},rv=reviews(a);const lastRev=rv.slice().reverse().find(x=>["returned","rejected","approved"].includes(x.state));
+    return {id,a,st:flSt(a),sec:audSec(a),gov:a.f.gov||a.sector||"",aud:a.auditor||userName(a._owner)||"",rev:(ap.revBy||(lastRev&&lastRev.by)||ap.by||""),officer:a.f.officer||"",sub:ap.firstAt||ap.reqAt||null,ret:hqRetN(a),tm:flTimes(a),apAt:ap.state==="approved"?ap.at:null,apBy:ap.state==="approved"?ap.by:"",when:ap.reqAt||a.updated||a.created||0}})
+   .filter(x=>(!FL.sec||x.sec===FL.sec)&&(!FL.gov||gcl(x.gov)===FL.gov)&&(!FL.aud||x.aud===FL.aud)&&(!FL.rev||x.rev===FL.rev)&&(!FL.st||x.st===FL.st)&&(!d1||x.when>=d1)&&(!d2||x.when<=d2)&&(!q||norm([x.id,x.a.f.vno,x.officer,x.aud].join(" ")).includes(q)))}
+function renderFlow(){const el=$("#flowBody");if(!el)return;const base=Object.entries(audits).filter(([id,a])=>a&&a.f&&a._id&&flScope(a)).map(([id,a])=>a);const L=flData();
+  const newN=(()=>{try{return vrows().filter(r=>audVis(r)&&!reserved(audits[r.vno])).length}catch(e){return 0}})();
+  const C={prog:0,pend:0,resub:0,hqret:0,rdy:0,sent:0};L.forEach(x=>C[x.st]++);const tot=L.length,retT=L.reduce((s,x)=>s+x.ret,0);
+  const uniq=f=>[...new Set(base.map(f).filter(Boolean))].sort((p,q)=>p.localeCompare(q,"ar"));
+  const govs=uniq(a=>a.f.gov||a.sector||""),auds=uniq(a=>a.auditor||""),revs=uniq(a=>(a.f._ap&&(a.f._ap.revBy||a.f._ap.by))||"");
+  const sel=(id,lab,opts,cur,all)=>`<label class="hq-sel"><span>${lab}</span><select id="${id}"><option value="">${all}</option>${opts.map(([v,l])=>`<option value="${esc(v)}"${cur===v?" selected":""}>${esc(l)}</option>`).join("")}</select></label>`;
+  const tile=(k,l,n,c)=>`<button type="button" class="hq-card" data-flst="${k}" style="text-align:center;cursor:pointer;padding:12px;border:${FL.st===k?"2px solid var(--navy)":"1px solid var(--line)"}"><div style="font-size:26px;font-weight:800;color:${c||"var(--ink)"}">${n.toLocaleString("en-US")}</div><div class="sub">${l}</div></button>`;
+  /* لكل مدقق ولكل أخصائي */
+  const byA={},byR={};L.forEach(x=>{const o=byA[x.aud||"—"]=byA[x.aud||"—"]||{n:0,t:0,ret:0,ok:0};o.n++;o.t+=x.tm.aud;o.ret+=x.ret;if(x.st==="rdy"||x.st==="sent")o.ok++;
+    if(x.rev){const r=byR[x.rev]=byR[x.rev]||{n:0,t:0,ret:0,ok:0,pend:0};r.n++;r.t+=x.tm.hq;r.ret+=x.ret;if(x.st==="rdy"||x.st==="sent")r.ok++;if(x.st==="pend"||x.st==="resub")r.pend++}});
+  /* أسباب الاسترجاع */
+  const RE=[];L.forEach(x=>reviews(x.a).forEach(r=>{if(r.state==="returned"||r.state==="rejected")RE.push({x,r})}));RE.sort((p,q)=>q.r.at-p.r.at);
+  const itc={};RE.forEach(({r})=>(r.items||[]).forEach(k=>{const t=(allItemsOf(k)||k.slice(2));itc[t]=(itc[t]||0)+1}));const itL=Object.entries(itc).sort((p,q)=>q[1]-p[1]).slice(0,10);
+  el.innerHTML=`<div class="hq-wrap"><div class="ex-bar" style="flex-wrap:wrap;gap:8px">
+    ${sel("flSec","القطاع",HQ_SECS.map(s=>[s,s]),FL.sec,"كل القطاعات")}${sel("flGov","المحافظة",govs.map(g=>[gcl(g),g]),FL.gov,"كل المحافظات")}${sel("flAud","المدقق",auds.map(a=>[a,a]),FL.aud,"كل المدققين")}${sel("flRev","أخصائي الجودة",revs.map(a=>[a,a]),FL.rev,"كل الأخصائيين")}${sel("flSt","الحالة",Object.entries(FL_ST),FL.st,"كل الحالات")}
+    <div class="hq-cu"><span>من</span><input type="date" class="in" id="flD1" value="${FL.d1}"><span>إلى</span><input type="date" class="in" id="flD2" value="${FL.d2}"></div>
+    <input class="in" id="flQ" placeholder="بحث برقم الزيارة أو المأمور" value="${esc(FL.q)}" style="max-width:220px"><button type="button" class="btn2" id="flClr">مسح الفلاتر</button><span class="ex-sp"></span><button type="button" class="btn2" id="flXls">${hqIc("xls",16)} Excel</button></div>
+   <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin:12px 0">
+    <div class="hq-card" style="text-align:center;padding:12px"><div style="font-size:26px;font-weight:800">${newN.toLocaleString("en-US")}</div><div class="sub">جديدة (لم تُحجز)</div></div>
+    ${tile("prog",FL_ST.prog,C.prog)}${tile("pend",FL_ST.pend,C.pend,"#2D4F8A")}${tile("hqret",FL_ST.hqret,C.hqret,"var(--bad)")}${tile("resub",FL_ST.resub,C.resub,"#8A5A00")}${tile("rdy",FL_ST.rdy,C.rdy,"var(--ok)")}${tile("sent",FL_ST.sent,C.sent,"var(--ok)")}
+    <div class="hq-card" style="text-align:center;padding:12px"><div style="font-size:26px;font-weight:800">${tot?(Math.round(retT/tot*100)/100):0}</div><div class="sub">متوسط مرات الاسترجاع للمعاملة</div></div></div>
+   <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(340px,1fr));gap:12px">
+    <div class="hq-card"><h3 class="sec">مدة بقاء المعاملة عند كل مدقق</h3><div class="tbl-wrap"><table class="tbl"><thead><tr><th>المدقق</th><th>المعاملات</th><th>متوسط المدة لديه</th><th>مرات الاسترجاع</th><th>معتمدة</th></tr></thead><tbody>${Object.entries(byA).sort((p,q)=>q[1].n-p[1].n).map(([k,o])=>`<tr><td>${esc(k)}</td><td>${o.n}</td><td>${flDays(o.t/o.n)}</td><td>${o.ret}</td><td>${o.ok}</td></tr>`).join("")||'<tr><td colspan="5">لا توجد بيانات</td></tr>'}</tbody></table></div></div>
+    <div class="hq-card"><h3 class="sec">مدة بقاء المعاملة عند كل أخصائي</h3><div class="tbl-wrap"><table class="tbl"><thead><tr><th>الأخصائي</th><th>المعاملات</th><th>متوسط مدة المراجعة</th><th>بانتظاره</th><th>اعتمدها</th></tr></thead><tbody>${Object.entries(byR).sort((p,q)=>q[1].n-p[1].n).map(([k,o])=>`<tr><td>${esc(k)}</td><td>${o.n}</td><td>${flDays(o.t/o.n)}</td><td>${o.pend}</td><td>${o.ok}</td></tr>`).join("")||'<tr><td colspan="5">لا توجد بيانات</td></tr>'}</tbody></table></div></div></div>
+   <div class="hq-card" style="margin-top:12px"><h3 class="sec">أسباب الاسترجاع <span class="sub">${RE.length} استرجاع</span></h3>
+    ${itL.length?`<div class="sub" style="margin-bottom:6px">أكثر الفقرات استرجاعاً: ${itL.map(([t,n])=>`${esc(t)} (${n})`).join(" · ")}</div>`:""}
+    <div class="tbl-wrap" style="max-height:300px;overflow:auto"><table class="tbl"><thead><tr><th>التاريخ</th><th>رقم الزيارة</th><th>الأخصائي</th><th>المدقق</th><th>السبب والملاحظات</th></tr></thead><tbody>${RE.slice(0,300).map(({x,r})=>`<tr><td>${sessTm(r.at)}</td><td><a href="#" data-flh="${esc(x.id)}">${esc(x.a.f.vno||x.id)}</a></td><td>${esc(r.by)}</td><td>${esc(x.aud)}</td><td>${esc(r.note||"")}</td></tr>`).join("")||'<tr><td colspan="5">لا توجد استرجاعات</td></tr>'}</tbody></table></div></div>
+   <div class="hq-card" style="margin-top:12px"><h3 class="sec">المعاملات <span class="sub">${tot.toLocaleString("en-US")}</span></h3><div class="sub" style="margin-bottom:6px">اضغط رقم الزيارة لعرض سجلها الكامل من الرصد حتى الإرسال.</div>
+    <div class="tbl-wrap" style="max-height:520px;overflow:auto"><table class="tbl"><thead><tr><th>رقم الزيارة</th><th>المحافظة</th><th>مأمور الضبط</th><th>المدقق</th><th>الأخصائي</th><th>الحالة</th><th>أُحيلت للمركز</th><th>الاسترجاع</th><th>المدة عند المدقق</th><th>المدة عند الأخصائي</th><th>الاعتماد</th><th>ممتثل</th></tr></thead><tbody>${L.sort((p,q)=>q.when-p.when).slice(0,500).map(x=>`<tr><td><a href="#" data-flh="${esc(x.id)}">${esc(x.a.f.vno||x.id)}</a></td><td>${esc(x.gov)}</td><td>${esc(x.officer)}</td><td>${esc(x.aud)}</td><td>${esc(x.rev)}</td><td>${esc(FL_ST[x.st])}</td><td>${x.sub?fmtD(x.sub):"—"}</td><td>${x.ret}</td><td>${flDays(x.tm.aud)}</td><td>${flDays(x.tm.hq)}</td><td>${x.apAt?esc(fmtD(x.apAt))+" — "+esc(x.apBy):"—"}</td><td>${x.a.f._sent?"✓ "+esc(fmtD(x.a.f._sent.at)):"—"}</td></tr>`).join("")||'<tr><td colspan="12">لا توجد معاملات بهذه الفلاتر</td></tr>'}</tbody></table></div>${tot>500?`<div class="sub">يظهر أحدث 500 — صدّر Excel للكل.</div>`:""}</div></div>`;
+  const on=(id,k)=>{const e=$("#"+id);if(e)e.onchange=()=>{FL[k]=e.value;renderFlow()}};on("flSec","sec");on("flGov","gov");on("flAud","aud");on("flRev","rev");on("flSt","st");on("flD1","d1");on("flD2","d2");
+  const q=$("#flQ");q.oninput=()=>{FL.q=q.value;clearTimeout(q._t);q._t=setTimeout(()=>{renderFlow();const n=$("#flQ");n.focus();n.setSelectionRange(n.value.length,n.value.length)},350)};
+  $("#flClr").onclick=()=>{FL={sec:"",gov:"",aud:"",rev:"",st:"",d1:"",d2:"",q:""};renderFlow()};
+  $$("#flowBody [data-flst]").forEach(b=>b.onclick=()=>{FL.st=FL.st===b.dataset.flst?"":b.dataset.flst;renderFlow()});
+  $$("#flowBody [data-flh]").forEach(b=>b.onclick=e=>{e.preventDefault();flHist(b.dataset.flh)});
+  $("#flXls").onclick=e=>flXls(e.currentTarget,L)}
+function allItemsOf(k){return null}
+function flHist(id){const a=audits[id];if(!a)return;const rv=reviews(a),lg=(a.f._log||[]),ap=a.f._ap||{},tm=flTimes(a);
+  const ev=lg.map(l=>({at:l.at,t:l.act,by:l.by,n:l.note})).sort((p,q)=>p.at-q.at);
+  $("#sheet").innerHTML=`<h3>سجل المعاملة ${esc(a.f.vno||id)}</h3>
+   <div class="tbl-wrap"><table class="tbl"><tbody>
+    <tr><th>مأمور الضبط</th><td>${esc(a.f.officer||"—")}</td></tr><tr><th>مدقق الجودة بالمحافظة</th><td>${esc(a.auditor||"—")}</td></tr>
+    <tr><th>أخصائي الجودة بالمركز الرئيسي</th><td>${esc(ap.revBy||ap.by||"—")}</td></tr><tr><th>أول إحالة للمركز</th><td>${ap.firstAt?sessTm(ap.firstAt):"—"}</td></tr>
+    <tr><th>عدد مرات الاسترجاع</th><td>${hqRetN(a)}</td></tr><tr><th>الاعتماد النهائي</th><td>${ap.state==="approved"?sessTm(ap.at)+" — "+esc(ap.by||""):"—"}</td></tr>
+    <tr><th>الإرسال في ممتثل</th><td>${a.f._sent?sessTm(a.f._sent.at)+" — "+esc(a.f._sent.by):"لم تُرسل"}</td></tr>
+    <tr><th>المدة عند المدقق / الأخصائي</th><td>${flDays(tm.aud)} / ${flDays(tm.hq)}</td></tr></tbody></table></div>
+   <h3 class="sec" style="margin-top:12px">مراحل المراجعة</h3>${rv.length?`<div class="actlog" style="display:block">${rv.map((x,i)=>`<div><b>${i+1}. ${({submitted:"استكمل — أُحيلت للمركز",resubmitted:"أُعيدت بعد التصحيح",returned:"مسترجعة من الجودة",rejected:"مسترجعة",approved:"مكتملة – معتمدة من الجودة"})[x.state]||esc(x.state)}</b> — ${esc(x.by)} <small>(${sessTm(x.at)})</small>${x.note?`<br><small>السبب: ${esc(x.note)}</small>`:""}${x.items&&x.items.length?`<br><small>الفقرات: ${x.items.map(k=>esc(allItemsOf(k)||k.slice(2))).join("، ")}</small>`:""}${x.snap?`<br><small>نسخة محفوظة: ${Object.keys(x.snap.ans||{}).length} فقرة</small>`:""}</div>`).join("")}</div>`:'<div class="sub">لم تُحل للمركز بعد</div>'}
+   <h3 class="sec" style="margin-top:12px">سجل الإجراءات والتصحيحات</h3><div class="actlog" style="display:block;max-height:260px;overflow:auto">${ev.map(x=>`<div>${esc(x.t)} — ${esc(x.by)} <small>(${sessTm(x.at)})</small>${x.n?`<br><small>${esc(x.n)}</small>`:""}</div>`).join("")||"—"}</div>
+   <div class="btns" style="margin-top:12px"><button type="button" class="btn2 pri" id="flOpen">فتح المعاملة</button><button type="button" class="btn2" id="closeSh">إغلاق</button></div>`;
+  openSheet();$("#closeSh").onclick=closeSheet;$("#flOpen").onclick=()=>{closeSheet();go("audit");openAudit(id)}}
+async function flXls(btn,L){const o=btn.innerHTML;btn.disabled=true;btn.textContent="جارٍ التجهيز…";try{const EX=await exceljs();const wb=new EX.Workbook();const ws=wb.addWorksheet("المعاملات",{views:[{rightToLeft:true}]});
+  const H=["رقم الزيارة","القطاع","المحافظة","مأمور الضبط","المدقق","الأخصائي","الحالة","أُحيلت للمركز","مرات الاسترجاع","المدة عند المدقق (يوم)","المدة عند الأخصائي (يوم)","تاريخ الاعتماد","المعتمد","الإرسال في ممتثل","آخر سبب استرجاع"];
+  ws.columns=H.map((h,i)=>({width:[14,12,16,22,22,22,26,14,10,12,12,14,22,14,40][i]}));const hr=ws.addRow(H);hr.eachCell(c=>{c.fill={type:"pattern",pattern:"solid",fgColor:{argb:"FF1C437E"}};c.font={bold:true,color:{argb:"FFFFFFFF"}};c.alignment={horizontal:"center",vertical:"middle",wrapText:true}});hr.height=32;
+  const d=ms=>ms?new Date(ms):null,dy=ms=>ms?Math.round(ms/864e5*10)/10:0;
+  L.forEach(x=>{const lr=reviews(x.a).slice().reverse().find(r=>r.state==="returned"||r.state==="rejected");ws.addRow([x.a.f.vno||x.id,x.sec,x.gov,x.officer,x.aud,x.rev,FL_ST[x.st],d(x.sub),x.ret,dy(x.tm.aud),dy(x.tm.hq),d(x.apAt),x.apBy,x.a.f._sent?d(x.a.f._sent.at):"",lr?lr.note||"":""])});
+  [8,12,14].forEach(c=>ws.getColumn(c).numFmt="yyyy-mm-dd");ws.autoFilter={from:{row:1,column:1},to:{row:1,column:H.length}};
+  const buf=await wb.xlsx.writeBuffer();await deliver(new Blob([buf],{type:"application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"}),"متابعة-مسار-المعاملات.xlsx")}catch(e){toast("تعذر التصدير: "+(e.message||e))}btn.disabled=false;btn.innerHTML=o}
 
 /* ===================== الشريط السفلي ===================== */
 function missingFields(){const a=A(),m=[];if(a.type<0)m.push("وصف بند اللائحة");if(!(a.f.vno||"").trim())m.push("رقم الزيارة");if(!(a.f.name||"").trim())m.push("اسم المخالف");if(!$("#auditor").value.trim())m.push("اسم المدقق");return m}
@@ -2278,14 +2350,14 @@ async function boot(){
 }
 
 /* ----- التنقل ----- */
-const PAGES=[["dash","الرئيسية",["admin","exec","manager","staff","clerk","viewer"]],["exec","الملخص التنفيذي",[]],["hq","المركز الرئيسي",[]],["audit","المخالفات والتدقيق",["admin","exec","manager","staff","clerk","viewer"]],["report","تقارير التدقيق",["admin","exec","manager","viewer","clerk"]],["team","أداء الموظفين",["admin","exec","manager","viewer"]],["perf","تقييم الأداء",["admin","exec","manager","staff","viewer"]],["north","الوحدة الشمالية – القطاع الشرقي",[]],["south","الوحدة الجنوبية – القطاع الشرقي",[]],["acad","أكاديمية إدارة المخالفات",["admin","exec","manager","staff","clerk","viewer","trainee"]],["users","الإدارة والهيكل",["admin"]]];
+const PAGES=[["dash","الرئيسية",["admin","exec","manager","staff","clerk","viewer"]],["exec","الملخص التنفيذي",[]],["hq","المركز الرئيسي",[]],["audit","المخالفات والتدقيق",["admin","exec","manager","staff","clerk","viewer"]],["report","تقارير التدقيق",["admin","exec","manager","viewer","clerk"]],["team","أداء الموظفين",["admin","exec","manager","viewer"]],["perf","تقييم الأداء",["admin","exec","manager","staff","viewer"]],["flow","متابعة مسار المعاملات",["admin","exec","manager","staff"]],["north","الوحدة الشمالية – القطاع الشرقي",[]],["south","الوحدة الجنوبية – القطاع الشرقي",[]],["acad","أكاديمية إدارة المخالفات",["admin","exec","manager","staff","clerk","viewer","trainee"]],["users","الإدارة والهيكل",["admin"]]];
 /* شريط تنقل أفقي بقوائم منسدلة — مثل موقع شركة المياه الوطنية */
 const NAV_HID=["south","north","acad","users"];
 const NAV_HQ=[["ov","نظرة عامة"],["sec","القطاعات"],["trend","الاتجاه والمقارنات"],["vio","المخالفات"],["mgr","مدراء الرقابة"],["map","الخريطة"],["rep","تكرار الرصد"],["rasd","جودة الرصد"]];
 /* ترتيب القوائم — يعدّله مدير النظام من «الإدارة والهيكل» */
 const NAV_GL={dash:"الرئيسية",hq:"المركز الرئيسي",_rep:"التقارير والأداء",_unit:"بوابات الوحدات",_adm:"الإدارة والهيكلة",_top:"أيقونة مستقلة في الشريط"};
 const NAV_HL={home:"الصفحة الرئيسية",about:"نبذة عن الإدارة",preq:"طلب الصلاحيات",faq:"الأسئلة الشائعة والشكاوى",mine:"ملخص أعمالي"};
-const NAV_DEF=[["h:home","dash"],["h:about","dash"],["h:preq","dash"],["h:faq","dash"],["p:exec","_top"]].concat(NAV_HQ.map(([k])=>["v:"+k,"hq"]),[["p:audit","_top"]]).concat([["h:mine","_rep"],["p:report","_rep"],["p:team","_rep"],["p:perf","_rep"],["p:north","_unit"],["p:south","_unit"],["p:acad","_top"]].concat([["u:org","_adm"],["u:staff","_adm"],["u:perm","_adm"],["u:dist","_adm"],["u:aud","_adm"],["u:log","_adm"]]));
+const NAV_DEF=[["h:home","dash"],["h:about","dash"],["h:preq","dash"],["h:faq","dash"],["p:exec","_top"]].concat(NAV_HQ.map(([k])=>["v:"+k,"hq"]),[["p:audit","_top"]]).concat([["h:mine","_rep"],["p:report","_rep"],["p:team","_rep"],["p:perf","_rep"],["p:flow","_rep"],["p:north","_unit"],["p:south","_unit"],["p:acad","_top"]].concat([["u:org","_adm"],["u:staff","_adm"],["u:perm","_adm"],["u:dist","_adm"],["u:aud","_adm"],["u:log","_adm"]]));
 let NAV_CFG=null,NAV_LB={};try{const c=JSON.parse(localStorage.getItem("jawda-nav")||"null");if(Array.isArray(c))NAV_CFG=c;NAV_LB=JSON.parse(localStorage.getItem("jawda-navlb")||"{}")||{}}catch(e){}
 const navL=(key,def)=>{const v=(NAV_LB||{})[key];return v&&String(v).trim()?String(v).trim():def};
 async function loadNav(){try{const {data}=await sb.from("quality_settings").select("value").eq("key","nav").maybeSingle();NAV_CFG=data&&data.value&&Array.isArray(data.value.items)?data.value.items:null;NAV_LB=data&&data.value&&data.value.labels||{};if(NAV_LB["p:hq"]&&!NAV_LB["g:hq"]){NAV_LB["g:hq"]=NAV_LB["p:hq"];delete NAV_LB["p:hq"]}try{localStorage.setItem("jawda-nav",JSON.stringify(NAV_CFG));localStorage.setItem("jawda-navlb",JSON.stringify(NAV_LB))}catch(e){}}catch(e){}}
@@ -2336,13 +2408,13 @@ function buildTabs(){try{txUI()}catch(e){}const {G,ok}=navGroups();
   $$("#tabs .nv-g").forEach(g=>{if(!g.querySelector(".nv-m"))return;let t=null;g.onmouseenter=()=>{clearTimeout(t);$$("#tabs .nv-g.hov").forEach(x=>{if(x!==g)x.classList.remove("hov")});g.classList.add("hov")};g.onmouseleave=()=>{clearTimeout(t);t=setTimeout(()=>g.classList.remove("hov"),450)}})}
 document.addEventListener("click",e=>{if(!(e.target.closest&&e.target.closest("#tabs")))navClose()});
 document.addEventListener("keydown",e=>{if(e.key==="Escape")navClose()});
-const PG_HERO={audit:["المخالفات والتدقيق","اختر مخالفة من القائمة وابدأ تدقيقها وفق دليل دراسة المخالفات وآلية ضبطها","check"],report:["تقارير التدقيق","مؤشرات جودة التدقيق حسب الوحدة والموظف وبند اللائحة","xls"],team:["أداء الموظفين","إنجاز موظفي الجودة ونتائج تدقيقهم","clock"],users:["الإدارة والهيكل","الحسابات والصلاحيات والهيكل التنظيمي","search"]};
+const PG_HERO={audit:["المخالفات والتدقيق","اختر مخالفة من القائمة وابدأ تدقيقها وفق دليل دراسة المخالفات وآلية ضبطها","check"],report:["تقارير التدقيق","مؤشرات جودة التدقيق حسب الوحدة والموظف وبند اللائحة","xls"],team:["أداء الموظفين","إنجاز موظفي الجودة ونتائج تدقيقهم","clock"],users:["الإدارة والهيكل","الحسابات والصلاحيات والهيكل التنظيمي","search"],flow:["متابعة مسار المعاملات","المعاملات من التدقيق حتى اعتماد الجودة والإرسال في ممتثل — المدد والاسترجاعات وأسبابها","clock"]};
 function pgHero(p){const h=PG_HERO[p],el=$("#pgHero");if(!el)return;if(!h){el.hidden=true;return}el.hidden=false;el.innerHTML=`<span class="ic">${hqIc(h[2],24)}</span><div><h2>${h[0]}</h2><p>${h[1]}</p></div>`}
 (function(){const pg=document.querySelector('.pg[data-pg="audit"]');if(!pg||pg.querySelector(".aud-side"))return;const side=document.createElement("div");side.className="aud-side";const main=document.createElement("div");main.className="aud-main";[...pg.children].forEach(c=>{(c.id==="queueBlock"||c.id==="doneBlock"?side:main).appendChild(c)});pg.appendChild(side);pg.appendChild(main)})();
 function go(p){setTimeout(()=>{try{sessPg()}catch(e){}},60);if(!PAGES.find(x=>x[0]===p&&pageOK(x)))p=isTrainee(me)?"acad":"dash";page=p;try{localStorage.setItem("vv:page",p)}catch(e){}try{permPill();const vw=permView(p);if(p==="audit"&&vw!==go._vw&&typeof renderAll==="function")renderAll();go._vw=p==="audit"?vw:go._vw}catch(e){}
   $$(".pg").forEach(x=>x.hidden=x.dataset.pg!==p);$$("[data-go]").forEach(b=>b.setAttribute("aria-current",String(b.dataset.go===p)));try{$$("#tabs .nv-g").forEach(g=>{const k=g.dataset.grp,on=navActive(k,p);const b=g.querySelector(".nv-b");if(b)b.setAttribute("aria-current",String(on))})}catch(e){}
   $("#auditBar").hidden=p!=="audit";$("#upBtn").hidden=p!=="audit"||!canUpload();
-  if(p==="dash")renderDash();if(p==="report")renderReport();if(p==="team")renderTeam();if(p==="users")renderUsers();document.body.classList.toggle("hqwide",p==="hq"||p==="exec"||p==="perf"||p==="acad"||p==="south"||p==="north"||p==="dash");document.body.classList.toggle("home-on",p==="dash");RD_BASE=null;RD_SCOPE="";pgHero(p);if(p==="hq")renderHQ();if(p==="exec")renderExec();if(p==="perf")renderPerf();if(p==="acad")renderAcad();if(p==="south"){stUse(SOUTH_CX);renderSouth();if(STV==="reg")stLoadReg()}if(p==="north"){stUse(NORTH_CX);renderSouth();if(STV==="reg")stLoadReg()}window.scrollTo(0,0)}
+  if(p==="dash")renderDash();if(p==="report")renderReport();if(p==="team")renderTeam();if(p==="users")renderUsers();document.body.classList.toggle("hqwide",p==="hq"||p==="exec"||p==="flow"||p==="perf"||p==="acad"||p==="south"||p==="north"||p==="dash");document.body.classList.toggle("home-on",p==="dash");RD_BASE=null;RD_SCOPE="";pgHero(p);if(p==="hq")renderHQ();if(p==="exec")renderExec();if(p==="flow")renderFlow();if(p==="perf")renderPerf();if(p==="acad")renderAcad();if(p==="south"){stUse(SOUTH_CX);renderSouth();if(STV==="reg")stLoadReg()}if(p==="north"){stUse(NORTH_CX);renderSouth();if(STV==="reg")stLoadReg()}window.scrollTo(0,0)}
 $("#logoutBtn").onclick=logout;
 $("#pwBtn").onclick=()=>{$("#pwCancel").hidden=false;$("#pwTitle").textContent="تغيير كلمة المرور";$("#pwMsg").textContent="";show("pwView")};
 $("#refreshBtn").onclick=async()=>{const b=$("#refreshBtn");if(b.disabled)return;if(isTrainee(me)){AC.courses=null;renderAcad();return}AC.courses=null;b.disabled=true;b.textContent="جارٍ التحديث…";await flush();await loadData();if(needUsers())await loadUsers();bootSave();renderAll();go(page);b.disabled=false;b.textContent="↻ تحديث";toast("تم تحديث البيانات")};
