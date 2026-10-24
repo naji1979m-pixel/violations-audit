@@ -777,6 +777,7 @@ body.home-on:has(.home-only) .wrap{padding-bottom:0}
 @media(max-width:860px){.ex-row2{grid-template-columns:1fr}}
 </style>
 <style>.sheet-bg{z-index:70!important}.toast{z-index:9990!important}</style>
+<style>body.guest-on{background:#061433!important}#guestView .g-bar{display:flex;align-items:center;gap:10px;flex-wrap:wrap;background:#0B2545;margin:0 calc(50% - 50vw);padding:10px max(16px,calc(50vw - 50% + 16px));color:#fff}#guestView .g-hi{font-weight:700;color:#BFD8F5;font-size:14px}#guestView .sp{flex:1}#guestView .g-b{font:inherit;font-weight:700;font-size:14px;border-radius:10px;padding:8px 14px;border:1px solid rgba(255,255,255,.5);background:transparent;color:#fff;cursor:pointer}#guestView .g-b.pri{background:#fff;color:#0B2545;border-color:#fff}@media(max-width:560px){#guestView .g-hi{width:100%;text-align:center}#guestView .sp{display:none}#guestView .g-b{flex:1}}</style>
 </head>
 <body>
 <div class="auth" id="authView" hidden><div class="auth-card"><div class="auth-hero"><img data-nwc src="data:image/gif;base64,R0lGODlhAQABAAAAACw=" alt="شركة المياه الوطنية — National Water Company"><h1>الجودة والتدقيق</h1><p>المتطلبات والاشتراطات اللازمة للمخالفات</p><p>جودة الرصد</p></div>
@@ -787,6 +788,7 @@ body.home-on:has(.home-only) .wrap{padding-bottom:0}
     <button class="btnp" id="lgBtn" type="submit">دخول</button>
     <button type="button" class="linkbtn" id="lgForgot" style="align-self:center;margin-top:4px">نسيت كلمة المرور؟</button>
     <button type="button" class="btn2" id="lgReg" style="margin-top:4px">طلب تسجيل حساب جديد</button>
+    <button type="button" class="linkbtn" id="lgHome" style="align-self:center;margin-top:4px" onclick="guestShow()">→ الصفحة الرئيسية</button>
   </form>
   <form id="fgForm" hidden>
     <span class="sub" style="text-align:right">اكتب اسم المستخدم، ويصل طلبك لمدير النظام ليرسل لك كلمة مرور مؤقتة.</span>
@@ -2084,8 +2086,19 @@ async function pushAudit(k){
 }
 
 /* ----- الدخول ----- */
-const VIEWS=["authView","pwView","blockView","appView"];
-function show(v){VIEWS.forEach(id=>{const e=$("#"+id);if(e)e.hidden=id!==v});$("#auditBar").hidden=!(v==="appView"&&page==="audit")}
+const VIEWS=["authView","pwView","blockView","appView","guestView"];
+
+/* ===== واجهة الزائر (بدون حساب) ===== */
+function guestShow(){let g=document.getElementById("guestView");
+  if(!g){g=document.createElement("div");g.id="guestView";g.className="wrap";g.hidden=true;
+    const h0=document.querySelector("#appView header.top");if(h0){const h=h0.cloneNode(true);h.querySelectorAll("#upBtn,#fileIn").forEach(x=>x.remove());h.querySelectorAll("[id]").forEach(x=>x.removeAttribute("id"));g.appendChild(h)}
+    const ub=document.createElement("div");ub.className="g-bar";ub.innerHTML=`<span class="g-hi">مرحباً بك في منصة الجودة والتدقيق</span><span class="sp"></span><button type="button" class="g-b" id="gLogin">🔑 تسجيل الدخول</button><button type="button" class="g-b pri" id="gReg">📝 تسجيل جديد</button>`;g.appendChild(ub);
+    const hb=document.createElement("div");hb.className="home-ban home-only";hb.style.setProperty("--hbg",`url('${HOME_SHOW}')`);hb.innerHTML=`<img src="${HOME_SHOW}" alt="شركة المياه الوطنية — مستقبل مائي مستدام" decoding="async" style="height:auto;min-height:0">`;g.appendChild(hb);
+    const ap=document.getElementById("appView");ap.parentNode.insertBefore(g,ap.nextSibling);
+    $("#gLogin").onclick=()=>guestAuth(false);$("#gReg").onclick=()=>guestAuth(true)}
+  show("guestView");try{window.scrollTo(0,0)}catch(e){}}
+function guestAuth(reg){show("authView");$("#fgForm").hidden=true;$("#rgForm").hidden=true;$("#loginForm").hidden=false;$("#lgMsg").textContent="";if(reg)$("#lgReg").click();else setTimeout(()=>{try{$("#lgUser").focus()}catch(e){}},50)}
+function show(v){document.body.classList.toggle("guest-on",v==="guestView");VIEWS.forEach(id=>{const e=$("#"+id);if(e)e.hidden=id!==v});$("#auditBar").hidden=!(v==="appView"&&page==="audit")}
 function toEmail(u){u=u.trim();return u.includes("@")?u:u.toLowerCase()+"@jawda.local"}
 function blockMsg(t){$("#blockMsg").textContent=t;show("blockView")}
 $("#loginForm").addEventListener("submit",async e=>{e.preventDefault();
@@ -2105,7 +2118,7 @@ async function offEnter(){const id=offUid();if(!id){show("authView");$("#lgMsg")
   me=prof;await obLoad();await enterApp();return true}
 async function afterLogin(){
   if(isOff()){await offEnter();return}
-  let user=null;try{({data:{user}}=await sb.auth.getUser())}catch(e){if(netErr(e)){await offEnter();return}}if(!user){if(isOff()){await offEnter();return}show("authView");return}
+  let user=null;try{({data:{user}}=await sb.auth.getUser())}catch(e){if(netErr(e)){await offEnter();return}}if(!user){if(isOff()){await offEnter();return}guestShow();return}
   let {data:prof,error:pe}=await sb.from("quality_users").select("*").eq("id",user.id).maybeSingle();if(pe&&netErr(pe)){await offEnter();return}
   if(!prof){const r=await sb.rpc("q_claim_admin",{p_name:null});if(r.data==="ok"){({data:prof}=await sb.from("quality_users").select("*").eq("id",user.id).maybeSingle())}}
   if(!prof){blockMsg("حسابك غير مسجل في نظام الجودة. تواصل مع مدير النظام لإنشاء حساب لك.");return}
@@ -2156,7 +2169,7 @@ async function boot(){
   if(!sb){$("#lgMsg").textContent="تعذر الاتصال بالخادم، تحقق من الإنترنت ثم أعد فتح التطبيق";show("authView");return}
   if(isOff()){if(offUid()){await offEnter();return}show("authView");$("#lgMsg").textContent="أنت بدون اتصال — أول دخول يحتاج إنترنت";return}
   let session=null;try{({data:{session}}=await sb.auth.getSession())}catch(e){if(netErr(e)&&offUid()){await offEnter();return}}
-  if(session)await afterLogin();else show("authView");
+  if(session)await afterLogin();else guestShow();
 }
 
 /* ----- التنقل ----- */
