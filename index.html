@@ -838,7 +838,7 @@ body.home-on:has(.home-only) .wrap{padding-bottom:0}
     </button>
     <input type="file" id="fileIn" accept=".xlsx,.xls,.csv" hidden>
   </header>
-  <div class="userbar"><span><b id="whoName"></b> — <span id="whoRole"></span></span><span class="sp"></span><button type="button" class="linkbtn" id="refreshBtn">↻ تحديث</button><button type="button" class="linkbtn" id="pwBtn">كلمة المرور</button><button type="button" class="linkbtn" id="logoutBtn">خروج</button></div>
+  <div class="userbar"><span><b id="whoName"></b> — <span id="whoRole"></span></span><span class="sp"></span><button type="button" class="linkbtn" id="txBtn" hidden>✏️ تعديل النصوص</button><button type="button" class="linkbtn" id="refreshBtn">↻ تحديث</button><button type="button" class="linkbtn" id="pwBtn">كلمة المرور</button><button type="button" class="linkbtn" id="logoutBtn">خروج</button></div>
   <nav class="tabs" id="tabs"></nav>
   <div class="pghero" id="pgHero"></div>
   <div class="fbar" id="fbar"><label><span>المنطقة</span><select class="in" id="fReg"></select></label><div class="fgovw" data-ms="govs"><span id="fGovL">المدن والمحافظات</span><button type="button" class="in fms" id="fGov" aria-haspopup="true" aria-expanded="false" aria-labelledby="fGovL fGov">كل المحافظات</button><div class="fpop" id="fGovPop" hidden role="dialog" aria-label="اختيار المدن والمحافظات"></div></div><label><span>الوحدة</span><select class="in" id="fUnit"></select></label><div class="fgovw" data-ms="vsts"><span id="fVstL">حالة الزيارة</span><button type="button" class="in fms" id="fVst" aria-haspopup="true" aria-expanded="false" aria-labelledby="fVstL fVst">كل الحالات</button><div class="fpop" id="fVstPop" hidden role="dialog" aria-label="اختيار حالة الزيارة"></div></div><div class="fgovw" data-ms="pks"><span id="fPkL">الحالة التفصيلية</span><button type="button" class="in fms" id="fPk" aria-haspopup="true" aria-expanded="false" aria-labelledby="fPkL fPk">كل الحالات</button><div class="fpop" id="fPkPop" hidden role="dialog" aria-label="اختيار الحالة التفصيلية"></div></div><div class="fdate" dir="ltr"><div class="fdh" dir="rtl"><span>الفترة <small>(تاريخ بدء الزيارة)</small> <b id="fDTxt" dir="rtl"></b></span><button type="button" class="linkbtn" id="fDClr" hidden>كل الفترات</button></div>
@@ -1705,9 +1705,11 @@ const SB_URL="https://ahsvlqmensttzxbgkcwo.supabase.co",SB_KEY="sb_publishable_E
 const tFetch=(u,o)=>{o=o||{};if(o.signal)return fetch(u,o);const c=new AbortController(),t=setTimeout(()=>c.abort(),45000);return fetch(u,Object.assign({},o,{signal:c.signal})).finally(()=>clearTimeout(t))};
 const sb=window.supabase?window.supabase.createClient(SB_URL,SB_KEY,{auth:{persistSession:true,autoRefreshToken:true,storageKey:"jawda-auth"},global:{fetch:tFetch}}):null;
 const BUCKET="quality-files";
-const ROLE={admin:"مدير النظام",exec:"مدير الجودة",manager:"رئيس الجودة بالوحدة",staff:"موظف الجودة",clerk:"إداري",viewer:"مطّلع",trainee_o:"متدرب — مأمور ضبط",trainee_m:"متدرب — مدير رقابة"};
-const roleKey=u=>u&&u.role==="trainee"?(u.job==="m"?"trainee_m":"trainee_o"):(u&&u.role);
-const qUpd=o=>String(o.p_role||"").startsWith("trainee")?sb.rpc("q_set_trainee",{p_user:o.p_user,p_job:o.p_role==="trainee_m"?"m":"o",p_sector:o.p_sector||"",p_full_name:o.p_full_name||""}):sb.rpc("q_update_user",o);
+const ROLE={admin:"مدير النظام",director:"المدير التنفيذي",exec:"مدير الجودة",manager:"رئيس الجودة بالوحدة",staff:"موظف الجودة",clerk:"إداري",viewer:"مطّلع",trainee_o:"متدرب — مأمور ضبط",trainee_m:"متدرب — مدير رقابة"};
+const roleKey=u=>u&&u.role==="exec"&&u.job==="d"?"director":u&&u.role==="trainee"?(u.job==="m"?"trainee_m":"trainee_o"):(u&&u.role);
+const qUpd=async o=>{if(String(o.p_role||"").startsWith("trainee"))return sb.rpc("q_set_trainee",{p_user:o.p_user,p_job:o.p_role==="trainee_m"?"m":"o",p_sector:o.p_sector||"",p_full_name:o.p_full_name||""});
+  const dir=o.p_role==="director",pu=(typeof users!=="undefined"&&users||[]).find(x=>x.id===o.p_user);const r=await sb.rpc("q_update_user",Object.assign({},o,{p_role:dir?"exec":o.p_role}));if(r.error)return r;
+  if(dir||(pu&&pu.job==="d")){const t=await sb.rpc("q_set_title",{p_user:o.p_user,p_job:dir?"d":null});if(t.error)return t}return r};
 const isMgrR=()=>!!me&&["admin","exec","manager"].includes(me.role);
 const isHQ=u=>!!u&&!!u.sector&&gcl(u.sector)===gcl(ORG.hq||"");
 /* صلاحية استثنائية: كل البوابات والتقارير والطباعة — ما عدا الإدارة والهيكل (لمدير النظام فقط) */
@@ -1723,7 +1725,7 @@ const isSysAdmin=u=>{if(!u||u.role!=="admin")return false;const t=norm(u.full_na
 let PERMS={r:{},u:{}},PERM_OFF=false;
 try{const c=JSON.parse(localStorage.getItem("jawda-perms")||"null");if(c&&c.r)PERMS=c}catch(e){}
 const PERM_ROLES=[["exec","مدير الجودة"],["hqstaff","أخصائي جودة (المركز الرئيسي)"],["manager","رئيس الجودة بالوحدة"],["staff","موظف الجودة (الوحدات)"],["clerk","إداري"],["viewer","مطّلع"],["trainee","متدرب"]];
-const PERM_ACTS=[["audit","تدقيق المخالفات وتعبئة المستند الداعم وطباعته"],["reserve","حجز المخالفات"],["upload","رفع التقرير الشامل (ملف المخالفات)"],["seeall","رؤية جميع المناطق والوحدات"],["rsev","تقييم جودة الرصد"],["about","تعديل محتوى الصفحة الرئيسية"]];
+const PERM_ACTS=[["audit","تدقيق المخالفات وتعبئة المستند الداعم وطباعته"],["reserve","حجز المخالفات"],["upload","رفع التقرير الشامل (ملف المخالفات)"],["seeall","رؤية جميع المناطق والوحدات"],["rsev","تقييم جودة الرصد"],["about","تعديل محتوى الصفحة الرئيسية"],["txt","تغيير المسميات والعبارات في المنصة"]];
 const permRK=u=>!u?"":u.role==="staff"&&isHQ(u)?"hqstaff":u.role;
 function permGet(kind,key,u){u=u||me;if(PERM_OFF||!u||u.role==="admin")return undefined;const x=(PERMS.u||{})[u.id];const nv=v=>v==="v"?"v":!!v;if(x&&x[kind]&&key in x[kind])return nv(x[kind][key]);const r=(PERMS.r||{})[permRK(u)];if(r&&r[kind]&&key in r[kind])return nv(r[kind][key]);return undefined}
 /* «تصفح فقط»: البوابة تظهر للاطلاع، وتتعطل فيها مهام التعديل */
@@ -1744,6 +1746,61 @@ let PERM_U="";
 const PERM_FIXED=["users","south","north"];
 function permItems(){return PAGES.filter(p=>!PERM_FIXED.includes(p[0])).map(p=>["pg",p[0],"بوابة: "+p[1]]).concat(PERM_ACTS.map(([k,l])=>["ac",k,"مهمة: "+l]))}
 function permCell(kind,key,cur,def,attr){return `<select class="in pm-s${cur===undefined?"":" set"}${cur==="v"?" vw":""}" ${attr}><option value=""${cur===undefined?" selected":""}>افتراضي (${def?"✓":"✕"})</option><option value="1"${cur===true?" selected":""}>✓ ${kind==="pg"?"دخول كامل":"مسموح"}</option>${kind==="pg"?`<option value="v"${cur==="v"?" selected":""}>👁 تصفح فقط</option>`:""}<option value="0"${cur===false?" selected":""}>✕ ممنوع</option></select>`}
+/* ===== تغيير المسميات والعبارات في المنصة — مدير النظام ومن يمنحه الصلاحية ===== */
+let TXT={},TX_L=[],TX_MODE=false;
+try{TXT=JSON.parse(localStorage.getItem("jawda-txt")||"{}")||{}}catch(e){TXT={}}
+const txPrep=()=>{TX_L=Object.entries(TXT||{}).filter(([a,b])=>a&&typeof b==="string"&&a!==b).sort((x,y)=>y[0].length-x[0].length)};txPrep();
+const txS=s=>{if(!TX_L.length||typeof s!=="string"||!s)return s;let o=s;for(const [a,b] of TX_L)if(o.indexOf(a)>-1)o=o.split(a).join(b);return o};
+const TX_O=new WeakMap(),TX_V=new WeakMap(),TX_A=new WeakMap(),TX_AT=["placeholder","title","aria-label"];
+const txSkip=el=>!el||!el.closest||!!el.closest("script,style,textarea,[contenteditable],.notx,#txDlg,#txBar");
+function txNode(n){const el=n.parentElement;if(txSkip(el))return;const cur=n.nodeValue;let orig=cur;if(TX_V.has(n)&&TX_V.get(n)===cur)orig=TX_O.get(n);
+  TX_O.set(n,orig);const out=txS(orig);if(out!==orig&&el.tagName==="OPTION"&&!el.hasAttribute("value"))el.setAttribute("value",orig);TX_V.set(n,out);if(out!==cur)n.nodeValue=out}
+function txAttr(el){if(!el||!el.getAttribute||txSkip(el))return;let m=TX_A.get(el);if(!m){m={};TX_A.set(el,m)}
+  TX_AT.forEach(a=>{const cur=el.getAttribute(a);if(cur==null)return;const o=m[a]&&m[a][1]===cur?m[a][0]:cur,out=txS(o);m[a]=[o,out];if(out!==cur)el.setAttribute(a,out)})}
+function txWalk(root){if(!root)return;if(root.nodeType===3){txNode(root);return}if(root.nodeType!==1&&root.nodeType!==9)return;
+  const w=document.createTreeWalker(root,NodeFilter.SHOW_TEXT);let n;while((n=w.nextNode()))if(n.nodeValue&&n.nodeValue.trim())txNode(n);
+  if(root.nodeType===1)txAttr(root);if(root.querySelectorAll)root.querySelectorAll("[placeholder],[title],[aria-label]").forEach(txAttr)}
+const txAll=()=>{try{txWalk(document.documentElement)}catch(e){}};
+try{new MutationObserver(ms=>{if(!TX_L.length)return;for(const m of ms){if(m.type==="childList")m.addedNodes.forEach(txWalk);else if(m.type==="characterData")txNode(m.target);else if(m.type==="attributes")txAttr(m.target)}})
+  .observe(document.documentElement,{childList:true,subtree:true,characterData:true,attributes:true,attributeFilter:TX_AT})}catch(e){}
+/* نصوص التقارير المرسومة (PDF) */
+try{const P=CanvasRenderingContext2D.prototype;["fillText","strokeText","measureText"].forEach(f=>{const o=P[f];P[f]=function(t,...a){return o.call(this,TX_L.length&&typeof t==="string"?txS(t):t,...a)}})}catch(e){}
+if(TX_L.length){if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",txAll);else txAll()}
+async function loadTexts(){try{const {data}=await sb.from("quality_settings").select("value").eq("key","texts").maybeSingle();TXT=data&&data.value&&typeof data.value==="object"?data.value:{};try{localStorage.setItem("jawda-txt",JSON.stringify(TXT))}catch(e){}txPrep();txAll()}catch(e){}}
+const canTxt=()=>!!me&&(isSysAdmin(me)||permOv("txt",()=>false)===true);
+async function txSave(N){const b=JSON.parse(JSON.stringify(TXT));TXT=N;txPrep();txAll();
+  let r=await sb.rpc("q_set_texts",{p_value:N});if(r.error&&/function|schema cache|q_set_texts/i.test(r.error.message||""))r=await sb.from("quality_settings").upsert({key:"texts",value:N,updated_at:new Date().toISOString()});
+  if(r.error){TXT=b;txPrep();txAll();toast("تعذر الحفظ: "+r.error.message);return false}try{localStorage.setItem("jawda-txt",JSON.stringify(N))}catch(e){}return true}
+function txUI(){const b=document.getElementById("txBtn");if(!b)return;const ok=canTxt();b.hidden=!ok;if(!ok&&TX_MODE)txMode(false);b.onclick=()=>txMode(!TX_MODE)}
+function txMode(on){TX_MODE=on;document.body.classList.toggle("txm",on);let bar=document.getElementById("txBar");
+  if(!on){if(bar)bar.remove();return}
+  if(!document.getElementById("txCss")){const st=document.createElement("style");st.id="txCss";st.textContent=`#txBar{position:fixed;bottom:14px;left:50%;transform:translateX(-50%);z-index:9998;background:#0B2545;color:#fff;border-radius:14px;padding:9px 12px;display:flex;gap:8px;align-items:center;flex-wrap:wrap;justify-content:center;box-shadow:0 8px 26px rgba(0,0,0,.35);font-size:13px;max-width:calc(100vw - 24px)}#txBar button{background:#fff;color:#0B2545;border:0;border-radius:9px;padding:6px 10px;font:inherit;font-weight:700;cursor:pointer}#txBar button.x{background:#C0392B;color:#fff}
+body.txm *:not(#txBar,#txBar *,#txDlg,#txDlg *):hover:not(:has(:hover)){outline:2px dashed #E0A800;outline-offset:1px}
+#txDlg{position:fixed;inset:0;z-index:9999;background:rgba(5,15,30,.55);display:flex;align-items:center;justify-content:center;padding:16px}#txDlg .bx{background:#fff;color:#14213D;border-radius:16px;padding:16px;width:min(580px,100%);max-height:86vh;overflow:auto;box-shadow:0 18px 50px rgba(0,0,0,.4);text-align:right}#txDlg h3{margin:0 0 10px;font-size:16px}#txDlg .o{background:#EEF2F7;border-radius:10px;padding:8px 10px;margin:4px 0 10px;white-space:pre-wrap;font-size:13px}#txDlg textarea,#txDlg input{width:100%;box-sizing:border-box;font:inherit;padding:8px;border:1px solid #C5CFDC;border-radius:9px;background:#fff;color:#14213D}#txDlg .row{display:flex;gap:8px;align-items:center;border-bottom:1px solid #E3E8EF;padding:7px 0;font-size:13px}#txDlg .row span{flex:1;min-width:0;overflow-wrap:anywhere}#txDlg .btns{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}#txDlg button{font:inherit;border-radius:9px;padding:7px 12px;border:1px solid #C5CFDC;background:#fff;color:#14213D;cursor:pointer;font-weight:700}#txDlg button.pri{background:#0B2545;color:#fff;border-color:#0B2545}#txDlg button.del{color:#C0392B}#txDlg small{color:#5B6B82}`;document.head.appendChild(st)}
+  if(!bar){bar=document.createElement("div");bar.id="txBar";bar.className="notx";bar.innerHTML=`<span>✏️ وضع تعديل النصوص — اضغط على أي عبارة أو اسم لتغييره</span><button type="button" id="txAllB">📋 كل التعديلات (${Object.keys(TXT).length})</button><button type="button" class="x" id="txEnd">إنهاء</button>`;document.body.appendChild(bar);
+    bar.querySelector("#txEnd").onclick=()=>txMode(false);bar.querySelector("#txAllB").onclick=txList}}
+function txBarN(){const b=document.getElementById("txAllB");if(b)b.textContent=`📋 كل التعديلات (${Object.keys(TXT).length})`}
+function txPick(e){let n=null;try{if(document.caretRangeFromPoint){const r=document.caretRangeFromPoint(e.clientX,e.clientY);n=r&&r.startContainer}else if(document.caretPositionFromPoint){const r=document.caretPositionFromPoint(e.clientX,e.clientY);n=r&&r.offsetNode}}catch(x){}
+  const t=e.target;if(!n||n.nodeType!==3||!n.nodeValue.trim()||!(t.contains&&t.contains(n))){n=null;const w=document.createTreeWalker(t,NodeFilter.SHOW_TEXT);let k;while((k=w.nextNode()))if(k.nodeValue.trim()){n=k;break}}
+  if(n){const cur=n.nodeValue;const o=TX_V.has(n)&&TX_V.get(n)===cur?TX_O.get(n):cur;return {o:o.trim(),c:cur.trim()}}
+  const el=t.closest&&t.closest("[placeholder],[title],[aria-label]");if(el){const a=TX_AT.find(x=>el.getAttribute(x));if(a){const m=TX_A.get(el),cur=el.getAttribute(a);return {o:(m&&m[a]&&m[a][1]===cur?m[a][0]:cur).trim(),c:cur.trim()}}}return null}
+function txDlg(html,bind){let d=document.getElementById("txDlg");if(d)d.remove();d=document.createElement("div");d.id="txDlg";d.className="notx";d.innerHTML=`<div class="bx" dir="rtl">${html}</div>`;document.body.appendChild(d);d.onclick=e=>{if(e.target===d)d.remove()};bind(d);return d}
+function txEdit(o,c){const key0=Object.keys(TXT).find(k=>k===o);const d=txDlg(`<h3>✏️ تغيير العبارة</h3><small>العبارة الأصلية</small><div class="o">${esc(o)}</div>
+  <label><small>الصيغة الجديدة (تتغير في كل المنصة وفي تقارير PDF)</small><textarea id="txNew" rows="3">${esc(TXT[o]!=null?TXT[o]:c)}</textarea></label>
+  <div class="btns"><button type="button" class="pri" id="txOk">حفظ</button>${key0!=null?`<button type="button" class="del" id="txRst">↩︎ إرجاع للأصل</button>`:""}<button type="button" id="txNo">إلغاء</button></div>`,d=>{
+  const ta=d.querySelector("#txNew");setTimeout(()=>{ta.focus();ta.select()},30);d.querySelector("#txNo").onclick=()=>d.remove();
+  d.querySelector("#txOk").onclick=async()=>{const v=ta.value.trim();if(!v){toast("اكتب الصيغة الجديدة");return}const N=Object.assign({},TXT);if(v===o)delete N[o];else N[o]=v;if(await txSave(N)){d.remove();txBarN();toast("✅ تم تغيير العبارة في المنصة")}};
+  const rs=d.querySelector("#txRst");if(rs)rs.onclick=async()=>{const N=Object.assign({},TXT);delete N[o];if(await txSave(N)){d.remove();txBarN();toast("↩︎ رجعت العبارة لأصلها")}}})}
+function txList(){const E=Object.entries(TXT).sort((a,b)=>a[0].localeCompare(b[0],"ar"));txDlg(`<h3>📋 تعديلات النصوص <small>(${E.length})</small></h3>
+  <small>أضف عبارة وصيغتها الجديدة يدوياً — تتغير أينما ظهرت في المنصة</small><div class="btns" style="margin:6px 0 4px"><input id="txA" placeholder="العبارة الحالية كما تظهر"><input id="txB" placeholder="الصيغة الجديدة"><button type="button" class="pri" id="txAdd">إضافة</button></div>
+  ${E.length?E.map(([a,b],i)=>`<div class="row"><span>${esc(a)}</span><b>←</b><span><b>${esc(b)}</b></span><button type="button" data-txe="${i}">تعديل</button><button type="button" class="del" data-txd="${i}">حذف</button></div>`).join(""):'<div class="o">لا توجد تعديلات بعد</div>'}
+  <div class="btns"><button type="button" id="txCl">إغلاق</button></div>`,d=>{d.querySelector("#txCl").onclick=()=>d.remove();
+  d.querySelector("#txAdd").onclick=async()=>{const a=d.querySelector("#txA").value.trim(),b=d.querySelector("#txB").value.trim();if(!a||!b){toast("اكتب العبارة الحالية والصيغة الجديدة");return}const N=Object.assign({},TXT);N[a]=b;if(await txSave(N)){txBarN();txList()}};
+  d.querySelectorAll("[data-txd]").forEach(x=>x.onclick=async()=>{const [a]=E[+x.dataset.txd];const N=Object.assign({},TXT);delete N[a];if(await txSave(N)){txBarN();txList()}});
+  d.querySelectorAll("[data-txe]").forEach(x=>x.onclick=()=>{const [a,b]=E[+x.dataset.txe];txEdit(a,b)})})}
+["click","mousedown","pointerdown","touchstart","dblclick","submit","change","input"].forEach(ev=>document.addEventListener(ev,e=>{if(!TX_MODE)return;const t=e.target;if(t&&t.closest&&t.closest("#txBar,#txDlg"))return;
+  e.preventDefault();e.stopImmediatePropagation();if(ev!=="click")return;const p=txPick(e);if(!p||!p.o){toast("اضغط على عبارة مكتوبة");return}txEdit(p.o,p.c)},{capture:true,passive:false}));
+
 /* ===== إيقاف المنصة للتحديث ===== */
 let MAINT=null;
 async function loadMaint(){try{const {data}=await sb.from("quality_settings").select("value").eq("key","maint").maybeSingle();MAINT=data&&data.value||null}catch(e){}return MAINT}
@@ -1781,7 +1838,7 @@ function bindPerms(){if(!$("#permBlock"))return;
 
 function pageOK(p){if(!me)return false;if(p[0]==="users")return isSysAdmin(me);if(!PERM_FIXED.includes(p[0])){const o=permGet("pg",p[0]);if(o!==undefined)return o!==false}if(p[0]==="hq"||p[0]==="exec")return canHQ();if(p[0]==="south")return southOK();if(p[0]==="north")return northOK();if(p[0]==="acad")return acadOK()&&(isAcadTeam(me)||p[2].includes(me.role)||isHQU(me));if(p[2].includes(me.role))return true;return isHQU(me)&&p[0]!=="users"}
 const needUsers=()=>!!me&&(["admin","exec","manager","viewer"].includes(me.role)||isHQU(me));
-const TITLE_EXEC="المدير التنفيذي لإدارة المخالفات والجودة";const isAid=u=>!!u&&u.role==="exec"&&/عايض/.test(norm(u.full_name))&&/القحطاني/.test(norm(u.full_name));
+const TITLE_EXEC="المدير التنفيذي لإدارة المخالفات والجودة";const isAid=u=>!!u&&u.role==="exec"&&(u.job==="d"||/عايض/.test(norm(u.full_name))&&/القحطاني/.test(norm(u.full_name)));
 function roleLabel(u){if(isAid(u))return TITLE_EXEC;if(u&&u.role==="trainee")return ROLE[roleKey(u)];return u.role==="staff"&&isHQ(u)?"أخصائي جودة":(ROLE[u.role]||u.role)}
 const canEditAudit=()=>permOv("audit",()=>!!me&&["admin","exec","manager","staff"].includes(me.role));
 /* تزويد المنصة بالتقرير الشامل (رفع/استبدال/حذف): مدير النظام + نايف البقمي فقط */
@@ -1910,7 +1967,7 @@ function mapAudits(q,ro){const keep=audits.manual;audits={};
   if(keep)audits.manual=keep;
 }
 async function loadUsers(){const {data}=await sb.from("quality_users").select("*").order("created_at");users=data||[]}
-let LD_ERR=false;async function loadData(){try{await Promise.all([loadNav(),loadMaint(),loadPerms(),loadOrg(),loadSouthCfg(),loadAbout(),loadQueue(),loadAudits(),loadRefs(),loadApprovers(),loadAttIdx()]);loadReportCols()}catch(e){LD_ERR=true;if(netErr(e)){NET_DOWN=true;netPill()}else toast("تعذر تحميل البيانات: "+(e.message||""))}try{buildFilters()}catch(e){}}
+let LD_ERR=false;async function loadData(){try{await Promise.all([loadNav(),loadMaint(),loadPerms(),loadTexts(),loadOrg(),loadSouthCfg(),loadAbout(),loadQueue(),loadAudits(),loadRefs(),loadApprovers(),loadAttIdx()]);loadReportCols()}catch(e){LD_ERR=true;if(netErr(e)){NET_DOWN=true;netPill()}else toast("تعذر تحميل البيانات: "+(e.message||""))}try{buildFilters()}catch(e){}}
 
 /* ----- الحفظ ----- */
 let saveT=null;const dirty=new Set();
@@ -2065,7 +2122,7 @@ function bindNavEd(){if(!$("#navEdBlock"))return;let O=navOrder();const redraw=(
 function navGo(t,k){const p=PAGES.find(x=>x[0]===k);if(t==="p"&&p&&!pageOK(p)){toast("ليس لديك صلاحية الدخول لهذه البوابة — يمكنك طلبها من «طلب الصلاحيات»");return}
   navClose();if(t==="h"){HOMEV=k;go("dash");return}if(t==="v"){HQV=k;go("hq");return}go(k)}
 function navClose(){$$("#tabs .nv-g.open,#tabs .nv-g.hov").forEach(g=>g.classList.remove("open","hov"))}
-function buildTabs(){const {G,ok}=navGroups();
+function buildTabs(){try{txUI()}catch(e){}const {G,ok}=navGroups();
   $("#tabs").innerHTML=G.map(g=>{const lk=!g.it&&!g.k.startsWith("_")&&!ok(g.k);const ic=HOME_IC[g.k]||(g.k==="_rep"?"chart":g.k==="_unit"?"map":g.k==="_exec"?"star":"eye");
     return `<div class="nv-g" data-grp="${g.k}"><button type="button" class="tab nv-b${lk?" lk":""}" ${g.it?`data-nvt="${g.k}" aria-haspopup="true"`:`data-go="${g.k}"`}><span class="hn-i">${hqIc(lk?"lock":ic,18)}</span><span class="hn-l">${esc(g.l)}</span>${g.it?'<i class="nv-c">⌄</i>':""}</button>${g.it?`<div class="nv-m">${g.it.map(([t,k,l])=>{const plk=t==="p"&&!ok(k);return `<button type="button" class="nv-i${plk?" lk":""}" data-nvi="${t}:${k}">${plk?"🔒 ":""}${esc(l)}</button>`}).join("")}</div>`:""}</div>`}).join("");
   $$("#tabs [data-go]").forEach(b=>b.onclick=()=>{const k=b.dataset.go;if(!PAGES.find(x=>x[0]===k&&pageOK(x))){toast("ليس لديك صلاحية الدخول لهذه البوابة — يمكنك طلبها من «طلب الصلاحيات»");return}navClose();go(k)});
@@ -2678,12 +2735,14 @@ const HQ_IC={
   lock:'<rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/>',
   edit:'<path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z"/>'};
 const hqIc=(k,s)=>`<svg viewBox="0 0 24 24" width="${s||22}" height="${s||22}" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${HQ_IC[k]}</svg>`;
-function hqYears(){const y={};rows.forEach(r=>{const d=dayOfRow(r);if(d!=null)y[new Date(d*864e5).getUTCFullYear()]=1});return Object.keys(y).map(Number).sort()}
+function hqYears(){const y={};rows.forEach(r=>{const d=dayOfRow(r);if(d!=null&&d>=RPT_START)y[new Date(d*864e5).getUTCFullYear()]=1});return Object.keys(y).map(Number).sort()}
 function hqMaxDay(){let m=null;rows.forEach(r=>{const d=dayOfRow(r);if(d!=null&&(m==null||d>m))m=d});return m}
-function hqRange(){const k=HQP.k;if(k==="all")return [0,0];if(/^y\d{4}$/.test(k)){const y=+k.slice(1);return [Math.floor(Date.UTC(y,0,1)/864e5),Math.floor(Date.UTC(y,11,31)/864e5)]}
+const RPT_START=Math.floor(Date.UTC(2025,3,6)/864e5),RPT_ISO="2025-04-06";
+function hqRange(){const k=HQP.k;if(k==="all"){const m=hqMaxDay();return [RPT_START,m!=null&&m>=RPT_START?m:0]}const r=hqRange0();return [Math.max(r[0]||0,RPT_START),r[1]]}
+function hqRange0(){const k=HQP.k;if(k==="all")return [0,0];if(/^y\d{4}$/.test(k)){const y=+k.slice(1);return [Math.floor(Date.UTC(y,0,1)/864e5),Math.floor(Date.UTC(y,11,31)/864e5)]}
   if(k==="q3"){const m=hqMaxDay();if(m==null)return [0,0];const t=new Date(m*864e5);return [Math.floor(Date.UTC(t.getUTCFullYear(),t.getUTCMonth()-2,1)/864e5),m]}
   return [HQP.d1||0,HQP.d2||0]}
-function hqRows(noG){const [a,b]=hqRange();return rows.filter(r=>{if(HQSF&&secOf(r.region)!==HQSF)return false;if(!noG&&HQG.length&&!HQG.includes((r.sector||"غير محدد").trim()))return false;if(!a&&!b)return true;const d=dayOfRow(r);if(d==null)return false;return (!a||d>=a)&&(!b||d<=b)})}
+function hqRows(noG){const [a,b]=hqRange();return rows.filter(r=>{if(HQSF&&secOf(r.region)!==HQSF)return false;if(!noG&&HQG.length&&!HQG.includes((r.sector||"غير محدد").trim()))return false;if(!a&&!b)return true;const d=dayOfRow(r);if(d==null)return HQP.k==="all";return (!a||d>=a)&&(!b||d<=b)})}
 function hqScope(A){const [a,b]=hqRange();const p=a||b?`${wkDay(a||A.d1)} – ${wkDay(b||A.d2)}`:(A.d1!=null?`${wkDay(A.d1)} – ${wkDay(A.d2)}`:"");return {sec:(HQSF||"جميع القطاعات")+(HQG.length?" — "+gmsShort(HQG):""),per:p}}
 const HQ_L2C={"إجمالي المخالفات المرصودة":"n","المرصود":"n","المرصودة":"n","المرسلة للهيئة":"sent","المرسل للهيئة":"sent","القرارات الصادرة":"iss","قيد التدقيق لدى الهيئة":"auth","المسترجعة حالياً":"ret","المسترجع حالياً":"ret","بانتظار المراجعة والاعتماد":"pend","بانتظار المراجعة":"pend","غير مكتملة الأركان":"arch"};let HQ_CTX={};
 function hqTile(ic,label,val,sub,tone,frac,tip,rd){const c=HQ_L2C[label];const ra=rd||(c?rdA(Object.assign({c},HQ_CTX)):"");return `<div class="hk${ra?" rdk":""}" style="--tone:${tone}"${tip?` data-tip="${esc(tip)}"`:""}${ra}><div class="hk-h"><span class="hk-i">${hqIc(ic)}</span><span class="hk-l">${esc(label)}</span>${c&&EX[c]?exB(c):""}</div><b class="hk-v">${val}</b><div class="hk-s">${sub||"&nbsp;"}</div>${frac!=null?`<div class="hk-bar"><i style="width:${Math.max(0,Math.min(100,frac*100))}%"></i></div>`:""}</div>`}
@@ -3182,7 +3241,7 @@ const northOK=()=>!!me&&me.role!=="trainee"&&(northAdmin()||isNorthStaff(me)||NO
 const stGK=g=>gcl(g).replace(/[إأآ]/g,"ا");let ST_GL={};
 const stGov=r=>{const k=stGK(r.sector||"");return ST_GL[k]||(r.sector||"").trim()};
 const isSouthGov=g=>gcl(unitOf(g))===gcl(SOUTH_U)||/الأحساء|الاحساء|الإحساء|الهفوف|المبرز|بقيق/.test(g||"");
-function southRows(){const C={};rows.forEach(r=>{if(!ST_CX.gov(r.sector))return;const k=stGK(r.sector),l=(r.sector||"").trim();(C[k]=C[k]||{})[l]=(C[k][l]||0)+1});ST_GL={};Object.entries(C).forEach(([k,o])=>ST_GL[k]=Object.entries(o).sort((a,b)=>b[1]-a[1])[0][0]);return rows.filter(r=>{if(!ST_CX.gov(r.sector))return false;if(STP==="all")return true;const d=dayOfRow(r);if(d==null)return false;if(STP==="q3")return d>=hqMaxDay()-91;return new Date(d*864e5).getUTCFullYear()===+STP.slice(1)})}
+function southRows(){const C={};rows.forEach(r=>{if(!ST_CX.gov(r.sector))return;const k=stGK(r.sector),l=(r.sector||"").trim();(C[k]=C[k]||{})[l]=(C[k][l]||0)+1});ST_GL={};Object.entries(C).forEach(([k,o])=>ST_GL[k]=Object.entries(o).sort((a,b)=>b[1]-a[1])[0][0]);return rows.filter(r=>{if(!ST_CX.gov(r.sector))return false;const d=dayOfRow(r);if(STP==="all")return d==null||d>=RPT_START;if(d==null||d<RPT_START)return false;if(STP==="q3")return d>=hqMaxDay()-91;return new Date(d*864e5).getUTCFullYear()===+STP.slice(1)})}
 const ST_SEC=[["rep","تقرير الوحدة","M3 3v18h18M7 15l4-4 3 3 5-6",()=>ST_CX.adm()],["aud","المخالفات والتدقيق","M9 11l3 3 8-8M20 12v7a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h9",()=>ST_CX.ok()],["guide","الدليل الإجرائي للمخالفات","M4 19.5A2.5 2.5 0 0 1 6.5 17H20V3H6.5A2.5 2.5 0 0 0 4 5.5v14zM8 7h8M8 11h6",()=>ST_CX.ok()],["reg","اعتماد الموظفين","M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM19 8v6M22 11h-6",()=>ST_CX.adm()]];
 function renderSouth(){const el=$(ST_CX.el+"");if(!el)return;if(!ST_CX.ok()){el.innerHTML='<section class="block"><div class="empty">🔒 هذه البوابة غير متاحة لحسابك.</div></section>';return}
   const secs=ST_SEC.filter(x=>x[3]());if(!secs.some(x=>x[0]===STV))STV=secs[0][0];
@@ -3350,7 +3409,7 @@ function renderExec(){const el=$("#execBody");if(!el)return;if(EX_LOST==null&&sb
   el.innerHTML=`<div class="hq ex-pg">
     <div class="ex-bar"><div class="hq-chips">${pk.map(([k,l])=>`<button type="button" class="hq-chip" data-xper="${k}" aria-pressed="${HQP.k===k}">${l}</button>`).join("")}</div>
       ${(()=>{const [a,b]=hqRange(),iso=d=>d!=null&&d!==0?new Date(d*864e5).toISOString().slice(0,10):"",mx=hqMaxDay();const lo=(A.d1!=null?A.d1:null),f=a||(HQP.k==="all"?lo:0),t=b||(HQP.k==="all"?mx:0);
-        return `<div class="hq-cu ex-dr"><span>من</span><input type="date" class="in" id="exD1" value="${iso(f)}" aria-label="من تاريخ"><span>إلى</span><input type="date" class="in" id="exD2" value="${iso(t)}" aria-label="إلى تاريخ"></div>`})()}
+        return `<div class="hq-cu ex-dr"><span>من</span><input type="date" class="in" id="exD1" min="${RPT_ISO}" value="${iso(f)}" aria-label="من تاريخ"><span>إلى</span><input type="date" class="in" id="exD2" value="${iso(t)}" aria-label="إلى تاريخ"></div>`})()}
       <label class="hq-sel"><span>القطاع</span><select id="exSec"><option value="">جميع القطاعات</option>${HQ_SECS.map(s=>`<option${HQSF===s?" selected":""}>${s}</option>`).join("")}</select></label>
       <span class="ex-sp"></span><button type="button" class="btn2 pri" id="exPdf">${hqIc("pdf",16)} تقرير PDF</button><button type="button" class="btn2" id="exXls">${hqIc("xls",16)} تقرير Excel</button></div>
     <div class="hq-body">${L.length?execHtml(A,T,sc,secs):'<div class="hq-card"><div class="empty">لا توجد مخالفات في هذه الفترة أو القطاع</div></div>'}</div></div>`;
@@ -3463,7 +3522,7 @@ function renderHQ(){
     <div class="hq-top"><div class="hq-t1"><div><span class="hq-badge">المركز الرئيسي</span><h2>لوحة الأداء التنفيذية</h2><p>إدارة المخالفات والجودة — ${esc(sc.sec)}${sc.per?" — "+sc.per:""}</p></div>
       <div class="hq-ex"><button type="button" class="hq-xb" id="hqPdf">${hqIc("pdf",18)} PDF</button><button type="button" class="hq-xb" id="hqPpt">${hqIc("ppt",18)} PowerPoint</button><button type="button" class="hq-xb" id="hqXls">${hqIc("xls",18)} Excel</button></div></div>
       <div class="hq-f"><div class="hq-chips">${pk.map(([k,l])=>`<button type="button" class="hq-chip" data-per="${k}" aria-pressed="${HQP.k===k}">${l}</button>`).join("")}</div>
-        ${HQP.k==="cu"?`<div class="hq-cu"><input type="date" class="in" id="hqD1" value="${HQP.d1?new Date(HQP.d1*864e5).toISOString().slice(0,10):""}" aria-label="من"><span>إلى</span><input type="date" class="in" id="hqD2" value="${HQP.d2?new Date(HQP.d2*864e5).toISOString().slice(0,10):""}" aria-label="إلى"></div>`:""}
+        ${HQP.k==="cu"?`<div class="hq-cu"><input type="date" class="in" id="hqD1" min="${RPT_ISO}" value="${HQP.d1?new Date(HQP.d1*864e5).toISOString().slice(0,10):""}" aria-label="من"><span>إلى</span><input type="date" class="in" id="hqD2" value="${HQP.d2?new Date(HQP.d2*864e5).toISOString().slice(0,10):""}" aria-label="إلى"></div>`:""}
         <label class="hq-sel"><span>القطاع</span><select id="hqSec"><option value="">جميع القطاعات</option>${HQ_SECS.map(s=>`<option${HQSF===s?" selected":""}>${s}</option>`).join("")}</select></label>${gmsHtml("hqGms",HQG)}</div>
       <p class="hq-src">المصدر: التقرير الشامل — منصة مكين للتقارير · آخر تاريخ في البيانات ${(()=>{const m=hqMaxDay();return m!=null?wkDay(m):"—"})()}</p></div>
     ${note}
@@ -3892,7 +3951,7 @@ let PFV="mgr",PFP={k:"all",d1:0,d2:0},PFS="",PFG=[],PFQ="",PFC="",PFK="sent";
 function pfRange(){const o=HQP;HQP=PFP;const r=hqRange();HQP=o;return r}
 function pfBase(noG){const G0=PFG;if(noG)PFG=[];try{return pfBase0()}finally{PFG=G0}}
 function pfBase0(){const [a,b]=pfRange(),all=seesAll();return rows.filter(r=>{if(!all&&!scopeOK(r.sector,r.region))return false;if(PFS&&secOf(r.region)!==PFS)return false;if(PFG.length&&!PFG.includes((r.sector||"غير محدد").trim()))return false;
-  if(a||b){const d=dayOfRow(r);if(d==null)return false;if(a&&d<a)return false;if(b&&d>b)return false}return true})}
+  if(a||b){const d=dayOfRow(r);if(d==null)return PFP.k==="all";if(a&&d<a)return false;if(b&&d>b)return false}return true})}
 function pfAgg(L){const P={mgr:{},off:{}},S={},G={},T=hqZ();
   const add=(M,k,r,c)=>{if(!k)return;const o=M[k]||(M[k]=Object.assign(hqZ(),{sec:{},gov:{}}));hqAdd(o,c,r);const s=secOf(r.region),g=(r.sector||"غير محدد").trim();o.sec[s]=(o.sec[s]||0)+1;o.gov[g]=(o.gov[g]||0)+1};
   L.forEach(r=>{const c=r._hc=hqCls(r);hqAdd(T,c,r);add(P.mgr,(r.mgr||"").trim(),r,c);add(P.off,(r.officer||"").trim(),r,c);const s=secOf(r.region),g=(r.sector||"غير محدد").trim();hqAdd(S[s]=S[s]||hqZ(),c,r);const go=G[g]||(G[g]=Object.assign(hqZ(),{s}));hqAdd(go,c,r)});
@@ -3933,7 +3992,7 @@ function renderPerf(){const el=$("#perfBody");const L=pfBase(),A=pfAgg(L),T=A.T,
   el.innerHTML=`<div class="hq pv"><div class="hq-top"><div class="hq-t1"><div><span class="hq-badge">تقييم الأداء</span><h2>جودة مدراء الرقابة ومأموري الضبط</h2><p>${esc(scope)}${PFG.length?" — "+esc(gmsShort(PFG)):""} — ${per} · نسبة الجودة = 100% − نسبة المسترجع من المرسل للهيئة</p></div>
     <div class="hq-ex"><button type="button" class="hq-xb" id="pfPdf">${hqIc("pdf",18)} PDF</button><button type="button" class="hq-xb" id="pfXls">${hqIc("xls",18)} Excel</button></div></div>
     <div class="hq-f"><div class="hq-chips">${pk.map(([k,l])=>`<button type="button" class="hq-chip" data-pfper="${k}" aria-pressed="${PFP.k===k}">${l}</button>`).join("")}</div>
-      ${PFP.k==="cu"?`<div class="hq-cu"><input type="date" class="in" id="pfD1" value="${PFP.d1?new Date(PFP.d1*864e5).toISOString().slice(0,10):""}"><span>إلى</span><input type="date" class="in" id="pfD2" value="${PFP.d2?new Date(PFP.d2*864e5).toISOString().slice(0,10):""}"></div>`:""}
+      ${PFP.k==="cu"?`<div class="hq-cu"><input type="date" class="in" id="pfD1" min="${RPT_ISO}" value="${PFP.d1?new Date(PFP.d1*864e5).toISOString().slice(0,10):""}"><span>إلى</span><input type="date" class="in" id="pfD2" value="${PFP.d2?new Date(PFP.d2*864e5).toISOString().slice(0,10):""}"></div>`:""}
       ${all?`<label class="hq-sel"><span>القطاع</span><select id="pfSec"><option value="">جميع القطاعات</option>${HQ_SECS.map(s=>`<option${PFS===s?" selected":""}>${s}</option>`).join("")}</select></label>`:""}
       ${gmsHtml("pfGms",PFG)}</div></div>
     <div class="hq-kgrid">${hqTile("search","مدراء الرقابة",hqF(mg.length),"اضغط لعرض القائمة","#1F5BB0",null,null,' data-pfgo="mgr" role="button" tabindex="0"')}${hqTile("eye","مأمورو الضبط",hqF(of.length),"اضغط لعرض القائمة","#2AA6A0",null,null,' data-pfgo="off" role="button" tabindex="0"')}${hqTile("eye","المرصودة",hqF(T.n),"","#1F5BB0",null,null,rdA({}))}${hqTile("send","المرسلة للهيئة",hqF(T.sent),hqP(T.sent,T.n)+" من المرصود","#2F6FC0",T.sent/(T.n||1),null,rdA({c:"sent"}))}${hqTile("undo","المسترجعة حالياً",hqF(T.ret),hqP(T.ret,T.sent)+" من المرسل"+retSplit(T,{}),HQC.ret,T.ret/(T.sent||1),null,rdA({c:"ret"}))}${hqTile("check","القرارات الصادرة",hqF(T.iss),hqP(T.iss,T.sent)+" من المرسل",HQC.iss,T.iss/(T.sent||1),null,rdA({c:"iss"}))}
