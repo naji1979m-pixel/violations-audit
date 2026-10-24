@@ -1850,6 +1850,39 @@ async function bindSess(){const box=$("#sessIn");if(!box)return;const [_,ON]=awa
     sh("السجل",["الاسم","الدخول","الخروج","مدة التواجد","آخر صفحة","الجهاز"],L.map(s=>[s.full_name,sessTm(s.started_at),sessOn(s)?"متصل الآن":s.ended_at?sessTm(s.ended_at):sessTm(s.last_seen)+" (آخر نشاط)",sessFmt(sessDur(s)),s.page||"",s.device||""]),[30,22,26,16,22,22]);
     const buf=await wb.xlsx.writeBuffer();await deliver(new Blob([buf],{type:"application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"}),"سجل-الدخول.xlsx")}catch(x){toast("تعذر التصدير: "+(x.message||x))}b.disabled=false}}
 
+/* ===== الحماية والإنذار — محاولات الدخول الفاشلة وقفل الحساب ===== */
+const secMins=t=>Math.max(1,Math.ceil((new Date(t).getTime()-Date.now())/60000));
+const secLockMsg=t=>`🔒 الحساب مقفل مؤقتاً بسبب محاولات دخول خاطئة متكررة — حاول بعد ${secMins(t)} دقيقة أو تواصل مع مدير النظام.`;
+async function secGate(u){try{const r=await sb.rpc("q_login_gate",{p_username:u.trim()});return !r.error&&r.data&&new Date(r.data)>new Date()?r.data:null}catch(e){return null}}
+async function secFail(u){try{const r=await sb.rpc("q_login_fail",{p_username:u.trim(),p_device:typeof sessDev==="function"?sessDev():""});return r.error?null:r.data}catch(e){return null}}
+let SEC_LOGIN=false;
+async function secAfter(){try{const r=await sb.rpc("q_login_ok",{p_device:typeof sessDev==="function"?sessDev():"",p_log:SEC_LOGIN});SEC_LOGIN=false;if(!r.error&&r.data&&new Date(r.data)>new Date())return r.data}catch(e){}return null}
+let SEC_D=null,SEC_ERR="";
+async function loadSec(){SEC_ERR="";try{const {data,error}=await sb.from("quality_sec_log").select("*").gte("at",new Date(Date.now()-30*864e5).toISOString()).order("at",{ascending:false}).limit(3000);
+  if(error){SEC_ERR=/relation|does not exist|schema cache/i.test(error.message)?"شغّل ملف security.sql في Supabase أولاً":error.message;SEC_D=[]}else SEC_D=data||[]}catch(e){SEC_ERR="تعذر التحميل";SEC_D=[]}}
+const secNew=()=>{let t=0;try{t=+localStorage.getItem("jawda-sec-seen")||0}catch(e){}return (SEC_D||[]).filter(x=>(x.kind==="fail"||x.kind==="lock")&&new Date(x.at).getTime()>t)};
+async function secAlert(){if(!isSysAdmin(me))return;await loadSec();if(SEC_ERR)return;const N=secNew();if(!N.length)return;const L=N.filter(x=>x.kind==="lock").length,F=N.filter(x=>x.kind==="fail").length;
+  let el=document.getElementById("secPill");if(!el){el=document.createElement("button");el.type="button";el.id="secPill";el.style.cssText="position:fixed;top:calc(10px + env(safe-area-inset-top));right:50%;transform:translateX(50%);z-index:9000;background:#C0392B;color:#fff;border:0;border-radius:12px;padding:9px 14px;font:inherit;font-weight:700;box-shadow:0 8px 22px rgba(0,0,0,.3);cursor:pointer;max-width:calc(100vw - 24px)";document.body.appendChild(el)}
+  el.textContent=`⚠️ تنبيه أمني: ${F} محاولة دخول فاشلة${L?` و${L} حساب قُفل`:""} — اضغط للتفاصيل`;el.onclick=()=>{el.remove();go("users");setTimeout(()=>{const b=$("#secBlock");if(b)b.scrollIntoView({block:"start",behavior:"smooth"})},400)}}
+function secBlock(){if(!isSysAdmin(me))return "";return `<section class="block" id="secBlock"><h2>🛡️ الحماية والإنذار <span class="sub">مدير النظام فقط</span></h2><div id="secIn"><div class="sub">جارٍ التحميل…</div></div></section>`}
+async function bindSec(){const box=$("#secIn");if(!box)return;await loadSec();if(!$("#secIn"))return;
+  if(SEC_ERR){box.innerHTML=`<div class="hq-alert">⚠️ ${esc(SEC_ERR)}</div>`;return}
+  const D=SEC_D,N=secNew(),now=Date.now(),d1=D.filter(x=>now-new Date(x.at).getTime()<864e5);
+  const LK=(users||[]).filter(u=>u.locked_until&&new Date(u.locked_until)>new Date());
+  const F=D.filter(x=>x.kind==="fail"),G={};F.forEach(x=>{const k=x.username||"—";const g=G[k]=G[k]||{n:0,known:x.known,last:x.at,ips:new Set(),dev:new Set()};g.n++;if(x.ip)g.ips.add(x.ip);if(x.device)g.dev.add(x.device)});
+  const GS=Object.entries(G).sort((a,b)=>b[1].n-a[1].n);const kn={fail:"❌ محاولة فاشلة",lock:"🔒 قفل الحساب",ok:"✅ دخول ناجح",unlock:"🔓 فتح القفل"};
+  const fl=d1.filter(x=>x.kind==="fail").length,lk=d1.filter(x=>x.kind==="lock").length;
+  box.innerHTML=`<div class="sub" style="margin-bottom:10px">كل محاولة دخول بكلمة مرور خاطئة تُسجَّل هنا (الوقت، الجهاز، عنوان الشبكة IP). بعد <b>5 محاولات فاشلة خلال 15 دقيقة</b> يُقفل الحساب تلقائياً 15 دقيقة، ويظهر لك تنبيه أحمر عند دخولك.</div>
+  <div style="display:flex;flex-wrap:wrap;margin-bottom:12px;gap:10px">${[["آخر 24 ساعة — محاولات فاشلة",fl,fl?"#C0392B":"#1C7A4B"],["آخر 24 ساعة — حسابات قُفلت",lk,lk?"#C0392B":"#1C7A4B"],["مقفلة الآن",LK.length,LK.length?"#C0392B":"#1C7A4B"],["محاولات بأسماء غير موجودة (30 يوم)",F.filter(x=>!x.known).length,"#8A6D00"]].map(([l,n,c])=>`<div style="flex:1;min-width:150px;border:1px solid var(--line);border-radius:12px;padding:10px;text-align:center"><div style="font-size:24px;font-weight:800;color:${c}">${n}</div><div class="sub">${l}</div></div>`).join("")}</div>
+  ${LK.length?`<h3 class="sec">🔒 حسابات مقفلة الآن</h3><div class="ulist">${LK.map(u=>`<div class="urow"><div class="uinfo"><b>${esc(u.full_name)}</b><span dir="ltr">${esc(u.username)}</span><small>يُفتح تلقائياً بعد ${secMins(u.locked_until)} دقيقة</small></div><button type="button" class="btn2 pri" data-unl="${u.id}">🔓 فتح القفل الآن</button></div>`).join("")}</div>`:""}
+  <h3 class="sec">المحاولات الفاشلة حسب اسم المستخدم <span class="sub">آخر 30 يوم</span></h3>
+  ${GS.length?`<div class="tbl-wrap"><table class="tbl"><thead><tr><th>اسم المستخدم المُدخل</th><th>الحساب</th><th>عدد المحاولات</th><th>آخر محاولة</th><th>عناوين الشبكة</th><th>الأجهزة</th></tr></thead><tbody>${GS.map(([k,g])=>{const u=(users||[]).find(x=>String(x.username||"").toLowerCase()===k);return `<tr${g.n>=5?' style="background:rgba(192,57,43,.08)"':""}><td dir="ltr">${esc(k)}</td><td>${g.known?esc(u?u.full_name:"موجود"):'<b style="color:#8A6D00">غير موجود ⚠️</b>'}</td><td><b>${g.n}</b></td><td>${sessTm(g.last)}</td><td dir="ltr">${esc([...g.ips].slice(0,4).join("، ")||"—")}</td><td>${esc([...g.dev].slice(0,3).join("، "))}</td></tr>`}).join("")}</tbody></table></div>`:'<div class="sub">✅ لا توجد محاولات دخول فاشلة</div>'}
+  <h3 class="sec">السجل الأمني <span class="sub">${D.length}</span></h3>
+  ${D.length?`<div class="tbl-wrap" style="max-height:380px;overflow:auto"><table class="tbl"><thead><tr><th>الوقت</th><th>الحدث</th><th>اسم المستخدم</th><th>الجهاز</th><th>IP</th></tr></thead><tbody>${D.slice(0,800).map(x=>`<tr${N.includes(x)?' style="font-weight:700"':""}><td>${sessTm(x.at)}</td><td>${kn[x.kind]||esc(x.kind)}${x.detail?" — "+esc(x.detail):""}</td><td dir="ltr">${esc(x.username||"")}</td><td>${esc(x.device||"")}</td><td dir="ltr">${esc(x.ip||"")}</td></tr>`).join("")}</tbody></table></div>`:""}
+  <div class="btns" style="margin-top:10px"><button type="button" class="btn2" id="secRf">↻ تحديث</button>${N.length?`<button type="button" class="btn2" id="secSeen">✔ اطّلعت على التنبيهات (${N.length})</button>`:""}</div>`;
+  $("#secRf").onclick=()=>bindSec();const sn=$("#secSeen");if(sn)sn.onclick=()=>{try{localStorage.setItem("jawda-sec-seen",String(Date.now()))}catch(e){}const p=$("#secPill");if(p)p.remove();bindSec()};
+  $$("#secIn [data-unl]").forEach(b=>b.onclick=async()=>{b.disabled=true;const r=await sb.rpc("q_unlock",{p_user:b.dataset.unl});if(r.error){toast("تعذر: "+r.error.message);b.disabled=false;return}await loadUsers();renderUsers();toast("🔓 تم فتح القفل")})}
+
 /* ===== إيقاف المنصة للتحديث ===== */
 let MAINT=null;
 async function loadMaint(){try{const {data}=await sb.from("quality_settings").select("value").eq("key","maint").maybeSingle();MAINT=data&&data.value||null}catch(e){}return MAINT}
@@ -2060,9 +2093,11 @@ $("#loginForm").addEventListener("submit",async e=>{e.preventDefault();
   if(!sb){msg.textContent="تعذر الاتصال بالخادم، تحقق من الإنترنت";return}
   if(!u.trim()||!p){msg.textContent="أدخل اسم المستخدم وكلمة المرور";return}
   const b=$("#lgBtn");b.disabled=true;b.textContent="جارٍ الدخول…";
+  const lk0=await secGate(u);if(lk0){b.disabled=false;b.textContent="دخول";msg.textContent=secLockMsg(lk0);return}
   const {error}=await sb.auth.signInWithPassword({email:toEmail(u),password:p});
-  b.disabled=false;b.textContent="دخول";
-  if(error){msg.textContent="اسم المستخدم أو كلمة المرور غير صحيحة";return}
+  if(error){const f=/invalid|credential/i.test(error.message||"")?await secFail(u):null;b.disabled=false;b.textContent="دخول";
+    msg.textContent=f&&f.locked_until?secLockMsg(f.locked_until):f&&f.n>=3&&f.n<5?`اسم المستخدم أو كلمة المرور غير صحيحة — متبقٍ ${5-f.n} محاولة قبل قفل الحساب مؤقتاً`:"اسم المستخدم أو كلمة المرور غير صحيحة";return}
+  b.disabled=false;b.textContent="دخول";SEC_LOGIN=true;
   await afterLogin()});
 function offUid(){try{const j=JSON.parse(localStorage.getItem("jawda-auth")||"null");return j&&(j.user&&j.user.id||j.currentSession&&j.currentSession.user&&j.currentSession.user.id)||null}catch(e){return null}}
 async function offEnter(){const id=offUid();if(!id){show("authView");$("#lgMsg").textContent="أنت بدون اتصال — أول دخول يحتاج إنترنت";return false}
@@ -2075,6 +2110,7 @@ async function afterLogin(){
   if(!prof){const r=await sb.rpc("q_claim_admin",{p_name:null});if(r.data==="ok"){({data:prof}=await sb.from("quality_users").select("*").eq("id",user.id).maybeSingle())}}
   if(!prof){blockMsg("حسابك غير مسجل في نظام الجودة. تواصل مع مدير النظام لإنشاء حساب لك.");return}
   if(!prof.active){blockMsg("حسابك موقوف حالياً. تواصل مع مدير النظام لتفعيله.");return}
+  {const lk=await secAfter();if(lk){try{await sb.auth.signOut()}catch(e){}show("authView");$("#lgMsg").textContent=secLockMsg(lk);return}}
   me=prof;try{QDB.set("prof:"+prof.id,prof)}catch(e){}await obLoad();
   if(prof.must_change_password){$("#pwCancel").hidden=true;$("#pwTitle").textContent="أنشئ كلمة مرور جديدة";show("pwView");return}
   await enterApp();
@@ -2100,7 +2136,7 @@ async function bootLoadAll(){LD_ERR=false;await Promise.all([loadData(),needUser
 function bootBadge(on){const b=$("#refreshBtn");if(!b)return;b.disabled=on;b.textContent=on?"⏳ جارٍ التحديث…":"↻ تحديث"}
 async function enterApp(){
   if(sb&&!isOff()&&me&&me.role!=="admin"){await Promise.race([loadMaint(),new Promise(r=>setTimeout(r,4000))]);if(maintKick())return}
-  show("appView");try{sessStart()}catch(e){}$("#whoName").textContent=me.full_name;$("#whoRole").textContent=roleLabel(me);
+  show("appView");try{sessStart()}catch(e){}setTimeout(()=>{try{secAlert()}catch(e){}},2500);$("#whoName").textContent=me.full_name;$("#whoRole").textContent=roleLabel(me);
   if(isTrainee(me)&&!acadOK()){blockMsg("أكاديمية إدارة المخالفات قيد التجهيز، وسيتم إشعارك عند افتتاحها.");return}
   if(isTrainee(me)){buildTabs();page="acad";go("acad");{const f=$("#aiFab");if(f)f.hidden=true}["#upBtn","#auditBar"].forEach(q=>{const x=$(q);if(x)x.hidden=true});return}
   buildTabs();
@@ -4355,7 +4391,7 @@ function bindOrg(){
 }
 function renderUsers(){
   const secs=sectorOptions();
-  $("#usersBody").innerHTML=`${maintBlock()}${sessBlock()}${signupBlock()}${pwReqBlock()}<section class="block"><h2>إنشاء حساب جديد</h2>
+  $("#usersBody").innerHTML=`${maintBlock()}${secBlock()}${sessBlock()}${signupBlock()}${pwReqBlock()}<section class="block"><h2>إنشاء حساب جديد</h2>
   <div class="grid">
     <label class="f">الاسم الكامل<input class="in" id="nuName"></label>
     <label class="f">اسم المستخدم (بالإنجليزي)<input class="in" id="nuUser" dir="ltr" autocapitalize="off" autocomplete="off" placeholder="ahmed.ali"></label>
@@ -4369,7 +4405,7 @@ function renderUsers(){
   ${permBlock()}${navEdBlock()}${orgEditor()}<section class="block"><h2>الحسابات <span class="sub">${users.length}</span></h2><div class="ulist">${users.map(u=>`
     <div class="urow ${u.active?"":"off"}"><div class="uinfo"><b>${esc(u.full_name)}</b><span dir="ltr">${esc(u.username)}${u.email?" · "+esc(u.email):""}</span>${u.phone?`<span dir="ltr">📱 ${esc(u.phone)}</span>`:""}${u.email?"":`<small style="color:var(--warn)">بدون بريد إلكتروني — اضغط «تعديل» لإضافته</small>`}<small>${esc(roleLabel(u))}${u.sector?" — "+esc(u.sector):""}${u.active?"":" — موقوف"}${u.must_change_password?" — لم يغيّر كلمة المرور المؤقتة":""}</small></div>
     <div class="uact">${u.id===me.id?`<span class="sub">حسابك</span>`:`${u.active?`<button type="button" class="btn2" data-act="toggle" data-id="${u.id}">🔒 قفل</button>`:`<button type="button" class="btn2 pri" data-act="toggle" data-id="${u.id}">✓ تفعيل</button>`}<button type="button" class="btn2" data-act="del" data-id="${u.id}" style="color:var(--bad)">✕ إلغاء الحساب</button><button type="button" class="btn2" data-act="edit" data-id="${u.id}">تعديل</button><button type="button" class="btn2" data-act="reset" data-id="${u.id}">كلمة مرور جديدة</button>${u.active?`<button type="button" class="btn2" data-act="wa" data-id="${u.id}" style="color:#128C4A;border-color:#9AD8B5">📲 إشعار واتساب</button>`:""}`}</div></div>`).join("")}</div></section>`;
-  bindOrg();bindPwReq();bindSignups();bindPerms();bindMaint();bindNavEd();bindSess();
+  bindOrg();bindPwReq();bindSignups();bindPerms();bindMaint();bindNavEd();bindSess();bindSec();
   $("#nuCreate").onclick=async()=>{
     const name=$("#nuName").value.trim(),un=$("#nuUser").value.trim().toLowerCase(),role=$("#nuRole").value,sec=$("#nuSector").value.trim(),pw=$("#nuPass").value.trim();
     if(!name||!un||!pw){toast("أكمل الاسم واسم المستخدم وكلمة المرور");return}
