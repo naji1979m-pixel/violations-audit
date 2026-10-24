@@ -1330,7 +1330,7 @@ function refLinks(k){if(!needAtt(k))return "";const has=REFS.has(refName(k)),isM
   return `${has?`<button type="button" class="linkbtn" data-ref="${esc(k)}">📷 مثال مقبول</button>`:""}${isMgr?`<label class="linkbtn" style="position:relative">${has?"تغيير المثال":"＋ تعيين صورة مرجعية"}<input type="file" accept="image/*" data-setref="${esc(k)}" style="position:absolute;inset:0;opacity:0;width:100%"></label>`:""}`}
 function attNoMeta(r){const e=(r.meta||{}).exif||{};return !r.pdf&&!e.date&&e.lat==null}
 function attFlag(r){if(attChecks(r).some(x=>x.ok===false))return "bad";if(attNoMeta(r))return "warn";const c=attChecks(r);return c.some(x=>x.ok===false)?"bad":c.some(x=>x.ok===true)?"ok":""}
-function checksTxt(r){return attChecks(r).map(c=>(c.ok===false?"⚠️ ":c.ok?"✓ ":"• ")+c.t).join(" — ")}
+function checksTxt(r){return attChecks(r).filter(c=>!/غير متوفر/.test(c.t)).map(c=>(c.ok===false?"⚠️ ":c.ok?"✓ ":"• ")+c.t).join(" — ")}
 function invalidate(k){const a=A();if(a.ans[k]&&a.ans[k].s==="ok"){a.ans[k]={...a.ans[k],s:undefined,conf:null};save();toast("تغيّرت مرفقات الفقرة، أعد تأكيد المطابقة")}}
 
 /* ===================== المرفقات ===================== */
