@@ -1613,37 +1613,27 @@ async function flXls(btn,L){const o=btn.innerHTML;btn.disabled=true;btn.textCont
   [8,12,14].forEach(c=>ws.getColumn(c).numFmt="yyyy-mm-dd");ws.autoFilter={from:{row:1,column:1},to:{row:1,column:H.length}};
   const buf=await wb.xlsx.writeBuffer();await deliver(new Blob([buf],{type:"application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"}),"متابعة-مسار-المعاملات.xlsx")}catch(e){toast("تعذر التصدير: "+(e.message||e))}btn.disabled=false;btn.innerHTML=o}
 
-/* ===================== صورة حية: حركة الشلالات والمياه ===================== */
-const FX_MAP={home:{w:1100,h:727,r:[["fall",460,168,240,134],["fall",462,410,46,58],["fall",647,410,46,58],["rip",395,460,370,34],["flow",690,598,410,129],["flow",0,600,290,60]]},
-  hdr:{w:1290,h:453,r:[["fall",98,238,186,98],["fall",318,288,60,46],["rip",190,334,520,70],["flow",700,370,590,83]]}};
-const fxReduce=()=>{try{return matchMedia("(prefers-reduced-motion: reduce)").matches}catch(e){return false}};
-function fxLayer(host,cfg){let L=host.querySelector(":scope > .fx-layer");if(!L){L=document.createElement("div");L.className="fx-layer";L.setAttribute("aria-hidden","true");
-    L.innerHTML=cfg.r.map(([k])=>`<i class="fx-${k}"></i>`).join("");host.insertBefore(L,host.firstChild)}return L}
-function fxPlace(L,cfg,box){const els=L.children;cfg.r.forEach(([k,x,y,w,h],i)=>{const e=els[i];if(!e)return;e.style.left=(box.ox+x*box.s)+"px";e.style.top=(box.oy+y*box.s)+"px";e.style.width=(w*box.s)+"px";e.style.height=(h*box.s)+"px"})}
-function fxPos(v,def){const m=String(v||"").match(/(-?\d+(?:\.\d+)?)%/);return m?+m[1]/100:def}
-function fxScan(){if(fxReduce())return;
-  document.querySelectorAll(".home-ban.home-only img").forEach(img=>{const host=img.parentNode;if(!img.naturalWidth){if(!img._fxw){img._fxw=1;img.addEventListener("load",fxScan,{once:true})}return}
-    const cfg=FX_MAP.home,L=fxLayer(host,cfg),hr=host.getBoundingClientRect(),ir=img.getBoundingClientRect(),cs=getComputedStyle(img);
-    const fit=cs.objectFit,bw=ir.width,bh=ir.height,nw=cfg.w,nh=cfg.h;let s=bw/nw;if(fit==="contain")s=Math.min(bw/nw,bh/nh);else if(fit==="cover")s=Math.max(bw/nw,bh/nh);
-    const pp=(cs.objectPosition||"50% 50%").split(/\s+/);const ox=(ir.left-hr.left)+(bw-nw*s)*fxPos(pp[0],.5),oy=(ir.top-hr.top)+(bh-nh*s)*fxPos(pp[1],.5);
-    L.style.cssText=`position:absolute;inset:0;overflow:hidden;pointer-events:none;z-index:1`;fxPlace(L,cfg,{s,ox,oy})});
-  document.querySelectorAll("header.top").forEach(h=>{if(!h.offsetWidth)return;const cfg=FX_MAP.hdr,L=fxLayer(h,cfg),bw=h.offsetWidth,bh=h.offsetHeight;const s=Math.max(bw/cfg.w,bh/cfg.h);
-    L.style.cssText=`position:absolute;inset:0;overflow:hidden;pointer-events:none;z-index:0`;fxPlace(L,cfg,{s,ox:(bw-cfg.w*s)*.5,oy:(bh-cfg.h*s)*.58})})}
+/* ===================== صورة حية: فيديو الشلالات والمياه ===================== */
+const LIVE_V="v1";const liveReduce=()=>{try{return matchMedia("(prefers-reduced-motion: reduce)").matches}catch(e){return false}};
+function liveVid(src,cls){const v=document.createElement("video");v.className=cls;v.muted=true;v.defaultMuted=true;v.loop=true;v.autoplay=true;v.playsInline=true;
+  ["muted","playsinline","autoplay","loop","disablepictureinpicture","disableremoteplayback"].forEach(a=>v.setAttribute(a,""));v.setAttribute("aria-hidden","true");v.preload="auto";
+  [["webm","video/webm"],["mp4","video/mp4"]].forEach(([e,t],i,A)=>{const so=document.createElement("source");so.src=src.replace(/\.mp4$/,"."+e)+"?"+LIVE_V;so.type=t;if(i===A.length-1)so.addEventListener("error",()=>v.remove());v.appendChild(so)});
+  v.addEventListener("playing",()=>v.classList.add("on"));v.addEventListener("error",()=>v.remove());const go=()=>{const p=v.play();if(p&&p.catch)p.catch(()=>{})};v.addEventListener("canplay",go);setTimeout(go,50);return v}
+function liveScan(){if(liveReduce())return;
+  document.querySelectorAll(".home-ban.home-only").forEach(h=>{if(h.querySelector(":scope > video.hb-live"))return;const img=h.querySelector("img");if(!img)return;h.appendChild(liveVid("home-live.mp4","hb-live"))});
+  document.querySelectorAll("header.top").forEach(h=>{if(h.querySelector(":scope > .hdr-live"))return;const w=document.createElement("div");w.className="hdr-live";w.setAttribute("aria-hidden","true");w.appendChild(liveVid("header-live.mp4","hv"));const o=document.createElement("i");w.appendChild(o);h.insertBefore(w,h.firstChild)})}
 (function(){const st=document.createElement("style");st.textContent=`
-.fx-layer i{position:absolute;display:block;mix-blend-mode:screen}
-.fx-fall{background:repeating-linear-gradient(180deg,rgba(255,255,255,0) 0,rgba(255,255,255,.0) 10px,rgba(255,255,255,.75) 16px,rgba(255,255,255,0) 26px),repeating-linear-gradient(90deg,rgba(255,255,255,.0) 0,rgba(255,255,255,.35) 2px,rgba(255,255,255,0) 6px,rgba(255,255,255,0) 11px);background-size:100% 52px,100% 100%;
-  -webkit-mask-image:linear-gradient(180deg,transparent,#000 18%,#000 82%,transparent),linear-gradient(90deg,transparent,#000 12%,#000 88%,transparent);-webkit-mask-composite:source-in;mask-image:linear-gradient(180deg,transparent,#000 18%,#000 82%,transparent);opacity:.55;animation:fxFall .85s linear infinite}
-.fx-rip{background:repeating-linear-gradient(100deg,rgba(255,255,255,0) 0,rgba(255,255,255,.55) 8px,rgba(255,255,255,0) 22px);background-size:60px 100%;border-radius:50%;
-  -webkit-mask-image:radial-gradient(ellipse at center,#000 30%,transparent 72%);mask-image:radial-gradient(ellipse at center,#000 30%,transparent 72%);opacity:.38;animation:fxRip 3.2s linear infinite,fxPulse 2.6s ease-in-out infinite}
-.fx-flow{background:repeating-linear-gradient(115deg,rgba(255,255,255,0) 0,rgba(180,225,255,.45) 10px,rgba(255,255,255,0) 30px);background-size:90px 90px;
-  -webkit-mask-image:radial-gradient(ellipse at center,#000 35%,transparent 75%);mask-image:radial-gradient(ellipse at center,#000 35%,transparent 75%);opacity:.32;animation:fxFlow 4s linear infinite,fxPulse 3.4s ease-in-out infinite}
-@keyframes fxFall{from{background-position:0 0,0 0}to{background-position:0 52px,0 0}}
-@keyframes fxRip{from{background-position:0 0}to{background-position:60px 0}}
-@keyframes fxFlow{from{background-position:0 0}to{background-position:-90px 0}}
-@keyframes fxPulse{0%,100%{opacity:.22}50%{opacity:.5}}
-@media (prefers-reduced-motion: reduce){.fx-layer{display:none}}`;document.head.appendChild(st)})();
-{let t=0;const q=()=>{clearTimeout(t);t=setTimeout(fxScan,150)};window.addEventListener("resize",q);try{new MutationObserver(ms=>{for(const m of ms){for(const n of m.addedNodes){if(n.nodeType===1&&!(n.classList&&n.classList.contains("fx-layer"))&&(n.matches&&n.matches(".home-ban,header.top,img,#guestView,.wrap")||n.querySelector&&n.querySelector(".home-ban,header.top"))){q();return}}if(m.type==="attributes"){q();return}}}).observe(document.body,{childList:true,subtree:true,attributes:true,attributeFilter:["hidden"]})}catch(e){}
-  if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",q);else q();setTimeout(fxScan,1500)}
+.home-ban.home-only video.hb-live{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;object-position:center;opacity:0;transition:opacity .6s;pointer-events:none;z-index:1}
+.home-ban.home-only video.hb-live.on{opacity:1}
+header.top{isolation:isolate}
+header.top>.hdr-live{position:absolute;inset:0;z-index:-1;overflow:hidden;pointer-events:none}
+header.top>.hdr-live video{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:center 58%;opacity:0;transition:opacity .6s}
+header.top>.hdr-live video.on{opacity:1}
+header.top>.hdr-live i{position:absolute;inset:0;background:linear-gradient(270deg,rgba(255,255,255,.55) 0%,rgba(255,255,255,.15) 38%,rgba(255,255,255,0) 60%)}
+@media (prefers-reduced-motion: reduce){.hb-live,.hdr-live{display:none}}`;document.head.appendChild(st)})();
+{let t=0;const q=()=>{clearTimeout(t);t=setTimeout(liveScan,120)};try{new MutationObserver(ms=>{for(const m of ms)for(const n of m.addedNodes){if(n.nodeType===1&&n.tagName!=="VIDEO"&&!(n.classList&&n.classList.contains("hdr-live"))&&(n.matches&&n.matches(".home-ban,header.top,#guestView")||n.querySelector&&n.querySelector(".home-ban,header.top"))){q();return}}}).observe(document.body,{childList:true,subtree:true})}catch(e){}
+  if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",q);else q();
+  document.addEventListener("visibilitychange",()=>{if(document.visibilityState==="visible")document.querySelectorAll("video.hb-live,.hdr-live video").forEach(v=>{const p=v.play();if(p&&p.catch)p.catch(()=>{})})})}
 
 /* ===================== الشريط السفلي ===================== */
 function missingFields(){const a=A(),m=[];if(a.type<0)m.push("وصف بند اللائحة");if(!(a.f.vno||"").trim())m.push("رقم الزيارة");if(!(a.f.name||"").trim())m.push("اسم المخالف");if(!$("#auditor").value.trim())m.push("اسم المدقق");return m}

@@ -1,4 +1,4 @@
-const CACHE = "quality-v169";
+const CACHE = "quality-v170";
 const CORE = ["./", "./index.html", "./manifest.json", "./icon-192.png", "./icon-512.png", "./apple-touch-icon.png"];
 // مكتبات خارجية تُحفظ في الجهاز ليعمل التطبيق والتقارير والطباعة بدون إنترنت
 const EXT = [
@@ -26,6 +26,8 @@ self.addEventListener("fetch", e => {
   const url = e.request.url;
   // طلبات قاعدة البيانات لا تُحفظ (يتولاها التطبيق نفسه)
   if (!cacheable(url)) return;
+  // الفيديو يُطلب على أجزاء (Range) فيُترك للمتصفح مباشرة
+  if (/\.(mp4|webm)(\?|$)/i.test(url) || e.request.headers.has("range")) return;
   // المكتبات بإصدار ثابت: من الجهاز أولاً (تعمل فوراً حتى مع شبكة بدون إنترنت)
   if (isLib(url)) {
     e.respondWith(caches.match(e.request).then(m => m || fetch(e.request).then(r => put(e.request, r))));
