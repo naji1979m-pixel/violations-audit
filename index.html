@@ -2061,10 +2061,15 @@ async function secAfter(){try{const r=await sb.rpc("q_login_ok",{p_device:typeof
 let SEC_D=null,SEC_ERR="";
 async function loadSec(){SEC_ERR="";try{const {data,error}=await sb.from("quality_sec_log").select("*").gte("at",new Date(Date.now()-30*864e5).toISOString()).order("at",{ascending:false}).limit(3000);
   if(error){SEC_ERR=/relation|does not exist|schema cache/i.test(error.message)?"شغّل ملف security.sql في Supabase أولاً":error.message;SEC_D=[]}else SEC_D=data||[]}catch(e){SEC_ERR="تعذر التحميل";SEC_D=[]}}
-const secNew=()=>{let t=0;try{t=+localStorage.getItem("jawda-sec-seen")||0}catch(e){}return (SEC_D||[]).filter(x=>(x.kind==="fail"||x.kind==="lock")&&new Date(x.at).getTime()>t)};
-async function secAlert(){if(!isSysAdmin(me))return;await loadSec();if(SEC_ERR)return;const N=secNew();if(!N.length)return;const L=N.filter(x=>x.kind==="lock").length,F=N.filter(x=>x.kind==="fail").length;
-  let el=document.getElementById("secPill");if(!el){el=document.createElement("button");el.type="button";el.id="secPill";el.style.cssText="position:fixed;top:calc(10px + env(safe-area-inset-top));right:50%;transform:translateX(50%);z-index:9000;background:#C0392B;color:#fff;border:0;border-radius:12px;padding:9px 14px;font:inherit;font-weight:700;box-shadow:0 8px 22px rgba(0,0,0,.3);cursor:pointer;max-width:calc(100vw - 24px)";document.body.appendChild(el)}
-  el.textContent=`⚠️ تنبيه أمني: ${F} محاولة دخول فاشلة${L?` و${L} حساب قُفل`:""} — اضغط للتفاصيل`;el.onclick=()=>{el.remove();go("users");setTimeout(()=>{const b=$("#secBlock");if(b)b.scrollIntoView({block:"start",behavior:"smooth"})},400)}}
+let SEC_SEEN=0;try{SEC_SEEN=+localStorage.getItem("jawda-sec-seen")||0}catch(e){}
+async function secSeenLoad(){try{const {data}=await sb.from("quality_settings").select("value").eq("key","sec_seen_"+me.id).maybeSingle();const t=data&&data.value&&+data.value.t||0;if(t>SEC_SEEN){SEC_SEEN=t;try{localStorage.setItem("jawda-sec-seen",String(t))}catch(e){}}}catch(e){}}
+async function secMarkSeen(){const mx=Math.max(SEC_SEEN,...(SEC_D||[]).map(x=>new Date(x.at).getTime()||0));SEC_SEEN=mx;try{localStorage.setItem("jawda-sec-seen",String(mx))}catch(e){}
+  const p=$("#secPill");if(p)p.remove();try{await sb.from("quality_settings").upsert({key:"sec_seen_"+me.id,value:{t:mx},updated_at:new Date().toISOString()})}catch(e){}}
+const secNew=()=>(SEC_D||[]).filter(x=>(x.kind==="fail"||x.kind==="lock")&&new Date(x.at).getTime()>SEC_SEEN);
+async function secAlert(){if(!isSysAdmin(me))return;await Promise.all([loadSec(),secSeenLoad()]);if(SEC_ERR)return;const N=secNew();if(!N.length)return;const L=N.filter(x=>x.kind==="lock").length,F=N.filter(x=>x.kind==="fail").length;
+  let el=document.getElementById("secPill");if(!el){el=document.createElement("div");el.id="secPill";el.style.cssText="position:fixed;top:calc(10px + env(safe-area-inset-top));right:50%;transform:translateX(50%);z-index:9000;background:#C0392B;color:#fff;border-radius:12px;padding:8px 10px;font-weight:700;box-shadow:0 8px 22px rgba(0,0,0,.3);max-width:calc(100vw - 24px);display:flex;gap:8px;align-items:center";document.body.appendChild(el)}
+  el.innerHTML=`<button type="button" id="secPillGo" style="background:none;border:0;color:#fff;font:inherit;font-weight:700;cursor:pointer;text-align:right">⚠️ تنبيه أمني: ${F} محاولة دخول فاشلة${L?` و${L} حساب قُفل`:""} — اضغط للتفاصيل</button><button type="button" id="secPillX" style="background:#fff;color:#C0392B;border:0;border-radius:9px;padding:5px 10px;font:inherit;font-weight:700;cursor:pointer;white-space:nowrap">✖ تجاهل</button>`;
+  $("#secPillGo").onclick=()=>{el.remove();USV="log";go("users");setTimeout(()=>{const b=$("#secBlock");if(b)b.scrollIntoView({block:"start",behavior:"smooth"})},500)};$("#secPillX").onclick=()=>secMarkSeen()}
 function secBlock(){if(!isSysAdmin(me))return "";return `<section class="block" id="secBlock"><h2>🛡️ الحماية والإنذار <span class="sub">مدير النظام فقط</span></h2><div id="secIn"><div class="sub">جارٍ التحميل…</div></div></section>`}
 async function bindSec(){const box=$("#secIn");if(!box)return;await loadSec();if(!$("#secIn"))return;
   if(SEC_ERR){box.innerHTML=`<div class="hq-alert">⚠️ ${esc(SEC_ERR)}</div>`;return}
@@ -2081,7 +2086,7 @@ async function bindSec(){const box=$("#secIn");if(!box)return;await loadSec();if
   <h3 class="sec">السجل الأمني <span class="sub">${D.length}</span></h3>
   ${D.length?`<div class="tbl-wrap" style="max-height:380px;overflow:auto"><table class="tbl"><thead><tr><th>الوقت</th><th>الحدث</th><th>اسم المستخدم</th><th>الجهاز</th><th>IP</th></tr></thead><tbody>${D.slice(0,800).map(x=>`<tr${N.includes(x)?' style="font-weight:700"':""}><td>${sessTm(x.at)}</td><td>${kn[x.kind]||esc(x.kind)}${x.detail?" — "+esc(x.detail):""}</td><td dir="ltr">${esc(x.username||"")}</td><td>${esc(x.device||"")}</td><td dir="ltr">${esc(x.ip||"")}</td></tr>`).join("")}</tbody></table></div>`:""}
   <div class="btns" style="margin-top:10px"><button type="button" class="btn2" id="secRf">↻ تحديث</button>${N.length?`<button type="button" class="btn2" id="secSeen">✔ اطّلعت على التنبيهات (${N.length})</button>`:""}</div>`;
-  $("#secRf").onclick=()=>bindSec();const sn=$("#secSeen");if(sn)sn.onclick=()=>{try{localStorage.setItem("jawda-sec-seen",String(Date.now()))}catch(e){}const p=$("#secPill");if(p)p.remove();bindSec()};
+  $("#secRf").onclick=()=>bindSec();const sn=$("#secSeen");if(sn)sn.onclick=async()=>{await secMarkSeen();bindSec()};
   $$("#secIn [data-unl]").forEach(b=>b.onclick=async()=>{b.disabled=true;const r=await sb.rpc("q_unlock",{p_user:b.dataset.unl});if(r.error){toast("تعذر: "+r.error.message);b.disabled=false;return}await loadUsers();renderUsers();toast("🔓 تم فتح القفل")})}
 
 /* ===== إيقاف المنصة للتحديث ===== */
