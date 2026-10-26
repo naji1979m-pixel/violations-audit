@@ -745,50 +745,6 @@ body.home-on #tabs,#tabs,body:not(.home-on) #tabs{position:relative!important;z-
 .ex-t thead th{background:linear-gradient(180deg,#123B9E,#0B2A5E)!important;color:#fff!important}.ex-t tbody tr:nth-child(even) td{background:#F5F9FF}.ex-t tr.hqtot td{background:#E7F0FD!important;color:#0B2A5E}
 .ex-ft{display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;padding:10px 16px;border-radius:14px;background:#0B2A5E;color:#D6E4F7;font-size:12.5px}.ex-ft span{display:flex;align-items:center;gap:6px}
 @media(max-width:860px){.ex-ban{flex-direction:column-reverse;align-items:flex-start;padding:18px}.ex-bt h2{font-size:24px}.ex-lg img{height:44px}}
-/* ===== الملخص التنفيذي: الترحيب الناطق وجولة الأيقونات ===== */
-.exv-btn{background:linear-gradient(135deg,#0B2A5E,#1E5BC6)!important;color:#fff!important;border-color:transparent!important}
-.exv-btn .exv-wv{display:inline-flex;gap:2px;align-items:flex-end;height:14px}.exv-btn .exv-wv i{width:3px;border-radius:2px;background:#5CC8FF;height:6px}
-.exv-q{position:absolute;top:8px;left:8px;z-index:3;width:28px;height:28px;border-radius:50%;border:1px solid #CFE0F7;background:#fff;color:#1E5BC6;font-family:inherit;font-weight:800;font-size:15px;line-height:26px;text-align:center;cursor:pointer;padding:0;box-shadow:0 2px 8px rgba(11,42,94,.15);transition:transform .15s,background .15s}
-.exv-q:hover,.exv-q:focus-visible{background:#1E5BC6;color:#fff;transform:scale(1.08);outline:none}
-.exv-q.on{background:#1E5BC6;color:#fff;animation:exvPulse 1.2s ease-in-out infinite}
-.ex-st .exv-q{top:auto;bottom:8px}
-.exv-rel{position:relative}
-@keyframes exvPulse{0%,100%{box-shadow:0 0 0 0 rgba(92,200,255,.7)}50%{box-shadow:0 0 0 8px rgba(92,200,255,0)}}
-.exv-ov{position:fixed;inset:0;z-index:9000;background:rgba(6,20,51,.62);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);display:flex;align-items:center;justify-content:center;padding:16px;animation:exvIn .3s ease}
-@keyframes exvIn{from{opacity:0}to{opacity:1}}
-.exv-card{position:relative;width:min(520px,100%);border-radius:26px;overflow:hidden;background:#fff;box-shadow:0 30px 80px rgba(6,20,51,.5),0 0 0 1px rgba(92,200,255,.35);text-align:center}
-.exv-top{position:relative;padding:28px 22px 22px;color:#fff;background:radial-gradient(circle at 50% 0,#2F7FE0 0,#123B9E 45%,#061433 100%)}
-.exv-top::after{content:"";position:absolute;inset:auto 30px 0 30px;height:3px;border-radius:3px;background:linear-gradient(90deg,transparent,#5CC8FF,#fff,#5CC8FF,transparent)}
-.exv-lg{display:inline-block;background:#fff;border-radius:16px;padding:8px 16px;box-shadow:0 0 22px rgba(92,200,255,.5)}.exv-lg img{display:block;height:46px;width:auto}
-.exv-top small{display:block;margin-top:14px;font-size:12.5px;opacity:.85;font-weight:700}
-.exv-top h3{margin:6px 0 2px;font-size:22px;font-weight:800;color:#fff;line-height:1.5}.exv-top p{margin:0;opacity:.92;font-weight:600;font-size:14px}
-.exv-bd{padding:18px 22px 22px}
-.exv-kp{display:grid;grid-template-columns:repeat(auto-fit,minmax(110px,1fr));gap:8px;margin-top:12px}.exv-kp span{display:flex;flex-direction:column;gap:2px;background:#F3F8FF;border:1px solid #DCE7F5;border-radius:12px;padding:8px 6px;font-size:12px;color:#33415C}.exv-kp b{font-size:18px;color:#0B2A5E}.exv-kp span:last-child:nth-child(odd){grid-column:1/-1}
-.exv-txt{min-height:48px;margin:0 0 14px;color:#0B2A5E;font-size:14.5px;line-height:1.9}
-.exv-wave{display:flex;justify-content:center;align-items:flex-end;gap:4px;height:34px;margin:0 0 12px;opacity:.25;transition:opacity .3s}
-.exv-wave i{width:5px;height:8px;border-radius:3px;background:linear-gradient(180deg,#5CC8FF,#1E5BC6)}
-.exv-spk .exv-wave{opacity:1}.exv-spk .exv-wave i,.exv-spk .exv-wv i,.exv-b.exv-spk .exv-wave i{animation:exvBar .9s ease-in-out infinite}
-.exv-wave i:nth-child(2),.exv-wv i:nth-child(2){animation-delay:.15s!important}.exv-wave i:nth-child(3),.exv-wv i:nth-child(3){animation-delay:.3s!important}.exv-wave i:nth-child(4){animation-delay:.45s!important}.exv-wave i:nth-child(5){animation-delay:.6s!important}
-@keyframes exvBar{0%,100%{height:6px}50%{height:28px}}
-.exv-btns{display:flex;gap:10px;justify-content:center;flex-wrap:wrap}
-.exv-p{border:0;border-radius:14px;padding:12px 20px;font-family:inherit;font-weight:700;font-size:15px;cursor:pointer;background:linear-gradient(135deg,#123B9E,#1E5BC6);color:#fff;box-shadow:0 8px 20px rgba(30,91,198,.35);display:inline-flex;align-items:center;gap:8px}
-.exv-s{border:1px solid #CFE0F7;border-radius:14px;padding:12px 18px;font-family:inherit;font-weight:700;font-size:14px;cursor:pointer;background:#fff;color:#123B9E}
-.exv-p:focus-visible,.exv-s:focus-visible{outline:3px solid #5CC8FF;outline-offset:2px}
-.exv-mute{position:absolute;top:12px;left:12px;width:34px;height:34px;border-radius:50%;border:1px solid rgba(255,255,255,.35);background:rgba(255,255,255,.14);color:#fff;cursor:pointer;font-size:16px;line-height:32px;padding:0}
-/* الجولة */
-.exv-tour{position:fixed;inset:0;z-index:9000}
-.exv-ring{position:fixed;border-radius:18px;box-shadow:0 0 0 4px #5CC8FF,0 0 0 9999px rgba(6,20,51,.66);transition:top .35s ease,left .35s ease,width .35s ease,height .35s ease;pointer-events:none}
-.exv-b{position:fixed;width:min(360px,calc(100vw - 24px));background:#fff;border-radius:20px;padding:16px 16px 14px;box-shadow:0 24px 60px rgba(6,20,51,.45),0 0 0 1px rgba(92,200,255,.4);transition:top .35s ease,left .35s ease;text-align:right}
-.exv-bh{display:flex;align-items:center;gap:8px;margin-bottom:6px}.exv-bh b{color:#0B2A5E;font-size:16px;flex:1}
-.exv-bh span{background:#E7F0FD;color:#123B9E;border-radius:999px;padding:2px 10px;font-size:12px;font-weight:700}
-.exv-b p{margin:0 0 10px;color:#33415C;font-size:14px;line-height:1.85}
-.exv-b .exv-wave{justify-content:flex-start;height:22px;margin:0 0 10px}
-.exv-bn{display:flex;gap:8px;align-items:center}.exv-bn .exv-sp{flex:1}
-.exv-bn button{border:1px solid #CFE0F7;background:#fff;color:#123B9E;border-radius:12px;padding:8px 12px;font-family:inherit;font-weight:700;font-size:13px;cursor:pointer}
-.exv-bn .exv-nx{background:#123B9E;color:#fff;border-color:#123B9E}
-.exv-bn .exv-ic{width:36px;padding:8px 0}
-@media (prefers-reduced-motion:reduce){.exv-ring,.exv-b{transition:none}.exv-q.on,.exv-spk .exv-wave i{animation:none}}
-@media print{.exv-q,.exv-btn{display:none!important}}
 .ex-pg{display:flex;flex-direction:column;gap:14px}.ex-bar{display:flex;flex-wrap:wrap;align-items:center;gap:10px;background:var(--paper);border:1px solid #DCE7F5;border-radius:16px;padding:10px 14px}.ex-sp{flex:1}
 .ex-bar .btn2{display:inline-flex;align-items:center;gap:6px}.ex-bar .hq-chip{background:#EEF3FC;color:#123B9E;border-color:#CFE0F7}.ex-bar .hq-chip[aria-pressed=true]{background:#123B9E;color:#fff}.ex-bar .hq-sel span{color:var(--muted)}
 .home-ban.home-only{margin:0 calc(50% - 50vw) 0;border-radius:0;box-shadow:none;width:100vw}
@@ -1071,7 +1027,7 @@ function matchType(txt){
 
 /* ===================== قراءة ملف الإكسل ===================== */
 /* ----- الحالة التفصيلية (من التقرير الشامل) ----- */
-const PK_NEW="جديدة لم تُدقق",PK_RET="مسترجعة في انتظار الاستكمال",PK_PREV="سبق اعتمادها وعادت",PK_BLANK="بانتظار المراجعة — حالة المخالفة فارغة",PK_UNK="غير محدد — أعد رفع التقرير";
+const PK_NEW="جديدة لم تُدقق",PK_RET="مسترجعة في انتظار الاستكمال",PK_PREV="سبق اعتمادها وعادت",PK_BLANK="معتمدة من مدقق الشركة",PK_UNK="غير محدد — أعد رفع التقرير";
 const PK_FIRST=[PK_NEW,PK_RET,PK_PREV];
 const PK_CLS={[PK_NEW]:"k-warn",[PK_RET]:"k-bad",[PK_PREV]:"k-navy",[PK_UNK]:"k-gray"};
 const PK_RET_AMIN=["إرسال لمدير الرقابة لاستكمال النواقص","العودة إلى أخصائي التفتيش","العودة إلى المدقق مع التعليق"];
@@ -1081,7 +1037,7 @@ function pkFrom(e){e=e||{};if(!("amin" in e))return PK_UNK;
   const lab=v=>v==="قيد التدقيق"?"قيد التدقيق لدى الهيئة":v;
   if(vs===P||(!vs&&vis===P)){
     if(PK_RET_AMIN.includes(am))return PK_RET;
-    if(hasDec)return vs===P?PK_PREV:PK_BLANK;
+    if(hasDec)return vs===P?PK_PREV:((e.decision||"").trim()==="غير معتمدة"?"غير معتمدة من مدير الرقابة":PK_BLANK);
     return PK_NEW}
   return lab(vs)||lab(vis)||"غير محدد"}
 const COLS={mgr:"اسم مدير الرقابة",pres:"رقم قرار رئيس الهيئة",fine:"قيمة المخالفة",amin:"حالة الزيارة لدى أمين اللجنة",decDate:"تاريخ اعتماد القرار",decision:"قرار مدير الرقابة",reason:"سبب القرار",region:"المنطقة",vstat:"حالة الزيارة",vno:"معرف المخالفة",visit:"رقم الزيارة",name:"اسم المخالف",nid:"هوية المخالف",coords:"موقع المخالفة",coords2:"الاحداثيات",gov:"المحافظة",date:"تاريخ بدء الزيارة",date2:"تاريخ انشاء الزيارة",officer:"اسم المفتش",explain:"ملاحظات المفتش",item:"وصف بند اللائحة",prop:"نوع العقار",sev:"نوع المخالفة",status:"حالة المخالفة"};
@@ -2981,7 +2937,7 @@ const HQ_RETVS=["بانتظار المراجعة والاعتماد","","مكت�
 function hqCls(r){const vs=(r.vstat||"").trim(),vv=(r.vvisit||"").trim(),dec=(r.dec||"").trim(),am=(r.amin||"").trim();
   const iss=r.pres!==undefined?!!String(r.pres).trim():HQ_ISS.includes(am);
   if(iss)return "iss";
-  if(dec==="معتمدة")return (HQ_RETVS.includes(vs)||PK_RET_AMIN.includes(am))?"ret":"auth";
+  if(dec==="معتمدة")return PK_RET_AMIN.includes(am)?"ret":(!vs&&vv==="بانتظار المراجعة والاعتماد")?"auth":HQ_RETVS.includes(vs)?"ret":"auth";
   if(/أرشيف/.test(vs)||dec==="غير معتمدة")return "arch";
   if(vs==="بانتظار المراجعة والاعتماد"||vv==="بانتظار المراجعة والاعتماد")return "pend";
   return "oth"}
@@ -3764,135 +3720,7 @@ function renderExec(){const el=$("#execBody");if(!el)return;if(EX_LOST==null&&sb
   $$("#execBody [data-xper]").forEach(b=>b.onclick=()=>{HQP.k=b.dataset.xper;if(HQP.k==="cu"&&!HQP.d1){const m=hqMaxDay();if(m!=null){HQP.d2=m;HQP.d1=m-29}}re()});
   const setR=()=>{const a=dd("exD1"),b=dd("exD2");HQP.k="cu";HQP.d1=a;HQP.d2=b;if(a&&b&&a>b){HQP.d1=b;HQP.d2=a}re()};if($("#exD1"))$("#exD1").onchange=setR;if($("#exD2"))$("#exD2").onchange=setR;
   $("#exSec").onchange=e=>{HQSF=e.target.value;HQG=[];re()};
-  if($("#exLostEd"))$("#exLostEd").onclick=exLostEdit;$("#exPdf").onclick=()=>execPdf();$("#exXls").onclick=()=>execXls();exVoice(T,sc,secs)}
-/* ===================== الملخص التنفيذي: الترحيب الناطق + جولة الأيقونات ===================== */
-/* الصوت: دالة speak في Supabase (صوت حامد السعودي عبر Azure) فقط؛ إن تعذّرت يُعرض الشرح مكتوباً بلا صوت */
-const EXV={cache:new Map(),audio:null,unlocked:false,seq:0,muted:false,tour:null,data:null,onEnd:null,
-  SIL:"data:audio/wav;base64,UklGRrQBAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YZABAACAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICA"};
-try{EXV.muted=localStorage.getItem("exv-muted")==="1"}catch(e){}
-const exvN=v=>{const n=Math.round(Number(v)||0);return String(n)};
-function exvUnlock(){if(EXV.unlocked)return;EXV.unlocked=true;try{EXV.audio=new Audio();EXV.audio.src=EXV.SIL;const p=EXV.audio.play();if(p&&p.catch)p.catch(()=>{})}catch(e){}
-  try{if(window.speechSynthesis){const u=new SpeechSynthesisUtterance(" ");u.volume=0;speechSynthesis.speak(u)}}catch(e){}}
-function exvSpk(on){document.querySelectorAll(".exv-card,.exv-b,.exv-btn").forEach(x=>x.classList.toggle("exv-spk",!!on))}
-function exvStop(){EXV.seq++;EXV.onEnd=null;try{if(EXV.audio){EXV.audio.pause();EXV.audio.onended=null}}catch(e){}try{window.speechSynthesis&&speechSynthesis.cancel()}catch(e){}exvSpk(false);document.querySelectorAll(".exv-q.on").forEach(b=>b.classList.remove("on"))}
-async function exvFetch(text){if(EXV.cache.has(text))return EXV.cache.get(text);
-  const p=(async()=>{let tok=null;try{const {data:{session}}=await sb.auth.getSession();tok=session&&session.access_token}catch(e){}
-    const ctl=new AbortController(),to=setTimeout(()=>ctl.abort(),15000);
-    try{const r=await fetch(SB_URL+"/functions/v1/speak",{method:"POST",signal:ctl.signal,headers:{apikey:SB_KEY,"Content-Type":"application/json",Authorization:"Bearer "+(tok||SB_KEY)},body:JSON.stringify({text,rate:"-2%"})});
-      if(!r.ok||!/audio/.test(r.headers.get("content-type")||""))throw new Error("tts "+r.status);return URL.createObjectURL(await r.blob())}finally{clearTimeout(to)}})();
-  EXV.cache.set(text,p);p.catch(()=>EXV.cache.delete(text));return p}
-function exvBrowser(text,my,done){const ss=window.speechSynthesis;if(!ss){done();return}
-  const u=new SpeechSynthesisUtterance(text);u.lang="ar-SA";u.rate=.95;const vs=ss.getVoices()||[];
-  const v=vs.find(x=>/ar[-_]SA/i.test(x.lang)&&/male|maged|hamed|tarik/i.test(x.name))||vs.find(x=>/ar[-_]SA/i.test(x.lang))||vs.find(x=>/^ar/i.test(x.lang));if(v)u.voice=v;
-  u.onend=u.onerror=()=>{if(my===EXV.seq)done()};exvSpk(true);ss.speak(u)}
-/* ينطق النص؛ done تُستدعى بعد انتهاء القراءة (أو فوراً عند كتم الصوت) */
-async function exvSay(text,done){exvStop();const my=EXV.seq;const fin=()=>{if(my!==EXV.seq)return;exvSpk(false);const f=done;done=null;f&&f()};
-  if(EXV.muted){setTimeout(fin,Math.min(9000,1200+text.length*45));return}
-  exvSpk(true);
-  try{const url=await exvFetch(text);if(my!==EXV.seq)return;const a=EXV.audio||(EXV.audio=new Audio());a.onended=fin;a.onerror=fin;a.src=url;await a.play()}
-  catch(e){if(my!==EXV.seq)return;console.warn("speak unavailable",e);exvSpk(false);setTimeout(fin,Math.min(9000,1200+text.length*45))}}
-function exvMute(){EXV.muted=!EXV.muted;try{localStorage.setItem("exv-muted",EXV.muted?"1":"0")}catch(e){}if(EXV.muted)exvStop();document.querySelectorAll("[data-exv-mute]").forEach(b=>{b.textContent=EXV.muted?"🔇":"🔊";b.setAttribute("aria-label",EXV.muted?"تشغيل الصوت":"كتم الصوت")})}
-
-/* نص الترحيب */
-/* تحويل الأرقام إلى كلمات عربية ليُنطق الرقم سليماً */
-function exvW(n,gen){n=Math.round(Math.abs(Number(n)||0));if(n===0)return "صِفْر";
-  const O=["","وَاحِد",gen?"اِثْنَيْن":"اِثْنَان","ثَلَاثَة","أَرْبَعَة","خَمْسَة","سِتَّة","سَبْعَة","ثَمَانِيَة","تِسْعَة"],
-    TN=["عَشَرَة","أَحَدَ عَشَر",gen?"اِثْنَيْ عَشَر":"اِثْنَا عَشَر","ثَلَاثَةَ عَشَر","أَرْبَعَةَ عَشَر","خَمْسَةَ عَشَر","سِتَّةَ عَشَر","سَبْعَةَ عَشَر","ثَمَانِيَةَ عَشَر","تِسْعَةَ عَشَر"],
-    TS=gen?["","","عِشْرِين","ثَلَاثِين","أَرْبَعِين","خَمْسِين","سِتِّين","سَبْعِين","ثَمَانِين","تِسْعِين"]:["","","عِشْرُون","ثَلَاثُون","أَرْبَعُون","خَمْسُون","سِتُّون","سَبْعُون","ثَمَانُون","تِسْعُون"],
-    H=["","مِئَة",gen?"مِئَتَيْن":"مِئَتَان","ثَلَاثُمِئَة","أَرْبَعُمِئَة","خَمْسُمِئَة","سِتُّمِئَة","سَبْعُمِئَة","ثَمَانِمِئَة","تِسْعُمِئَة"];
-  const u999=x=>{const p=[],h=Math.floor(x/100),r=x%100;if(h)p.push(H[h]);if(r){if(r<10)p.push(O[r]);else if(r<20)p.push(TN[r-10]);else{const o=r%10,t=Math.floor(r/10);p.push(o?O[o]+" وَ"+TS[t]:TS[t])}}return p.join(" وَ")};
-  const big=(x,one,two,few,many)=>x===1?one:x===2?two:(x>=3&&x<=10)?u999(x)+" "+few:u999(x)+" "+many;
-  const parts=[],m=Math.floor(n/1e6),k=Math.floor(n%1e6/1000),r=n%1000;
-  if(m)parts.push(big(m,"مِلْيُون",gen?"مِلْيُونَيْن":"مِلْيُونَان","مَلَايِين","مِلْيُون"));if(k)parts.push(big(k,"أَلْف",gen?"أَلْفَيْن":"أَلْفَان","آلَاف","أَلْف"));if(r)parts.push(u999(r));return parts.join(" وَ").replace(/وَاِ/g,"وَا")}
-function exvPct(q){if(q==null)return "";const s=String(q).split(".");return exvW(+s[0])+(s[1]&&+s[1]?" فَاصِلَة "+exvW(+s[1]):"")+" بِالْمِئَةِ"}
-function exvSayNum(s){return String(s||"").replace(/\d+/g,m=>exvW(+m))}
-/* نص الترحيب: [المنطوق, المعروض] — جمل قصيرة ليكون النطق طبيعياً */
-function exvWelcome2(){const d=EXV.data||{},T=d.T||{},sc=d.sc||{};const q=T.sent?Math.round((T.sent-T.ret)/T.sent*1000)/10:null;
-  const sec=sc.sec||"جميع القطاعات",per=sc.per&&!/[\/\-–]/.test(sc.per)?sc.per:"";
-  const rows=[["إجمالي المرصود",T.n],["بانتظار المراجعة والاعتماد",T.pend],["قيد التدقيق لدى الهيئة",T.auth],["القرارات الصادرة",T.iss]];
-  const say=["مَرْحَبًا بِكَ سَعَادَةَ الْمُدِيرِ التَّنْفِيذِيِّ، فِي مَنَصَّةِ الْجَوْدَةِ وَالتَّدْقِيقِ.","هَذَا هُوَ التَّقْرِيرُ التَّنْفِيذِيُّ، لِإِدَارَةِ الْمُخَالَفَاتِ وَالتَّعَدِّيَاتِ.",
-    `وَإِلَيْكَ أَبْرَزَ الْمُؤَشِّرَاتِ، ${sec==="جميع القطاعات"?"لِجَمِيعِ الْقِطَاعَاتِ":"لِقِطَاعِ "+sec}${per?"، "+(/^\d{4}$/.test(per.trim())?"لِعَامِ "+exvW(+per,1):exvSayNum(per)):""}.`,
-    `إِجْمَالِيُّ الْمَرْصُودِ: ${exvW(T.n)}.`,`بِانْتِظَارِ الْمُرَاجَعَةِ وَالِاعْتِمَادِ: ${exvW(T.pend)}.`,`قَيْدُ التَّدْقِيقِ لَدَى الْهَيْئَةِ: ${exvW(T.auth)}.`,`الْقَرَارَاتُ الصَّادِرَةُ: ${exvW(T.iss)}.`]
-    .concat(q!=null?[`وَنِسْبَةُ الْجَوْدَةِ: ${exvPct(q)}.`]:[],["لِعَرْضِ تَفَاصِيلِ أَيِّ رَقْمٍ، اِضْغَطْ عَلَيْهِ."]).join(" ");
-  const fmt=v=>(Number(v)||0).toLocaleString("en-US");
-  const show=`<b>التقرير التنفيذي لإدارة المخالفات والتعديات</b><br><span class="sub">${esc(sec)}${sc.per?" — "+esc(sc.per):""}</span>
-    <span class="exv-kp">${rows.map(([l,v])=>`<span><b>${fmt(v)}</b>${esc(l)}</span>`).join("")}${q!=null?`<span><b>${q}%</b>نسبة الجودة</span>`:""}</span>`;
-  return {say,show}}
-function exvWelcomeText(){return exvWelcome2().say}
-
-/* شرح كل عنصر: [المحدد, العنوان, النص] */
-/* النص المنطوق المشكّل لكل عنصر في الجولة (المعروض على الشاشة يبقى بدون تشكيل) */
-const EXV_SAY={"الترويسة": "هَذِهِ تَرْوِيسَةُ الْمُلَخَّصِ التَّنْفِيذِيِّ. تَعْرِضُ الْقِطَاعَ وَالْفَتْرَةَ الْمُخْتَارَةَ، وَآخِرَ تَارِيخٍ مُتَوَفِّرٍ فِي الْبَيَانَاتِ الْمُسْتَوْرَدَةِ مِنَ التَّقْرِيرِ الشَّامِلِ فِي مَنَصَّةِ مَكِين.", "اختيار الفترة": "مِنْ هُنَا تَخْتَارُ الْفَتْرَةَ: كُلَّ الْفَتَرَاتِ، أَوْ سَنَةً مُحَدَّدَةً، أَوْ آخِرَ ثَلَاثَةِ أَشْهُرٍ، أَوْ فَتْرَةً مُخَصَّصَةً. تَتَحَدَّثُ كُلُّ الْأَرْقَامِ فَوْرًا حَسَبَ اخْتِيَارِكَ.", "من تاريخ وإلى تاريخ": "لِتَحْدِيدِ فَتْرَةٍ مُخَصَّصَةٍ بِتَارِيخِ بِدَايَةٍ وَتَارِيخِ نِهَايَةٍ.", "القطاع": "لِعَرْضِ قِطَاعٍ وَاحِدٍ، أَوْ جَمِيعِ الْقِطَاعَاتِ مَعًا.", "تقرير PDF": "يُصْدِرُ الْمُلَخَّصُ التَّنْفِيذِيُّ مِلَفًّا بِصِيغَةِ بِي دِي إِفْ، بِهُوِيَّةِ شَرِكَةِ الْمِيَاهِ الْوَطَنِيَّةِ، جَاهِزًا لِلطِّبَاعَةِ أَوِ الْإِرْسَالِ.", "تقرير Excel": "يُصْدِرُ الْأَرْقَامَ نَفْسَهَا فِي مِلَفِّ إِكْسِل، لِمَنْ يَرْغَبُ فِي تَحْلِيلِهَا.", "المرصود": "الْخُطْوَةُ الْأُولَى فِي مَسَارِ الْمُخَالَفَةِ. أَيْقُونَةُ الْعَيْنِ تَعْنِي الرَّصْدَ، وَالرَّقْمُ هُوَ إِجْمَالِيُّ الْمُخَالَفَاتِ الَّتِي رَصَدَهَا مَأْمُورُو الضَّبْطِ كَمَا وَرَدَتْ فِي التَّقْرِيرِ الشَّامِلِ. اِضْغَطْ عَلَى أَيِّ بِطَاقَةٍ لِعَرْضِ الْمُخَالَفَاتِ خَلْفَهَا.", "بانتظار المراجعة والاعتماد": "الْخُطْوَةُ الثَّانِيَةُ. أَيْقُونَةُ السَّاعَةِ تَعْنِي الِانْتِظَارَ، وَهِيَ مُخَالَفَاتٌ مَا زَالَتْ لَدَى الشَّرِكَةِ بِانْتِظَارِ الْمُرَاجَعَةِ وَالِاعْتِمَادِ قَبْلَ إِرْسَالِهَا إِلَى الْهَيْئَةِ. وَالنِّسْبَةُ تَحْتَهَا مِنْ إِجْمَالِيِّ الْمَرْصُودِ.", "قيد التدقيق لدى الهيئة": "الْخُطْوَةُ الثَّالِثَةُ. أَيْقُونَةُ الْعَدَسَةِ تَعْنِي التَّدْقِيقَ، وَهِيَ مُخَالَفَاتٌ أُرْسِلَتْ إِلَى الْهَيْئَةِ السُّعُودِيَّةِ لِلْمِيَاهِ وَمَا زَالَتْ قَيْدَ التَّدْقِيقِ لَدَيْهَا، وَلِذَلِكَ يَظْهَرُ شِعَارُ الْهَيْئَةِ عَلَى الْبِطَاقَةِ. وَالنِّسْبَةُ هُنَا مِنْ إِجْمَالِيِّ الْمُرْسَلِ.", "المسترجع": "الْخُطْوَةُ الرَّابِعَةُ. أَيْقُونَةُ السَّهْمِ الرَّاجِعِ تَعْنِي الْمُسْتَرْجَعَ، وَهِيَ مُخَالَفَاتٌ أَعَادَتْهَا الْهَيْئَةُ إِلَى الشَّرِكَةِ لِاسْتِكْمَالِ نَوَاقِصِهَا. كُلَّمَا قَلَّ هَذَا الرَّقْمُ ارْتَفَعَتْ جَوْدَةُ الْمُخَالَفَاتِ.", "القرارات الصادرة": "الْخُطْوَةُ الْخَامِسَةُ وَالْأَخِيرَةُ. عَلَامَةُ الصَّحِّ تَعْنِي صُدُورَ الْقَرَارِ مِنَ الْهَيْئَةِ السُّعُودِيَّةِ لِلْمِيَاهِ، وَهِيَ نِهَايَةُ مَسَارِ الْمُخَالَفَةِ.", "المنفعة المفقودة وإصلاح الضرر": "يَعْرِضُ هَذَا الْجُزْءُ الْقِيمَةَ الْمَالِيَّةَ لِلْمَنْفَعَةِ الْمَفْقُودَةِ، وَتَكَالِيفَ إِصْلَاحِ الضَّرَرِ بِالرِّيَالِ، حَتَّى التَّارِيخِ الْمُوَضَّحِ بِجَانِبِهَا.", "نسبة الجودة": "أَيْقُونَةُ الْقَطْرَةِ لِنِسْبَةِ الْجَوْدَةِ، وَتُحْسَبُ بِطَرْحِ الْمُسْتَرْجَعِ مِنَ الْمُرْسَلِ ثُمَّ الْقِسْمَةِ عَلَى الْمُرْسَلِ. كُلَّمَا اقْتَرَبَتِ النِّسْبَةُ مِنْ مِئَةٍ بِالْمِئَةِ، كَانَتِ الْمُخَالَفَاتُ مُكْتَمِلَةَ الْأَرْكَانِ مِنْ أَوَّلِ مَرَّةٍ.", "حسب القطاع": "هَذَا الْجَدْوَلُ يُقَارِنُ الْقِطَاعَاتِ فِي كُلِّ مَرْحَلَةٍ مِنْ مَرَاحِلِ الْمُخَالَفَةِ، مَعَ نِسْبَةِ الْجَوْدَةِ لِكُلِّ قِطَاعٍ. اِضْغَطْ عَلَى أَيِّ رَقْمٍ لِعَرْضِ الْمُخَالَفَاتِ خَلْفَهُ.", "الجولة الصوتية": "وَصَلْنَا إِلَى نِهَايَةِ الْجَوْلَةِ التَّعْرِيفِيَّةِ. نَتَمَنَّى أَنْ تَكُونَ هَذِهِ الْجَوْلَةُ قَدْ قَدَّمَتْ لِسَعَادَتِكُمْ تَصَوُّرًا وَاضِحًا وَشَامِلًا عَنْ مُؤَشِّرَاتِ الْأَدَاءِ وَالْجَوْدَةِ فِي إِدَارَةِ الْمُخَالَفَاتِ وَالتَّعَدِّيَاتِ. شُكْرًا لَكُمْ."};
-function exvSteps(){const st=[...document.querySelectorAll("#execBody .ex-path .ex-st")];
-  const S=[
-    [".ex-ban","الترويسة","هذه ترويسة الملخص التنفيذي. تعرض القطاع والفترة المختارة، وآخر تاريخ متوفر في البيانات المستوردة من التقرير الشامل في منصة مكين."],
-    [".ex-bar .hq-chips","اختيار الفترة","من هنا تختار الفترة: كل الفترات، أو سنة محددة، أو آخر ثلاثة أشهر، أو فترة مخصصة. تتحدث كل الأرقام فوراً حسب اختيارك."],
-    [".ex-dr","من تاريخ وإلى تاريخ","لتحديد فترة مخصصة بتاريخ بداية وتاريخ نهاية."],
-    ["#exSec","القطاع","لعرض قطاع واحد، أو جميع القطاعات معاً."],
-    ["#exPdf","تقرير PDF","يُصدر الملخص التنفيذي ملفاً بصيغة PDF بهوية شركة المياه الوطنية، جاهزاً للطباعة أو الإرسال."],
-    ["#exXls","تقرير Excel","يُصدر الأرقام نفسها في ملف Excel لمن يرغب في تحليلها."],
-    [st[0],"المرصود","الخطوة الأولى في مسار المخالفة. أيقونة العين تعني الرصد، والرقم هو إجمالي المخالفات التي رصدها مأمورو الضبط كما وردت في التقرير الشامل. اضغط على أي بطاقة لعرض المخالفات خلفها."],
-    [st[1],"بانتظار المراجعة والاعتماد","الخطوة الثانية. أيقونة الساعة تعني الانتظار، وهي مخالفات ما زالت لدى الشركة بانتظار المراجعة والاعتماد قبل إرسالها إلى الهيئة. والنسبة تحتها من إجمالي المرصود."],
-    [st[2],"قيد التدقيق لدى الهيئة","الخطوة الثالثة. أيقونة العدسة تعني التدقيق، وهي مخالفات أُرسلت إلى الهيئة السعودية للمياه وما زالت قيد التدقيق لديها، ولذلك يظهر شعار الهيئة على البطاقة. والنسبة هنا من إجمالي المرسل."],
-    [st[3],"المسترجع","الخطوة الرابعة. أيقونة السهم الراجع تعني المسترجع، وهي مخالفات أعادتها الهيئة إلى الشركة لاستكمال نواقصها. كلما قلّ هذا الرقم ارتفعت جودة المخالفات."],
-    [st[4],"القرارات الصادرة","الخطوة الخامسة والأخيرة. علامة الصح تعني صدور القرار من الهيئة السعودية للمياه، وهي نهاية مسار المخالفة."],
-    [".ex-lost","المنفعة المفقودة وإصلاح الضرر","يعرض هذا الجزء القيمة المالية للمنفعة المفقودة، وتكاليف إصلاح الضرر بالريال، حتى التاريخ الموضح بجانبها."],
-    [".ex-q","نسبة الجودة","أيقونة القطرة لنسبة الجودة، وتُحسب بطرح المسترجع من المرسل ثم القسمة على المرسل. كلما اقتربت النسبة من مئة بالمئة، كانت المخالفات مكتملة الأركان من أول مرة."],
-    ["#execBody .ex-t","حسب القطاع","هذا الجدول يقارن القطاعات في كل مرحلة من مراحل المخالفة، مع نسبة الجودة لكل قطاع. اضغط أي رقم لعرض المخالفات خلفه."],
-    [".exv-btn","الجولة الصوتية","وصلنا إلى نهاية الجولة التعريفية. نتمنى أن تكون هذه الجولة قد قدمت لسعادتكم تصورا واضحا وشاملا عن مؤشرات الأداء والجودة في إدارة المخالفات والتعديات. شكراً لكم."]];
-  return S.map(([s,t,x])=>{const el=typeof s==="string"?document.querySelector(s.startsWith("#execBody")?s:"#execBody "+s):s;return el?{el,t,x,say:EXV_SAY[t]||x}:null}).filter(Boolean)}
-
-/* شاشة الترحيب */
-function exvWelcome(){exvClose();const lg=window.NWC_LOGO||(typeof LOGO!=="undefined"?LOGO:"");const nm=String(me&&me.full_name||"").trim();const ttl=(typeof roleLabel==="function"&&me)?roleLabel(me):"";
-  const ov=document.createElement("div");ov.className="exv-ov";ov.setAttribute("role","dialog");ov.setAttribute("aria-modal","true");ov.setAttribute("aria-label","الترحيب بالملخص التنفيذي");
-  ov.innerHTML=`<div class="exv-card"><div class="exv-top"><button type="button" class="exv-mute" data-exv-mute aria-label="${EXV.muted?"تشغيل الصوت":"كتم الصوت"}">${EXV.muted?"🔇":"🔊"}</button>
-      ${lg?`<div class="exv-lg"><img src="${lg}" alt="شركة المياه الوطنية"></div>`:""}<small>شركة المياه الوطنية</small>
-      <h3>مرحباً بك سعادة المدير التنفيذي</h3><p>منصة الجودة والتدقيق · التقرير التنفيذي لإدارة المخالفات والتعديات</p></div>
-    <div class="exv-bd"><div class="exv-wave" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i></div>
-      <p class="exv-txt" id="exvTxt">ملخص أداء إدارة المخالفات والجودة جاهز. اضغط «ابدأ» لسماع الترحيب.</p>
-      <div class="exv-btns" id="exvBtns"><button type="button" class="exv-p" id="exvGo">▶ ابدأ</button><button type="button" class="exv-s" id="exvSkip">تخطي</button></div></div></div>`;
-  document.body.appendChild(ov);EXV.ov=ov;
-  const key="exv-seen-"+(me&&me.id||"u");try{localStorage.setItem(key,"1")}catch(e){}
-  ov.querySelector("[data-exv-mute]").onclick=exvMute;$("#exvSkip").onclick=exvClose;ov.addEventListener("keydown",e=>{if(e.key==="Escape")exvClose()});
-  $("#exvGo").onclick=()=>{exvUnlock();const W=exvWelcome2(),t=W.say;$("#exvTxt").innerHTML=W.show;
-    const after=()=>{const b=$("#exvTour");b&&b.focus()};
-    $("#exvBtns").innerHTML=`<button type="button" class="exv-p" id="exvTour">🧭 جولة الأيقونات</button><button type="button" class="exv-s" id="exvEnd">دخول الملخص</button>`;$("#exvTour").onclick=()=>{exvClose();exvTour()};$("#exvEnd").onclick=exvClose;
-    exvSay(t,after)};
-  setTimeout(()=>{const b=$("#exvGo");b&&b.focus()},50)}
-function exvClose(){exvStop();if(EXV.ov){EXV.ov.remove();EXV.ov=null}if(EXV.tour){EXV.tour.el.remove();window.removeEventListener("resize",EXV.tour.pos);window.removeEventListener("scroll",EXV.tour.pos,true);EXV.tour=null}}
-
-/* الجولة */
-function exvTour(start,only){exvUnlock();const steps=only?[only]:exvSteps();if(!steps.length)return;exvClose();
-  const w=document.createElement("div");w.className="exv-tour";w.setAttribute("role","dialog");w.setAttribute("aria-label","جولة الأيقونات");
-  w.innerHTML=`<div class="exv-ring"></div><div class="exv-b" aria-live="polite"><div class="exv-bh"><b id="exvT"></b><span id="exvC"></span></div><div class="exv-wave" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i></div><p id="exvX"></p>
-    <div class="exv-bn"><button type="button" class="exv-ic" data-exv-mute aria-label="${EXV.muted?"تشغيل الصوت":"كتم الصوت"}">${EXV.muted?"🔇":"🔊"}</button><button type="button" id="exvRep" class="exv-ic" aria-label="إعادة الشرح">↻</button><span class="exv-sp"></span>
-    ${only?`<button type="button" class="exv-nx" id="exvX2">تم</button>`:`<button type="button" id="exvPv">السابق</button><button type="button" class="exv-nx" id="exvNx">التالي</button><button type="button" id="exvX2">إنهاء</button>`}</div></div>`;
-  document.body.appendChild(w);const T={el:w,i:start||0,steps};EXV.tour=T;
-  const ring=w.querySelector(".exv-ring"),bub=w.querySelector(".exv-b");
-  T.pos=()=>{const s=T.steps[T.i];if(!s)return;const r=s.el.getBoundingClientRect(),pad=6,vw=innerWidth,vh=innerHeight;
-    ring.style.top=(r.top-pad)+"px";ring.style.left=(r.left-pad)+"px";ring.style.width=(r.width+pad*2)+"px";ring.style.height=(r.height+pad*2)+"px";
-    const bw=bub.offsetWidth,bh=bub.offsetHeight;let top=r.bottom+14;if(top+bh>vh-10)top=r.top-bh-14;if(top<10)top=Math.max(10,vh-bh-10);
-    let left=r.left+r.width/2-bw/2;left=Math.max(12,Math.min(vw-bw-12,left));bub.style.top=top+"px";bub.style.left=left+"px"};
-  const show=i=>{T.i=i;const s=T.steps[i];$("#exvT").textContent=s.t;$("#exvX").textContent=s.x;$("#exvC").textContent=only?"شرح":`${i+1} / ${T.steps.length}`;
-    if($("#exvPv"))$("#exvPv").disabled=i===0;if($("#exvNx"))$("#exvNx").textContent=i===T.steps.length-1?"إنهاء":"التالي";
-    s.el.scrollIntoView({block:"center",behavior:matchMedia("(prefers-reduced-motion:reduce)").matches?"auto":"smooth"});setTimeout(T.pos,380);T.pos();
-    const nx=T.steps[i+1];if(nx&&!EXV.muted)exvFetch(nx.say||nx.x).catch(()=>{});
-    exvSay(s.say||s.x,()=>{if(EXV.tour!==T||only)return;setTimeout(()=>{if(EXV.tour===T&&T.i===i&&i<T.steps.length-1)show(i+1)},900)})};
-  T.show=show;w.querySelector("[data-exv-mute]").onclick=exvMute;$("#exvRep").onclick=()=>show(T.i);$("#exvX2").onclick=exvClose;
-  if($("#exvPv"))$("#exvPv").onclick=()=>T.i>0&&show(T.i-1);if($("#exvNx"))$("#exvNx").onclick=()=>T.i<T.steps.length-1?show(T.i+1):exvClose();
-  w.addEventListener("click",e=>{if(e.target===w||e.target===ring)exvClose()});w.addEventListener("keydown",e=>{if(e.key==="Escape")exvClose();if(e.key==="ArrowLeft"&&$("#exvNx"))$("#exvNx").click();if(e.key==="ArrowRight"&&$("#exvPv"))$("#exvPv").click()});
-  window.addEventListener("resize",T.pos);window.addEventListener("scroll",T.pos,true);show(T.i);setTimeout(()=>{const b=$("#exvNx")||$("#exvX2");b&&b.focus()},60)}
-
-/* يُستدعى بعد كل رسم للملخص التنفيذي */
-function exVoice(T,sc,secs){EXV.data={T,sc,secs};const bar=document.querySelector("#execBody .ex-bar");if(!bar)return;
-  if(!bar.querySelector(".exv-btn")){const b=document.createElement("button");b.type="button";b.className="btn2 exv-btn";b.innerHTML=`<span class="exv-wv" aria-hidden="true"><i></i><i></i><i></i></span> الترحيب والجولة`;b.onclick=exvWelcome;bar.insertBefore(b,bar.querySelector(".ex-sp"))}
-  const steps=exvSteps();const skip=new Set([".ex-ban",".ex-bar .hq-chips",".ex-dr","#exSec","#exPdf","#exXls",".exv-btn"].map(s=>document.querySelector("#execBody "+s)).filter(Boolean));
-  steps.forEach(s=>{if(skip.has(s.el))return;let host=s.el;if(host.matches("table"))host=host.closest(".hq-card")||host;if(host.querySelector(":scope > .exv-q"))return;
-    if(getComputedStyle(host).position==="static")host.classList.add("exv-rel");
-    const q=document.createElement("button");q.type="button";q.className="exv-q";q.textContent="؟";q.setAttribute("aria-label","شرح صوتي: "+s.t);
-    q.addEventListener("click",e=>{e.stopPropagation();e.preventDefault();const was=q.classList.contains("on");exvStop();if(was)return;exvTour(0,s)},true);host.appendChild(q)});
-  let seen=false;try{seen=localStorage.getItem("exv-seen-"+(me&&me.id||"u"))==="1"}catch(e){}
-  if(!seen&&!EXV.ov&&!EXV.tour&&page==="exec")setTimeout(()=>{if(page==="exec"&&!EXV.ov)exvWelcome()},500)}
+  if($("#exLostEd"))$("#exLostEd").onclick=exLostEdit;$("#exPdf").onclick=()=>execPdf();$("#exXls").onclick=()=>execXls()}
 async function execPdf(){const b=$("#exPdf"),old=b?b.innerHTML:"";if(b){b.disabled=true;b.textContent="جارٍ إصدار PDF…"}
   try{const {A,T,sc,secs}=execData();try{await document.fonts.ready}catch(e){}const g=hqCv();await hqHead(g,"الملخص التنفيذي",sc,1,{sub:"شركة المياه الوطنية · إدارة المخالفات والجودة",accent:"#5CC8FF"});
     const {W,M}=g,qs=o=>{const v=exQ(o);return v==null?"—":v+"%"};
