@@ -3795,8 +3795,7 @@ function exvMute(){EXV.muted=!EXV.muted;try{localStorage.setItem("exv-muted",EXV
 /* نص الترحيب */
 function exvWelcomeText(){const d=EXV.data||{},T=d.T||{},sc=d.sc||{};const nm=String(me&&me.full_name||"").trim();const ttl=(typeof roleLabel==="function"&&me)?roleLabel(me):"";
   const q=T.sent?Math.round((T.sent-T.ret)/T.sent*1000)/10:null;
-  const who=ttl?`سعادة ${ttl}${nm?"، "+nm:""}`:(nm||"");
-  return `مرحباً بك ${who}. أهلاً بك في الملخص التنفيذي لإدارة المخالفات والجودة في شركة المياه الوطنية، ${sc.sec||"جميع القطاعات"}${sc.per?"، "+sc.per:""}. `+
+  return `مرحباً بك طال عمرك في منصة الجودة والتدقيق، في قسم التقرير التنفيذي لإدارة المخالفات والتعديات، ${sc.sec||"جميع القطاعات"}${sc.per?"، "+sc.per:""}. `+
     `في هذه الفترة رُصدت ${exvN(T.n)} مخالفة، منها ${exvN(T.pend)} بانتظار المراجعة والاعتماد، و${exvN(T.auth)} قيد التدقيق لدى الهيئة السعودية للمياه، وصدر ${exvN(T.iss)} قراراً`+
     (q!=null?`، ونسبة الجودة ${String(q).replace("."," فاصلة ")} بالمئة. `:". ")+
     `يمكنك الضغط على أي رقم لعرض تفاصيله، أو على علامة الاستفهام بجانب أي عنصر لسماع شرحه.`}
@@ -3825,8 +3824,8 @@ function exvSteps(){const st=[...document.querySelectorAll("#execBody .ex-path .
 function exvWelcome(){exvClose();const lg=window.NWC_LOGO||(typeof LOGO!=="undefined"?LOGO:"");const nm=String(me&&me.full_name||"").trim();const ttl=(typeof roleLabel==="function"&&me)?roleLabel(me):"";
   const ov=document.createElement("div");ov.className="exv-ov";ov.setAttribute("role","dialog");ov.setAttribute("aria-modal","true");ov.setAttribute("aria-label","الترحيب بالملخص التنفيذي");
   ov.innerHTML=`<div class="exv-card"><div class="exv-top"><button type="button" class="exv-mute" data-exv-mute aria-label="${EXV.muted?"تشغيل الصوت":"كتم الصوت"}">${EXV.muted?"🔇":"🔊"}</button>
-      ${lg?`<div class="exv-lg"><img src="${lg}" alt="شركة المياه الوطنية"></div>`:""}<small>شركة المياه الوطنية · إدارة المخالفات والجودة</small>
-      <h3>مرحباً بك${ttl?" سعادة "+esc(ttl):""}</h3><p>${esc(nm)}</p></div>
+      ${lg?`<div class="exv-lg"><img src="${lg}" alt="شركة المياه الوطنية"></div>`:""}<small>شركة المياه الوطنية</small>
+      <h3>مرحباً بك طال عمرك</h3><p>منصة الجودة والتدقيق · التقرير التنفيذي لإدارة المخالفات والتعديات</p></div>
     <div class="exv-bd"><div class="exv-wave" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i></div>
       <p class="exv-txt" id="exvTxt">ملخص أداء إدارة المخالفات والجودة جاهز. اضغط «ابدأ» لسماع الترحيب.</p>
       <div class="exv-btns" id="exvBtns"><button type="button" class="exv-p" id="exvGo">▶ ابدأ</button><button type="button" class="exv-s" id="exvSkip">تخطي</button></div></div></div>`;
