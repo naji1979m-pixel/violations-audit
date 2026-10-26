@@ -763,6 +763,7 @@ body.home-on #tabs,#tabs,body:not(.home-on) #tabs{position:relative!important;z-
 .exv-top small{display:block;margin-top:14px;font-size:12.5px;opacity:.85;font-weight:700}
 .exv-top h3{margin:6px 0 2px;font-size:22px;font-weight:800;color:#fff;line-height:1.5}.exv-top p{margin:0;opacity:.92;font-weight:600;font-size:14px}
 .exv-bd{padding:18px 22px 22px}
+.exv-kp{display:grid;grid-template-columns:repeat(auto-fit,minmax(110px,1fr));gap:8px;margin-top:12px}.exv-kp span{display:flex;flex-direction:column;gap:2px;background:#F3F8FF;border:1px solid #DCE7F5;border-radius:12px;padding:8px 6px;font-size:12px;color:#33415C}.exv-kp b{font-size:18px;color:#0B2A5E}.exv-kp span:last-child:nth-child(odd){grid-column:1/-1}
 .exv-txt{min-height:48px;margin:0 0 14px;color:#0B2A5E;font-size:14.5px;line-height:1.9}
 .exv-wave{display:flex;justify-content:center;align-items:flex-end;gap:4px;height:34px;margin:0 0 12px;opacity:.25;transition:opacity .3s}
 .exv-wave i{width:5px;height:8px;border-radius:3px;background:linear-gradient(180deg,#5CC8FF,#1E5BC6)}
@@ -3777,7 +3778,7 @@ function exvStop(){EXV.seq++;EXV.onEnd=null;try{if(EXV.audio){EXV.audio.pause();
 async function exvFetch(text){if(EXV.cache.has(text))return EXV.cache.get(text);
   const p=(async()=>{let tok=null;try{const {data:{session}}=await sb.auth.getSession();tok=session&&session.access_token}catch(e){}
     const ctl=new AbortController(),to=setTimeout(()=>ctl.abort(),15000);
-    try{const r=await fetch(SB_URL+"/functions/v1/speak",{method:"POST",signal:ctl.signal,headers:{apikey:SB_KEY,"Content-Type":"application/json",Authorization:"Bearer "+(tok||SB_KEY)},body:JSON.stringify({text,rate:"-4%"})});
+    try{const r=await fetch(SB_URL+"/functions/v1/speak",{method:"POST",signal:ctl.signal,headers:{apikey:SB_KEY,"Content-Type":"application/json",Authorization:"Bearer "+(tok||SB_KEY)},body:JSON.stringify({text,rate:"-2%"})});
       if(!r.ok||!/audio/.test(r.headers.get("content-type")||""))throw new Error("tts "+r.status);return URL.createObjectURL(await r.blob())}finally{clearTimeout(to)}})();
   EXV.cache.set(text,p);p.catch(()=>EXV.cache.delete(text));return p}
 function exvBrowser(text,my,done){const ss=window.speechSynthesis;if(!ss){done();return}
@@ -3793,12 +3794,29 @@ async function exvSay(text,done){exvStop();const my=EXV.seq;const fin=()=>{if(my
 function exvMute(){EXV.muted=!EXV.muted;try{localStorage.setItem("exv-muted",EXV.muted?"1":"0")}catch(e){}if(EXV.muted)exvStop();document.querySelectorAll("[data-exv-mute]").forEach(b=>{b.textContent=EXV.muted?"🔇":"🔊";b.setAttribute("aria-label",EXV.muted?"تشغيل الصوت":"كتم الصوت")})}
 
 /* نص الترحيب */
-function exvWelcomeText(){const d=EXV.data||{},T=d.T||{},sc=d.sc||{};const nm=String(me&&me.full_name||"").trim();const ttl=(typeof roleLabel==="function"&&me)?roleLabel(me):"";
-  const q=T.sent?Math.round((T.sent-T.ret)/T.sent*1000)/10:null;
-  return `مرحباً بك طال عمرك في منصة الجودة والتدقيق، في قسم التقرير التنفيذي لإدارة المخالفات والتعديات، ${sc.sec||"جميع القطاعات"}${sc.per?"، "+sc.per:""}. `+
-    `في هذه الفترة رُصدت ${exvN(T.n)} مخالفة، منها ${exvN(T.pend)} بانتظار المراجعة والاعتماد، و${exvN(T.auth)} قيد التدقيق لدى الهيئة السعودية للمياه، وصدر ${exvN(T.iss)} قراراً`+
-    (q!=null?`، ونسبة الجودة ${String(q).replace("."," فاصلة ")} بالمئة. `:". ")+
-    `يمكنك الضغط على أي رقم لعرض تفاصيله، أو على علامة الاستفهام بجانب أي عنصر لسماع شرحه.`}
+/* تحويل الأرقام إلى كلمات عربية ليُنطق الرقم سليماً */
+function exvW(n){n=Math.round(Math.abs(Number(n)||0));if(n===0)return "صفر";
+  const O=["","واحد","اثنان","ثلاثة","أربعة","خمسة","ستة","سبعة","ثمانية","تسعة"],TN=["عشرة","أحد عشر","اثنا عشر","ثلاثة عشر","أربعة عشر","خمسة عشر","ستة عشر","سبعة عشر","ثمانية عشر","تسعة عشر"],
+    TS=["","","عشرون","ثلاثون","أربعون","خمسون","ستون","سبعون","ثمانون","تسعون"],H=["","مئة","مئتان","ثلاثمئة","أربعمئة","خمسمئة","ستمئة","سبعمئة","ثمانمئة","تسعمئة"];
+  const u999=x=>{const p=[],h=Math.floor(x/100),r=x%100;if(h)p.push(H[h]);if(r){if(r<10)p.push(O[r]);else if(r<20)p.push(TN[r-10]);else{const o=r%10,t=Math.floor(r/10);p.push(o?O[o]+" و"+TS[t]:TS[t])}}return p.join(" و")};
+  const big=(x,one,two,few,many)=>x===1?one:x===2?two:(x>=3&&x<=10)?u999(x)+" "+few:u999(x)+" "+many;
+  const parts=[],m=Math.floor(n/1e6),k=Math.floor(n%1e6/1000),r=n%1000;
+  if(m)parts.push(big(m,"مليون","مليونان","ملايين","مليون"));if(k)parts.push(big(k,"ألف","ألفان","آلاف","ألف"));if(r)parts.push(u999(r));return parts.join(" و")}
+function exvPct(q){if(q==null)return "";const s=String(q).split(".");return exvW(+s[0])+(s[1]&&+s[1]?" فاصلة "+exvW(+s[1]):"")+" بالمئة"}
+function exvSayNum(s){return String(s||"").replace(/\d+/g,m=>exvW(+m))}
+/* نص الترحيب: [المنطوق, المعروض] — جمل قصيرة ليكون النطق طبيعياً */
+function exvWelcome2(){const d=EXV.data||{},T=d.T||{},sc=d.sc||{};const q=T.sent?Math.round((T.sent-T.ret)/T.sent*1000)/10:null;
+  const sec=sc.sec||"جميع القطاعات",per=sc.per&&!/[\/\-–]/.test(sc.per)?sc.per:"";
+  const rows=[["إجمالي المرصود",T.n],["بانتظار المراجعة والاعتماد",T.pend],["قيد التدقيق لدى الهيئة",T.auth],["القرارات الصادرة",T.iss]];
+  const say=["مرحباً بك طال عمرك، في منصة الجودة والتدقيق.","هذا هو التقرير التنفيذي، لإدارة المخالفات والتعديات.",
+    `وإليك أبرز المؤشرات، ل${sec==="جميع القطاعات"?"جميع القطاعات":"قطاع "+sec}${per?"، "+(/^\d{4}$/.test(per.trim())?"لعام "+exvW(+per).replace(/(^| )(ألف|مئت|اثن)ان/g,"$1$2ين").replace(/ون(?= |$)/g,"ين"):exvSayNum(per)):""}.`]
+    .concat(rows.map(([l,v])=>`${l}: ${exvW(v)}.`),q!=null?[`ونسبة الجودة: ${exvPct(q)}.`]:[],
+    ["لعرض تفاصيل أي رقم، اضغط عليه.","ولسماع شرح أي عنصر، اضغط علامة الاستفهام بجانبه."]).join(" ");
+  const fmt=v=>(Number(v)||0).toLocaleString("en-US");
+  const show=`<b>التقرير التنفيذي لإدارة المخالفات والتعديات</b><br><span class="sub">${esc(sec)}${sc.per?" — "+esc(sc.per):""}</span>
+    <span class="exv-kp">${rows.map(([l,v])=>`<span><b>${fmt(v)}</b>${esc(l)}</span>`).join("")}${q!=null?`<span><b>${q}%</b>نسبة الجودة</span>`:""}</span>`;
+  return {say,show}}
+function exvWelcomeText(){return exvWelcome2().say}
 
 /* شرح كل عنصر: [المحدد, العنوان, النص] */
 function exvSteps(){const st=[...document.querySelectorAll("#execBody .ex-path .ex-st")];
@@ -3832,7 +3850,7 @@ function exvWelcome(){exvClose();const lg=window.NWC_LOGO||(typeof LOGO!=="undef
   document.body.appendChild(ov);EXV.ov=ov;
   const key="exv-seen-"+(me&&me.id||"u");try{localStorage.setItem(key,"1")}catch(e){}
   ov.querySelector("[data-exv-mute]").onclick=exvMute;$("#exvSkip").onclick=exvClose;ov.addEventListener("keydown",e=>{if(e.key==="Escape")exvClose()});
-  $("#exvGo").onclick=()=>{exvUnlock();const t=exvWelcomeText();$("#exvTxt").textContent=t;
+  $("#exvGo").onclick=()=>{exvUnlock();const W=exvWelcome2(),t=W.say;$("#exvTxt").innerHTML=W.show;
     const after=()=>{const b=$("#exvTour");b&&b.focus()};
     $("#exvBtns").innerHTML=`<button type="button" class="exv-p" id="exvTour">🧭 جولة الأيقونات</button><button type="button" class="exv-s" id="exvEnd">دخول الملخص</button>`;$("#exvTour").onclick=()=>{exvClose();exvTour()};$("#exvEnd").onclick=exvClose;
     exvSay(t,after)};
