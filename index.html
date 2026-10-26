@@ -3802,16 +3802,16 @@ function exvW(n){n=Math.round(Math.abs(Number(n)||0));if(n===0)return "صفر";
   const big=(x,one,two,few,many)=>x===1?one:x===2?two:(x>=3&&x<=10)?u999(x)+" "+few:u999(x)+" "+many;
   const parts=[],m=Math.floor(n/1e6),k=Math.floor(n%1e6/1000),r=n%1000;
   if(m)parts.push(big(m,"مليون","مليونان","ملايين","مليون"));if(k)parts.push(big(k,"ألف","ألفان","آلاف","ألف"));if(r)parts.push(u999(r));return parts.join(" و")}
-function exvPct(q){if(q==null)return "";const s=String(q).split(".");return exvW(+s[0])+(s[1]&&+s[1]?" فاصلة "+exvW(+s[1]):"")+" بالمئة"}
+function exvPct(q){if(q==null)return "";const s=String(q).split(".");return exvW(+s[0])+(s[1]&&+s[1]?" فَاصِلَة "+exvW(+s[1]):"")+" بِالْمِئَةِ"}
 function exvSayNum(s){return String(s||"").replace(/\d+/g,m=>exvW(+m))}
 /* نص الترحيب: [المنطوق, المعروض] — جمل قصيرة ليكون النطق طبيعياً */
 function exvWelcome2(){const d=EXV.data||{},T=d.T||{},sc=d.sc||{};const q=T.sent?Math.round((T.sent-T.ret)/T.sent*1000)/10:null;
   const sec=sc.sec||"جميع القطاعات",per=sc.per&&!/[\/\-–]/.test(sc.per)?sc.per:"";
   const rows=[["إجمالي المرصود",T.n],["بانتظار المراجعة والاعتماد",T.pend],["قيد التدقيق لدى الهيئة",T.auth],["القرارات الصادرة",T.iss]];
-  const say=["مرحباً بك سعادة المدير التنفيذي، في منصة الجودة والتدقيق.","هذا هو التقرير التنفيذي، لإدارة المخالفات والتعديات.",
-    `وإليك أبرز المؤشرات، ل${sec==="جميع القطاعات"?"جميع القطاعات":"قطاع "+sec}${per?"، "+(/^\d{4}$/.test(per.trim())?"لعام "+exvW(+per).replace(/(^| )(ألف|مئت|اثن)ان/g,"$1$2ين").replace(/ون(?= |$)/g,"ين"):exvSayNum(per)):""}.`]
-    .concat(rows.map(([l,v])=>`${l}: ${exvW(v)}.`),q!=null?[`ونسبة الجودة: ${exvPct(q)}.`]:[],
-    ["لعرض تفاصيل أي رقم، اضغط عليه.","ولسماع شرح أي عنصر، اضغط علامة الاستفهام بجانبه."]).join(" ");
+  const say=["مَرْحَبًا بِكَ سَعَادَةَ الْمُدِيرِ التَّنْفِيذِيِّ، فِي مَنَصَّةِ الْجَوْدَةِ وَالتَّدْقِيقِ.","هَذَا هُوَ التَّقْرِيرُ التَّنْفِيذِيُّ، لِإِدَارَةِ الْمُخَالَفَاتِ وَالتَّعَدِّيَاتِ.",
+    `وَإِلَيْكَ أَبْرَزَ الْمُؤَشِّرَاتِ، ${sec==="جميع القطاعات"?"لِجَمِيعِ الْقِطَاعَاتِ":"لِقِطَاعِ "+sec}${per?"، "+(/^\d{4}$/.test(per.trim())?"لِعَامِ "+exvW(+per).replace(/(^| )(ألف|مئت|اثن)ان/g,"$1$2ين").replace(/ون(?= |$)/g,"ين"):exvSayNum(per)):""}.`,
+    `إِجْمَالِيُّ الْمَرْصُودِ: ${exvW(T.n)}.`,`بِانْتِظَارِ الْمُرَاجَعَةِ وَالِاعْتِمَادِ: ${exvW(T.pend)}.`,`قَيْدُ التَّدْقِيقِ لَدَى الْهَيْئَةِ: ${exvW(T.auth)}.`,`الْقَرَارَاتُ الصَّادِرَةُ: ${exvW(T.iss)}.`]
+    .concat(q!=null?[`وَنِسْبَةُ الْجَوْدَةِ: ${exvPct(q)}.`]:[],["لِعَرْضِ تَفَاصِيلِ أَيِّ رَقْمٍ، اِضْغَطْ عَلَيْهِ."]).join(" ");
   const fmt=v=>(Number(v)||0).toLocaleString("en-US");
   const show=`<b>التقرير التنفيذي لإدارة المخالفات والتعديات</b><br><span class="sub">${esc(sec)}${sc.per?" — "+esc(sc.per):""}</span>
     <span class="exv-kp">${rows.map(([l,v])=>`<span><b>${fmt(v)}</b>${esc(l)}</span>`).join("")}${q!=null?`<span><b>${q}%</b>نسبة الجودة</span>`:""}</span>`;
