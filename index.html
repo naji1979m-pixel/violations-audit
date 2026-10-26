@@ -1071,10 +1071,16 @@ function matchType(txt){
 
 /* ===================== قراءة ملف الإكسل ===================== */
 /* ----- الحالة التفصيلية (من التقرير الشامل) ----- */
-const PK_NEW="جديدة لم تُدقق",PK_RET="مسترجعة في انتظار الاستكمال",PK_PREV="سبق اعتمادها وعادت",PK_BLANK="معتمدة من مدقق الشركة",PK_UNK="غير محدد — أعد رفع التقرير";
+const PK_NEW="جديدة لم تُدقق",PK_RET="مسترجعة في انتظار الاستكمال",PK_PREV="سبق اعتمادها وعادت",PK_BLANK="معتمدة — مدرجة في قائمة الانتظار لإرسال المخالفة",PK_UNK="غير محدد — أعد رفع التقرير";
 const PK_FIRST=[PK_NEW,PK_RET,PK_PREV];
 const PK_CLS={[PK_NEW]:"k-warn",[PK_RET]:"k-bad",[PK_PREV]:"k-navy",[PK_UNK]:"k-gray"};
 const PK_RET_AMIN=["إرسال لمدير الرقابة لاستكمال النواقص","العودة إلى أخصائي التفتيش","العودة إلى المدقق مع التعليق"];
+
+/* ----- تسلسل المخالفة (المرحلة) ----- */
+const VSTG=["١. بانتظار المراجعة والاعتماد — مدير الرقابة (شركة المياه الوطنية)","٢. معتمدة من مدير الرقابة — شركة المياه الوطنية","٣. بانتظار المراجعة — الهيئة السعودية للمياه","٤. معتمدة من الهيئة السعودية للمياه","مسترجعة لاستكمال النواقص","غير معتمدة أو مؤرشفة","أخرى"];
+const VSTG_CLS=["k-warn","k-navy","k-navy","k-ok","k-bad","k-gray","k-gray"];
+function pkStage(r){if(!r)return VSTG[6];const k=r.pkind||"";if(k===PK_RET)return VSTG[4];if(k===PK_NEW||k===PK_PREV)return VSTG[0];if(k===PK_BLANK)return VSTG[1];
+  const c=r._hc||(r._hc=hqCls(r));return c==="iss"?VSTG[3]:c==="auth"?VSTG[2]:c==="ret"?VSTG[4]:c==="arch"?VSTG[5]:c==="pend"?VSTG[0]:VSTG[6]}
 function pkOrder(keys,cnt){const f=PK_FIRST.filter(k=>keys.includes(k)),rest=keys.filter(k=>!PK_FIRST.includes(k)&&k!==PK_UNK).sort((a,b)=>(cnt[b]||0)-(cnt[a]||0));return f.concat(rest,keys.includes(PK_UNK)?[PK_UNK]:[])}
 function pkFrom(e){e=e||{};if(!("amin" in e))return PK_UNK;
   const vs=(e.vstatus||"").trim(),vis=(e.visit_status||"").trim(),P="بانتظار المراجعة والاعتماد",am=(e.amin||"").trim(),hasDec=!!((e.decision||"").trim()||(e.dec_date||"").trim());
@@ -2597,7 +2603,8 @@ function pkBlock(st){const T=st.tot.total,ks=pkCols(st);if(!T)return "";
   const govs=st.byGov.filter(g=>[PK_NEW,PK_RET,PK_PREV].some(k=>g.pk[k])).sort((a,b)=>((b.pk[PK_RET]||0)+(b.pk[PK_PREV]||0))-((a.pk[PK_RET]||0)+(a.pk[PK_PREV]||0))||b.total-a.total).slice(0,40);
   const tbl=(gl,list)=>{const kk=gl==="الوحدة"?"u":"g";return `<div class="tbl-wrap"><table class="tbl mtx"><thead><tr><th>${gl}</th><th>الإجمالي</th>${ks.map(k=>`<th>${esc(k)}</th>`).join("")}</tr></thead><tbody>${list.map(g=>`<tr><td>${esc(g.label)}</td><td${rdA({[kk]:g.label})}><b>${g.total.toLocaleString("en-US")}</b></td>${ks.map(k=>`<td${g.pk[k]?rdA({pk:k,[kk]:g.label}):""}>${cellNP(g.pk[k]||0,g.total)}</td>`).join("")}</tr>`).join("")}</tbody></table></div>`};
   return `<section class="block"><h2><span>الحالة التفصيلية<span class="ftag">من التقرير الشامل</span></span></h2>
-  <div class="sub" style="margin-bottom:8px">يميّز المخالفات التي حالتها «بانتظار المراجعة والاعتماد»: الجديدة، والمسترجعة لاستكمال النواقص، والتي سبق اعتمادها ثم عادت.</div>
+  <div class="sub" style="margin-bottom:8px">«تسلسل المخالفة» يبيّن مرحلة كل مخالفة: من مراجعة مدير الرقابة في شركة المياه الوطنية واعتماده، إلى مراجعة الهيئة السعودية للمياه واعتمادها. وتحته تفاصيل الحالات كما وردت في التقرير الشامل.</div>
+  ${(()=>{const G=st.tot.stg||{};const L=VSTG.map((n,i)=>[n,i]).filter(([n])=>G[n]);return L.length?`<h3 class="sec">تسلسل المخالفة</h3><div class="kpis">${L.map(([n,i])=>kpi(n,G[n].toLocaleString("en-US"),VSTG_CLS[i],pctN(G[n],T)+"%",null,rdA({stg:n}))).join("")}</div><h3 class="sec" style="margin-top:12px">تفاصيل الحالات</h3>`:""})()}
   <div class="kpis">${ks.map(k=>kpi(k,st.tot.pk[k].toLocaleString("en-US"),PK_CLS[k]||"k-ok",pctN(st.tot.pk[k],T)+"%",null,rdA({pk:k}))).join("")}</div>
   <h3 class="sec" style="margin-top:12px">حسب الوحدة</h3>${tbl("الوحدة",st.byUnit)}
   ${govs.length?`<h3 class="sec" style="margin-top:12px">حسب المحافظة</h3>${tbl("المحافظة",govs)}`:""}
@@ -2619,10 +2626,10 @@ function computeStats(period){
   const rows=vrows(),qset=new Set(rows.map(r=>r.vno)),recs=[];
   rows.forEach(r=>{const a=audits[r.vno];recs.push({key:r.vno,region:r.region||"غير محدد",gov:r.sector||"غير محدد",a:a&&a._id?a:null})});
   const allQ=rowMap();Object.entries(audits).forEach(([k,a])=>{if(k!=="manual"&&a._id&&!qset.has(k)&&!allQ[k]&&inFA(k,a))recs.push({key:k,region:a.region||a.f.region||"غير محدد",gov:a.sector||a.f.gov||"غير محدد",a})});
-  const byUnit={},tot={total:0,completed:0,returned:0,progress:0,incomplete:0,pending:0,plat:{},dec:{},pk:{}},bySec={},byUser={},byType={},fail={};
+  const byUnit={},tot={total:0,completed:0,returned:0,progress:0,incomplete:0,pending:0,plat:{},dec:{},pk:{},stg:{}},bySec={},byUser={},byType={},fail={};
   recs.forEach(({key,region,gov,a})=>{
     if(a&&!inP(a))return;const s=stOf(a);tot.total++;tot[s]++;
-    {const un=unitLab(gov);const Uu=byUnit[un]||(byUnit[un]={label:un,total:0,completed:0,returned:0,progress:0,incomplete:0,pending:0,pk:{}});Uu.total++;Uu[s]++;{const rr=rowMap()[key],k=rr?(rr.pkind||PK_UNK):PK_UNK;Uu.pk[k]=(Uu.pk[k]||0)+1;tot.pk[k]=(tot.pk[k]||0)+1}}
+    {const un=unitLab(gov);const Uu=byUnit[un]||(byUnit[un]={label:un,total:0,completed:0,returned:0,progress:0,incomplete:0,pending:0,pk:{}});Uu.total++;Uu[s]++;{const rr=rowMap()[key],k=rr?(rr.pkind||PK_UNK):PK_UNK;Uu.pk[k]=(Uu.pk[k]||0)+1;tot.pk[k]=(tot.pk[k]||0)+1;if(rr){const sg=pkStage(rr);tot.stg[sg]=(tot.stg[sg]||0)+1}}}
     const S=bySec[region]||(bySec[region]={label:region,total:0,completed:0,returned:0,progress:0,incomplete:0,pending:0,govs:{},plat:{},dec:{}});S.total++;S[s]++;
     const G=S.govs[gov]||(S.govs[gov]={label:gov,region,total:0,completed:0,returned:0,progress:0,incomplete:0,pending:0,plat:{},dec:{},pk:{}});G.total++;G[s]++;{const rr=rowMap()[key],k=rr?(rr.pkind||PK_UNK):PK_UNK;G.pk[k]=(G.pk[k]||0)+1}
     {const rr=rowMap()[key],ps=pLab(rr?rr.vstat:""),dc=dLab(rr?rr.dec:undefined);[tot,S,G].forEach(o=>{o.plat[ps]=(o.plat[ps]||0)+1;o.dec[dc]=(o.dec[dc]||0)+1})}
@@ -2917,8 +2924,8 @@ async function rawTable(L,btn){
   const vi=H0.indexOf("رقم الزيارة"),pos=vi>=0?vi+1:0;
   const H=[],idx=[];H0.forEach((h,j)=>{if(keep[j]){H.push(h);idx.push(j)}});
   const ins=Math.max(0,idx.findIndex(j=>j>=pos));const at=ins<0?H.length:ins;
-  H.splice(at,0,PK_COL);
-  const rows=full.map((row,i)=>{const o=idx.map(j=>row[j]??"");o.splice(at,0,L[i].pkind||"");return o});
+  H.splice(at,0,"المرحلة (التسلسل)",PK_COL);
+  const rows=full.map((row,i)=>{const o=idx.map(j=>row[j]??"");o.splice(at,0,pkStage(L[i]),L[i].pkind||"");return o});
   return {H,rows,miss,dropped:H0.length-idx.length};
 }
 const fileTag=()=>(F.pks.length===1?F.pks[0]:F.unit||F.reg||"نتائج-التصفية").replace(/[\\/:*?"<>|]/g,"-");
@@ -3018,14 +3025,14 @@ const rdA=o=>` data-rd="${esc(rdS(o))}" role="button" tabindex="0"`;
 function rdParse(spec){const o={};String(spec||"").split("|").forEach(p=>{const i=p.indexOf("=");if(i>0)o[p.slice(0,i)]=decodeURIComponent(p.slice(i+1))});return o}
 function rdFilter(L,o){return L.filter(r=>{const c=r._hc||(r._hc=hqCls(r));
   if(o.c&&o.c!=="n"){if(o.c==="sent"){if(!(c==="iss"||c==="ret"||c==="auth"))return false}else if(o.c==="retW"||o.c==="retC"){if(c!=="ret"||retSub(r)!==o.c)return false}else if(c!==o.c)return false}
-  if(o.s&&secOf(r.region)!==o.s)return false;if(o.pk&&(r.pkind||"")!==o.pk)return false;if(o.u&&unitLab(r.sector)!==o.u)return false;if(o.g&&(r.sector||"غير محدد").trim()!==o.g&&!(RD_SCOPE===SOUTH_T&&stGK(r.sector)===stGK(o.g)))return false;if(o.rg&&(r.region||"غير محدد").trim()!==o.rg)return false;
+  if(o.s&&secOf(r.region)!==o.s)return false;if(o.pk&&(r.pkind||"")!==o.pk)return false;if(o.stg&&pkStage(r)!==o.stg)return false;if(o.u&&unitLab(r.sector)!==o.u)return false;if(o.g&&(r.sector||"غير محدد").trim()!==o.g&&!(RD_SCOPE===SOUTH_T&&stGK(r.sector)===stGK(o.g)))return false;if(o.rg&&(r.region||"غير محدد").trim()!==o.rg)return false;
   if(o.ll){const h=!!rowLL(r);if(o.ll==="n"&&h)return false;if(o.ll==="y"&&!h)return false;if(o.ll==="far"&&!llFar(r))return false}
   if(o.cell){const [ca,cb,cs]=o.cell.split(",").map(Number),ll=rowLL(r);if(!ll||ll[0]<ca||ll[0]>=ca+cs||ll[1]<cb||ll[1]>=cb+cs)return false}
   if(o.m&&(r.mgr||"").trim()!==o.m)return false;if(o.o&&(r.officer||"").trim()!==o.o)return false;if(o.it&&(r.item||"بند غير محدد").trim()!==o.it)return false;
   if(o.rev&&!(r.dec||"").trim())return false;if(o.rej&&(r.dec||"").trim()!=="غير معتمدة")return false;
   if(o.mk||o.y){const d=dayOfRow(r);if(d==null)return false;const t=new Date(d*864e5);if(o.y&&t.getUTCFullYear()!==+o.y)return false;if(o.mk&&t.getUTCFullYear()*100+t.getUTCMonth()+1!==+o.mk)return false}
   return true})}
-function rdTitle(o){const p=[];if(o.pk){p.push(o.pk)}else p.push(o.rej?"غير المعتمدة":o.rev?"المدققة":(RD_K[o.c||"n"]||"المخالفات"));if(o.u)p.push(o.u);if(o.m)p.push("مدير الرقابة: "+o.m);if(o.o)p.push("مأمور الضبط: "+o.o);if(o.s)p.push("القطاع "+o.s);if(o.rg)p.push("منطقة "+o.rg);if(o.g)p.push(o.g);if(o.it)p.push("«"+(o.it.length>50?o.it.slice(0,48)+"…":o.it)+"»");if(o.mk)p.push(HQ_MON[o.mk%100-1]+" "+Math.floor(o.mk/100));if(o.cell)p.push("موقع محدد على الخريطة");if(o.ll==="n")p.push("بدون إحداثيات");if(o.ll==="far")p.push("إحداثيات خارج نطاق المحافظة");if(o.ll==="y")p.push("لها إحداثيات");if(o.y)p.push("سنة "+o.y);return p.join(" — ")}
+function rdTitle(o){const p=[];if(o.stg){p.push(o.stg)}else if(o.pk){p.push(o.pk)}else p.push(o.rej?"غير المعتمدة":o.rev?"المدققة":(RD_K[o.c||"n"]||"المخالفات"));if(o.u)p.push(o.u);if(o.m)p.push("مدير الرقابة: "+o.m);if(o.o)p.push("مأمور الضبط: "+o.o);if(o.s)p.push("القطاع "+o.s);if(o.rg)p.push("منطقة "+o.rg);if(o.g)p.push(o.g);if(o.it)p.push("«"+(o.it.length>50?o.it.slice(0,48)+"…":o.it)+"»");if(o.mk)p.push(HQ_MON[o.mk%100-1]+" "+Math.floor(o.mk/100));if(o.cell)p.push("موقع محدد على الخريطة");if(o.ll==="n")p.push("بدون إحداثيات");if(o.ll==="far")p.push("إحداثيات خارج نطاق المحافظة");if(o.ll==="y")p.push("لها إحداثيات");if(o.y)p.push("سنة "+o.y);return p.join(" — ")}
 let RD_BASE=null,RD_SCOPE="";
 function openRD(spec){const o=rdParse(spec);const base=RD_BASE?RD_BASE():vrows();const L=rdFilter(base,o);const ttl=rdTitle(o);
   const cnt={};L.forEach(r=>{const c=r._hc;cnt[c]=(cnt[c]||0)+1});const sent=(cnt.iss||0)+(cnt.ret||0)+(cnt.auth||0);
