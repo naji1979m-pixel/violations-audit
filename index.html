@@ -3765,7 +3765,7 @@ function renderExec(){const el=$("#execBody");if(!el)return;if(EX_LOST==null&&sb
   $("#exSec").onchange=e=>{HQSF=e.target.value;HQG=[];re()};
   if($("#exLostEd"))$("#exLostEd").onclick=exLostEdit;$("#exPdf").onclick=()=>execPdf();$("#exXls").onclick=()=>execXls();exVoice(T,sc,secs)}
 /* ===================== الملخص التنفيذي: الترحيب الناطق + جولة الأيقونات ===================== */
-/* الصوت: دالة speak في Supabase (صوت حامد السعودي عبر Azure)، وإن تعذّرت يُستخدم صوت المتصفح تلقائياً */
+/* الصوت: دالة speak في Supabase (صوت حامد السعودي عبر Azure) فقط؛ إن تعذّرت يُعرض الشرح مكتوباً بلا صوت */
 const EXV={cache:new Map(),audio:null,unlocked:false,seq:0,muted:false,tour:null,data:null,onEnd:null,
   SIL:"data:audio/wav;base64,UklGRrQBAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YZABAACAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICA"};
 try{EXV.muted=localStorage.getItem("exv-muted")==="1"}catch(e){}
@@ -3789,7 +3789,7 @@ async function exvSay(text,done){exvStop();const my=EXV.seq;const fin=()=>{if(my
   if(EXV.muted){setTimeout(fin,Math.min(9000,1200+text.length*45));return}
   exvSpk(true);
   try{const url=await exvFetch(text);if(my!==EXV.seq)return;const a=EXV.audio||(EXV.audio=new Audio());a.onended=fin;a.onerror=fin;a.src=url;await a.play()}
-  catch(e){if(my!==EXV.seq)return;console.warn("speak fallback",e);exvBrowser(text,my,fin)}}
+  catch(e){if(my!==EXV.seq)return;console.warn("speak unavailable",e);exvSpk(false);setTimeout(fin,Math.min(9000,1200+text.length*45))}}
 function exvMute(){EXV.muted=!EXV.muted;try{localStorage.setItem("exv-muted",EXV.muted?"1":"0")}catch(e){}if(EXV.muted)exvStop();document.querySelectorAll("[data-exv-mute]").forEach(b=>{b.textContent=EXV.muted?"🔇":"🔊";b.setAttribute("aria-label",EXV.muted?"تشغيل الصوت":"كتم الصوت")})}
 
 /* نص الترحيب */
