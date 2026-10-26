@@ -3808,7 +3808,7 @@ function exvSayNum(s){return String(s||"").replace(/\d+/g,m=>exvW(+m))}
 function exvWelcome2(){const d=EXV.data||{},T=d.T||{},sc=d.sc||{};const q=T.sent?Math.round((T.sent-T.ret)/T.sent*1000)/10:null;
   const sec=sc.sec||"جميع القطاعات",per=sc.per&&!/[\/\-–]/.test(sc.per)?sc.per:"";
   const rows=[["إجمالي المرصود",T.n],["بانتظار المراجعة والاعتماد",T.pend],["قيد التدقيق لدى الهيئة",T.auth],["القرارات الصادرة",T.iss]];
-  const say=["مرحباً بك طال عمرك، في منصة الجودة والتدقيق.","هذا هو التقرير التنفيذي، لإدارة المخالفات والتعديات.",
+  const say=["مرحباً بك سعادة المدير التنفيذي، في منصة الجودة والتدقيق.","هذا هو التقرير التنفيذي، لإدارة المخالفات والتعديات.",
     `وإليك أبرز المؤشرات، ل${sec==="جميع القطاعات"?"جميع القطاعات":"قطاع "+sec}${per?"، "+(/^\d{4}$/.test(per.trim())?"لعام "+exvW(+per).replace(/(^| )(ألف|مئت|اثن)ان/g,"$1$2ين").replace(/ون(?= |$)/g,"ين"):exvSayNum(per)):""}.`]
     .concat(rows.map(([l,v])=>`${l}: ${exvW(v)}.`),q!=null?[`ونسبة الجودة: ${exvPct(q)}.`]:[],
     ["لعرض تفاصيل أي رقم، اضغط عليه.","ولسماع شرح أي عنصر، اضغط علامة الاستفهام بجانبه."]).join(" ");
@@ -3843,7 +3843,7 @@ function exvWelcome(){exvClose();const lg=window.NWC_LOGO||(typeof LOGO!=="undef
   const ov=document.createElement("div");ov.className="exv-ov";ov.setAttribute("role","dialog");ov.setAttribute("aria-modal","true");ov.setAttribute("aria-label","الترحيب بالملخص التنفيذي");
   ov.innerHTML=`<div class="exv-card"><div class="exv-top"><button type="button" class="exv-mute" data-exv-mute aria-label="${EXV.muted?"تشغيل الصوت":"كتم الصوت"}">${EXV.muted?"🔇":"🔊"}</button>
       ${lg?`<div class="exv-lg"><img src="${lg}" alt="شركة المياه الوطنية"></div>`:""}<small>شركة المياه الوطنية</small>
-      <h3>مرحباً بك طال عمرك</h3><p>منصة الجودة والتدقيق · التقرير التنفيذي لإدارة المخالفات والتعديات</p></div>
+      <h3>مرحباً بك سعادة المدير التنفيذي</h3><p>منصة الجودة والتدقيق · التقرير التنفيذي لإدارة المخالفات والتعديات</p></div>
     <div class="exv-bd"><div class="exv-wave" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i></div>
       <p class="exv-txt" id="exvTxt">ملخص أداء إدارة المخالفات والجودة جاهز. اضغط «ابدأ» لسماع الترحيب.</p>
       <div class="exv-btns" id="exvBtns"><button type="button" class="exv-p" id="exvGo">▶ ابدأ</button><button type="button" class="exv-s" id="exvSkip">تخطي</button></div></div></div>`;
