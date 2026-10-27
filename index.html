@@ -187,7 +187,7 @@ button.attbtn{background:none;font:inherit}
 .uact{display:flex;gap:6px;flex-wrap:wrap}.uact .btn2{padding:6px 10px;font-size:13px}
 .ronote{background:var(--warn-bg);color:var(--warn);border-radius:10px;padding:8px 12px;font-size:13px;margin-bottom:10px;font-weight:600}
 .pg.ro .grid,.pg.ro #checkBody,.pg.ro textarea{pointer-events:none;opacity:.8}
-.pg.ro #checkBody [data-view],.pg.ro #checkBody .att .th{pointer-events:auto;cursor:zoom-in}
+.pg.ro #checkBody [data-view],.pg.ro #checkBody [data-view] *{pointer-events:auto!important;cursor:zoom-in}
 .chks{display:flex;flex-direction:column;gap:4px;max-height:230px;overflow:auto;border:1px solid var(--line);border-radius:10px;padding:8px}
 .chk{display:flex;gap:8px;align-items:center;font-size:14px;padding:4px 2px}.chk input{width:18px;height:18px}.chk small{color:var(--muted);margin-inline-start:auto}
 .tbl tr.govr td{background:var(--field);font-size:12.5px}
@@ -1448,7 +1448,8 @@ async function addFiles(k,files){
   }catch(e){if(netErr(e)){OUTATT.push({id:uuid(),visit:current,key:k,name:f.name,type:f.type,blob:f,ts:Date.now()});obSave();toast("📥 انقطع الاتصال — حُفظ "+f.name+" في الجهاز ويُرفع لاحقاً");continue}console.error("upload",e);toast("تعذر رفع الملف: "+f.name+" — السبب: "+((e&&(e.message||e.error||e.statusCode))||String(e)))}}
   if(aud!==current)return;if(okN)invalidate(k);await loadAtt();if(a._id)ATT_IDX[a._id]=new Set(attCache.map(r=>r.key));renderCheck();updateBar();if(okN)toast(okN===1?"تم إرفاق الملف":`تم إرفاق ${okN} ملفات`);
 }
-function viewAtt(id){const r=attCache.find(x=>x.id===id);if(!r)return;const it=allItems().find(i=>i.key===r.key);
+document.addEventListener("click",e=>{const b=e.target&&e.target.closest&&e.target.closest("#checkBody [data-view]");if(!b)return;e.preventDefault();e.stopPropagation();viewAtt(b.dataset.view)},true);
+async function viewAtt(id){let r=attCache.find(x=>x.id===id);if(!r){try{attFor=null;await loadAtt()}catch(e){}r=attCache.find(x=>x.id===id)}if(!r){toast("تعذر فتح المرفق — حدّث الصفحة");return}const it=allItems().find(i=>i.key===r.key);
   $("#sheet").innerHTML=`<h3>${esc(r.name)}</h3><div class="sub">${esc(it?it.t:"")}${r.pdf?` — ${r.total} صفحة${r.total>r.pages.length?` (يظهر أول ${r.pages.length})`:""}`:""}</div><div class="chklist">${attChecks(r).map(c=>`<div class="${c.ok===false?"cbad":c.ok?"cok":"cnone"}">${c.ok===false?"⚠️":c.ok?"✓":"•"} ${esc(c.t)}</div>`).join("")}</div><div class="viewer" style="margin:12px 0">${r.pages.map(p=>`<img src="${p}" alt="">`).join("")}</div><div class="btns"><button type="button" class="btn2" id="delAtt" style="color:var(--bad)">حذف المرفق</button><button type="button" class="btn2" id="closeSh">إغلاق</button></div>`;
   openSheet();$("#closeSh").onclick=closeSheet;
   if(A()._ro&&$("#delAtt")){$("#delAtt").remove()}else
