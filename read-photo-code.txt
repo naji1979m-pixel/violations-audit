@@ -1,0 +1,116 @@
+// Supabase Edge Function: read-photo — القراءة الذكية لصور مرفقات المخالفات
+// يستقبل صورة (JPEG base64) + بيانات المعاملة الأساسية، ويعيد عبر Claude: اتجاه الصورة، والختم المطبوع (رقم الزيارة/التاريخ/الإحداثيات/العنوان)، ومدى مطابقتها للمتطلب.
+import { createClient } from "npm:@supabase/supabase-js@2.45.4";
+
+const CORS = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+  "Access-Control-Allow-Methods": "POST, OPTIONS",
+};
+const json = (b: unknown, s = 200) =>
+  new Response(JSON.stringify(b), { status: s, headers: { ...CORS, "Content-Type": "application/json" } });
+
+const DAILY_LIMIT = Number(Deno.env.get("PHOTO_DAILY_LIMIT") ?? "300");
+const MODEL = Deno.env.get("PHOTO_MODEL") ?? Deno.env.get("ANTHROPIC_MODEL") ?? "claude-sonnet-5-5";
+
+const SYSTEM = `أنت قارئ صور دقيق في منصة «الجودة والتدقيق» بشركة المياه الوطنية. تصلك صورة مرفقة بملف مخالفة مياه (عداد، صندوق عداد، عقار، تمديدات، مستند أو لقطة شاشة من النظام).
+مهمتك:
+1) حدّد كم درجة يجب تدوير الصورة باتجاه عقارب الساعة لتصبح معتدلة (النص أفقي ومقروء والسماء للأعلى): 0 أو 90 أو 180 أو 270.
+2) اقرأ أي ختم أو نص مطبوع على الصورة: رقم الزيارة (مثل SWA-505083)، التاريخ والوقت، الإحداثيات، العنوان. حوّل التاريخ إلى YYYY-MM-DD أياً كانت صيغته (14/10/2026 أو Sep 14, 2025 أو 2025-09-14) والأرقام العربية الهندية إلى إنجليزية. إذا احتمل التاريخ صيغتين فاعتمد يوم/شهر/سنة. الإحداثيات: lat هو خط العرض (للسعودية تقريباً 16–33) و lon خط الطول (34–56)؛ إن ظهرت x/y فاستخدم القيم المنطقية.
+3) صف الصورة باختصار بالعربية، وقيّم هل تطابق «المتطلب» المرسل (relevant) مع سبب مختصر.
+4) اذكر مشاكل الجودة إن وُجدت (مهزوزة، مظلمة، مقصوصة، غير واضحة)، ولا تذكر الاتجاه ضمنها لأنه يُعالج بحقل rotate.
+لا تخترع قيماً: ما لا يظهر في الصورة اجعله null. أعد الإجابة فقط عبر الأداة photo_reading.`;
+
+const TOOL = {
+  name: "photo_reading",
+  description: "نتيجة قراءة الصورة",
+  input_schema: {
+    type: "object",
+    properties: {
+      rotate: { type: "integer", enum: [0, 90, 180, 270], description: "درجات التدوير مع عقارب الساعة لتصبح الصورة معتدلة" },
+      visit_no: { type: ["string", "null"] },
+      date: { type: ["string", "null"], description: "YYYY-MM-DD" },
+      time: { type: ["string", "null"] },
+      lat: { type: ["number", "null"] },
+      lon: { type: ["number", "null"] },
+      place: { type: ["string", "null"], description: "العنوان أو الحي أو المدينة كما يظهر" },
+      stamp_text: { type: ["string", "null"], description: "النص المطبوع على الصورة كما هو" },
+      summary: { type: "string", description: "وصف مختصر بالعربية" },
+      relevant: { type: ["boolean", "null"] },
+      note: { type: ["string", "null"], description: "سبب المطابقة أو عدمها بالعربية" },
+      issues: { type: "array", items: { type: "string" } },
+    },
+    required: ["rotate", "summary"],
+  },
+};
+
+Deno.serve(async (req) => {
+  if (req.method === "OPTIONS") return new Response("ok", { headers: CORS });
+  if (req.method !== "POST") return json({ error: "method" }, 405);
+  try {
+    const url = Deno.env.get("SUPABASE_URL")!;
+    const service = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+    const anon = Deno.env.get("SUPABASE_ANON_KEY")!;
+    const key = Deno.env.get("ANTHROPIC_API_KEY") ?? Deno.env.get("CLAUDE_API_KEY");
+    if (!key) return json({ error: "لم يُضبط مفتاح الذكاء الاصطناعي (ANTHROPIC_API_KEY) في أسرار Supabase." }, 500);
+
+    const auth = req.headers.get("Authorization") ?? "";
+    const userClient = createClient(url, anon, { global: { headers: { Authorization: auth } } });
+    const { data: { user } } = await userClient.auth.getUser();
+    if (!user) return json({ error: "سجّل الدخول أولاً." }, 401);
+
+    const admin = createClient(url, service);
+    const { data: qu } = await admin.from("quality_users").select("id,role,active").eq("id", user.id).maybeSingle();
+    if (!qu || !qu.active) return json({ error: "حسابك غير مفعّل في منصة الجودة." }, 403);
+
+    const day = new Date(Date.now() + 3 * 3600e3).toISOString().slice(0, 10);
+    const { data: use } = await admin.from("quality_ai_photo_usage").select("n").eq("user_id", user.id).eq("day", day).maybeSingle();
+    const used = use?.n ?? 0;
+    const limit = qu.role === "admin" ? DAILY_LIMIT * 3 : DAILY_LIMIT;
+    if (used >= limit) return json({ error: `وصلت للحد اليومي للقراءة الذكية (${limit} صورة).` }, 429);
+
+    const body = await req.json();
+    const image = String(body.image ?? "");
+    if (!image || image.length > 7_000_000) return json({ error: "الصورة غير صالحة أو كبيرة جداً." }, 400);
+    // وضع قراءة النص الكامل (لملفات المكتبة الممسوحة ضوئياً)
+    if (body.mode === "ocr") {
+      const r0 = await fetch("https://api.anthropic.com/v1/messages", {
+        method: "POST",
+        headers: { "x-api-key": key, "anthropic-version": "2023-06-01", "content-type": "application/json" },
+        body: JSON.stringify({
+          model: MODEL, max_tokens: 6000,
+          system: "انسخ كل النص الظاهر في صفحة المستند حرفياً وبترتيب القراءة الصحيح (من اليمين لليسار للعربية)، مع الحفاظ على العناوين وأرقام المواد والبنود، واكتب الجداول صفاً صفاً مفصولة بـ |. لا تلخص ولا تضف أي تعليق. إن لم يوجد نص فأعد سطراً فارغاً.",
+          messages: [{ role: "user", content: [{ type: "image", source: { type: "base64", media_type: "image/jpeg", data: image } }, { type: "text", text: "انسخ النص." }] }],
+        }),
+      });
+      const o0 = await r0.json().catch(() => ({}));
+      if (!r0.ok) return json({ error: "تعذر الاتصال بالذكاء الاصطناعي: " + (o0?.error?.message ?? r0.status) }, 502);
+      const text = (o0.content ?? []).filter((c: { type: string }) => c.type === "text").map((c: { text: string }) => c.text).join("\n").trim();
+      await admin.from("quality_ai_photo_usage").upsert({ user_id: user.id, day, n: used + 1, updated_at: new Date().toISOString() });
+      return json({ text, left: limit - used - 1 });
+    }
+    const ctx = body.ctx ?? {};
+    const info = `بيانات المعاملة: رقم الزيارة ${ctx.visit_no ?? "-"} — تاريخ الزيارة ${ctx.visit_date ?? "-"} — المحافظة ${ctx.gov ?? "-"} — المنطقة ${ctx.region ?? "-"}\nالمتطلب الذي أُرفقت له الصورة: ${String(ctx.requirement ?? "-").slice(0, 400)}`;
+
+    const r = await fetch("https://api.anthropic.com/v1/messages", {
+      method: "POST",
+      headers: { "x-api-key": key, "anthropic-version": "2023-06-01", "content-type": "application/json" },
+      body: JSON.stringify({
+        model: MODEL, max_tokens: 1500, system: SYSTEM, tools: [TOOL], tool_choice: { type: "tool", name: "photo_reading" },
+        messages: [{ role: "user", content: [
+          { type: "image", source: { type: "base64", media_type: "image/jpeg", data: image } },
+          { type: "text", text: info },
+        ] }],
+      }),
+    });
+    const out = await r.json().catch(() => ({}));
+    if (!r.ok) return json({ error: "تعذر الاتصال بالذكاء الاصطناعي: " + (out?.error?.message ?? r.status) }, 502);
+    const tu = (out.content ?? []).find((c: { type: string }) => c.type === "tool_use");
+    if (!tu) return json({ error: "لم يرجع النموذج نتيجة للصورة." }, 200);
+
+    await admin.from("quality_ai_photo_usage").upsert({ user_id: user.id, day, n: used + 1, updated_at: new Date().toISOString() });
+    return json({ result: tu.input, left: limit - used - 1 });
+  } catch (e) {
+    return json({ error: "خطأ غير متوقع: " + (e instanceof Error ? e.message : String(e)) }, 500);
+  }
+});
