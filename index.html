@@ -1169,7 +1169,10 @@ $("#fileIn").onchange=async e=>{if(!canUpload()){toast("تزويد المنصة 
         item:g(r,"item"),prop:g(r,"prop"),sev:g(r,"sev"),decision:g(r,"decision"),reason:g(r,"reason"),amin:g(r,"amin"),decDate:g(r,"decDate"),mgr:g(r,"mgr"),pres:g(r,"pres"),fine:g(r,"fine")};
     }).filter(r=>r.vno||r.visit);out.forEach(r=>{r.raw=rawBy[(r.visit||r.vno)+"|"+norm(r.item||"")]||null});
     if(!out.length){toast("لم أجد عمود «معرف المخالفة» في الملف");return}
-    importDialog(out,true);
+    /* قواعد الاستبعاد التلقائي للتقرير الشامل */
+    const IR=impRules(data,out,hdr);
+    if(!IR.out.length){toast("لا توجد مخالفات بعد تطبيق قواعد الاستبعاد");return}
+    window.lastRules=IR.info;importDialog(IR.out,true);
   }catch(err){toast("تعذرت قراءة الملف، تأكد أنه ملف إكسل")}
   e.target.value="";
 };
@@ -5621,13 +5624,27 @@ function govsOfRegion(reg){const R=gcl(reg||"");const out=new Map();const add=g=
   return [...out.values()].sort((a,b)=>gcl(a).localeCompare(gcl(b),"ar"))}
 
 /* ===================== رفع التقرير مع التصفية ===================== */
+const IMP_RULES=[["vst","حالة الزيارة «بانتظار التفتيش»","تُستبعد"],["vtype","نوع الزيارة","تُحتسب «غير مجدولة» فقط"],["org","منشأة المفتش","«شركة المياه الوطنية» فقط"],["date","تاريخ بدء الزيارة","من 06-04-2025 فما بعد"]];
+function impRules(data,out,hdr){const has=h=>hdr.includes(h),N=x=>norm(String(x??"")),cnt={vst:0,vtype:0,org:0,date:0},skip=[];
+  const src=new Map();let j=0;data.forEach(r=>{const o=out[j];if(o&&(String(r[COLS.vno]??"").trim()===o.vno&&String(r[COLS.visit]??"").trim()===o.visit)){src.set(o,r);j++}});
+  if(!has("نوع الزيارة"))skip.push("نوع الزيارة");if(!has("منشأة المفتش"))skip.push("منشأة المفتش");
+  const keep=out.filter(o=>{const r=src.get(o)||{};
+    if(/انتظار التفتيش/.test(N(o.visitSt))){cnt.vst++;return false}
+    if(has("نوع الزيارة")&&!/غير مجدول/.test(N(r["نوع الزيارة"]))){cnt.vtype++;return false}
+    if(has("منشأة المفتش")&&!/المياه الوطنيه/.test(N(r["منشأة المفتش"]))){cnt.org++;return false}
+    const d=dayOfRow({date:o.date});if(d!=null&&d<RPT_START){cnt.date++;return false}
+    return true});
+  return {out:keep,info:{total:out.length,kept:keep.length,cnt,skip}}}
+function impRulesHtml(){const I=window.lastRules;if(!I)return "";const f=v=>v.toLocaleString("en-US");
+  return `<div class="repbox" style="background:#F4F7FB;border-color:#C9D6E8"><b>⚙️ قواعد الاستبعاد التلقائي</b><div class="sub" style="margin:2px 0 6px">من ${f(I.total)} مخالفة في الملف بقي ${f(I.kept)} بعد تطبيق القواعد:</div>
+    ${IMP_RULES.map(([k,l,d])=>`<div class="sub">• ${l}: ${d} — ${I.skip.includes(l)?'<span style="color:var(--warn)">العمود غير موجود في الملف، لم تُطبق</span>':`استُبعد <b>${f(I.cnt[k])}</b>`}</div>`).join("")}</div>`}
 function importDialog(out,fresh){
   window.lastOut=out;const canRep=me&&["admin","exec","manager","clerk"].includes(me.role)&&rows.length>0;
   const K=r=>r.visitSt||"غير محدد",RG=r=>r.region||"غير محدد";
   const vs=[...new Set(out.map(K))].sort(),regs=[...new Set(out.map(RG))].sort();
   const defSt=vs,defReg=regs;
   const box=(id,list,def)=>`<div class="chks" id="${id}">${list.map(v=>`<label class="chk"><input type="checkbox" value="${esc(v)}"${def.includes(v)?" checked":""}><span>${esc(v)}</span><small></small></label>`).join("")}</div>`;
-  $("#sheet").innerHTML=`<h3>اختر ما يدخل قائمة التدقيق</h3><div class="sub">الملف فيه ${out.length.toLocaleString("en-US")} مخالفة</div>
+  $("#sheet").innerHTML=`<h3>اختر ما يدخل قائمة التدقيق</h3><div class="sub">الملف فيه ${out.length.toLocaleString("en-US")} مخالفة بعد الاستبعاد</div>${fresh?impRulesHtml():""}
    ${canRep?`<div class="repbox"><label class="chk"><input type="checkbox" id="impRep" checked><span><b>استبدال الملف الحالي بالملف الجديد</b><br><small style="margin:0">يُحذف الملف القديم (${rows.length.toLocaleString("en-US")}) ويُنزَّل الملف الجديد كاملاً ببياناته، ولا يُحذف منه إلا رقم الزيارة المكرر. التدقيقات المنجزة تبقى محفوظة.</small></span></label><div class="sub" style="margin-top:4px">بدون تحديد: تُضاف المخالفات للموجود وتتحدث المكررة.</div></div>`:""}
    <h3 class="sec">حالة الزيارة</h3>${box("impSt",vs,defSt)}
    <h3 class="sec">المنطقة <span><button type="button" class="linkbtn" id="impAll">تحديد الكل</button> · <button type="button" class="linkbtn" id="impNone">إلغاء الكل</button></span></h3>${box("impReg",regs,defReg)}
