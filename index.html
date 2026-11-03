@@ -2810,7 +2810,7 @@ function snapDec(o){const out=new Array(o.n);const dv=s=>s.charCodeAt(0)===1?JSO
   for(let j=0;j<o.n;j++){const r={},x={};let hx=false;for(const k of o.K){const i=o.C[k][j];if(i<0)continue;const v=dv(o.D[k][i]);if(k.startsWith("x.")){x[k.slice(2)]=v;hx=true}else r[k]=v}r.extra=hx?x:null;out[j]=r}return out}
 const supGz=()=>typeof CompressionStream!=="undefined"&&typeof DecompressionStream!=="undefined";
 async function snapGet(v){if(!v||!supGz())return null;try{const {data,error}=await sb.storage.from("quality-files").download(snapPath(v));if(error||!data)return null;const o=await gunz(data);if(o.v!==v||o.cols!==QCOLS)return null;return snapDec(o)}catch(e){return null}}
-async function snapBuild(){if(!canUpload()||!supGz())return;try{const v=await dataVer();if(!v)return;const q=await fetchAll("quality_queue",QCOLS,"جارٍ تجهيز النسخة السريعة");
+async function snapBuild(local){if(!canUpload()||!supGz())return;try{const v=await dataVer();if(!v)return;const QC=QCOLS.split(",");const q=local?local.map(x=>{const o={};QC.forEach(k=>o[k]=x[k]??null);return o}):await fetchAll("quality_queue",QCOLS,"جارٍ تجهيز النسخة السريعة");
     toast("جارٍ حفظ النسخة السريعة…");const qs=q.map(x=>{const ll=llParse(x.location);return ll?Object.assign({},x,{location:ll[0].toFixed(5)+","+ll[1].toFixed(5)}):x});const blob=await gzBlob(Object.assign({v,cols:QCOLS,at:Date.now()},snapEnc(qs)));
     const {error}=await sb.storage.from("quality-files").upload(snapPath(v),blob,{upsert:true,contentType:"application/gzip",cacheControl:"31536000"});if(error)throw error;
     QDB.set("queue",{v,cols:QCOLS,rows:q,at:Date.now()});
@@ -5673,13 +5673,18 @@ async function doImport(list,replace){if(!canUpload()){toast("غير مصرح ل
     L.forEach((r,n)=>{if(keyOf.has(r))return;let k=taken.has(v)?v+"#"+(r.vno||n+1):v;let j=2;while(taken.has(k))k=v+"#"+(r.vno||n+1)+"-"+(j++);keyOf.set(r,k);taken.add(k)})});
   const multi=Object.values(byV).filter(L=>L.length>1).length;
   const up=uniq.map(r=>({raw:r.raw||null,visit_no:keyOf.get(r),violation_id:r.vno||null,violator_name:r.name,violator_nid:r.nid,sector:r.gov||null,region:r.region||null,location:r.loc,visit_date:r.date,officer:r.officer,explanation:r.explain,item:r.item,property_type:r.prop,extra:(()=>{const e={sev:r.sev||"",vstatus:r.vstatus||"",visit_status:r.visitSt||"",decision:r.decision||"",reason:r.reason||"",amin:r.amin||"",dec_date:r.decDate||"",mgr:r.mgr||"",pres:r.pres||"",fine:r.fine||""};e.pkind=pkFrom(e);if(keyOf.get(r)!==(r.visit||r.vno))e.vis=r.visit||r.vno;return e})()}));
-  if(replace){const ks=[...new Set(rows.map(r=>r.vno).filter(Boolean))];
-    for(let i=0;i<ks.length;i+=300){toast(`جارٍ إزالة الملف السابق… ${Math.min(i+300,ks.length).toLocaleString("en-US")} من ${ks.length.toLocaleString("en-US")}`);
-      const r=await sbTry(()=>sb.from("quality_queue").delete().in("visit_no",ks.slice(i,i+300)),3).catch(e=>({error:e}));if(r&&r.error){toast("تعذر إزالة الملف السابق: "+(r.error.message||r.error));return}}
-    const {error}=await sb.from("quality_queue").delete().neq("visit_no","__none__");if(error){toast("تعذر إزالة الملف السابق: "+error.message);return}}
-  for(let i=0;i<up.length;i+=400){toast(`جارٍ الرفع… ${Math.min(i+400,up.length)} من ${up.length}`);
-    const {error}=await sb.from("quality_queue").upsert(up.slice(i,i+400),{onConflict:"visit_no"});if(error){await bumpVer();toast("تعذر الرفع: "+error.message);return}}
-  await bumpVer();await snapBuild();await loadData();renderQueue();toast(`تم رفع ${up.length.toLocaleString("en-US")} مخالفة`+(dup?` — حُذف ${dup.toLocaleString("en-US")} مكرر (نفس معرف المخالفة)`:" — لا يوجد مكرر")+(multi?` — ${multi.toLocaleString("en-US")} رقم زيارة تحته أكثر من مخالفة حُفظت كل مخالفة مستقلة`:""));
+  /* تسريع: الرفع يحدّث الموجود مباشرة (نفس المفتاح)، ولا يُحذف من الملف السابق إلا ما ليس في الملف الجديد، والطلبات تعمل بالتوازي */
+  const pool=async(jobs,n,fn)=>{let i=0,err=null;await Promise.all(Array.from({length:Math.min(n,jobs.length)},async()=>{while(i<jobs.length&&!err){const j=jobs[i++];try{await fn(j)}catch(e){err=e}}}));if(err)throw err};
+  const t0=Date.now(),f=x=>x.toLocaleString("en-US");
+  try{const B=[];for(let i=0;i<up.length;i+=500)B.push(up.slice(i,i+500));let done=0;toast(`جارٍ الرفع… 0 من ${f(up.length)}`);
+    await pool(B,4,async b=>{const r=await sbTry(()=>sb.from("quality_queue").upsert(b,{onConflict:"visit_no"}),3);if(r&&r.error)throw r.error;done+=b.length;toast(`جارٍ الرفع… ${f(done)} من ${f(up.length)}`)});
+    if(replace){const nk=new Set(up.map(x=>x.visit_no)),old=[...new Set(rows.map(r=>r.vno).filter(Boolean))].filter(k=>!nk.has(k));
+      if(old.length){const D=[];for(let i=0;i<old.length;i+=300)D.push(old.slice(i,i+300));let dd=0;
+        await pool(D,4,async c=>{const r=await sbTry(()=>sb.from("quality_queue").delete().in("visit_no",c),3);if(r&&r.error)throw r.error;dd+=c.length;toast(`جارٍ إزالة ما ليس في الملف الجديد… ${f(dd)} من ${f(old.length)}`)})}}}
+  catch(e){await bumpVer();toast("تعذر الرفع: "+(e&&e.message||e));return}
+  await bumpVer();toast("جارٍ تجهيز النسخة السريعة…");await snapBuild(replace?up:null);
+  try{RAWC={v:await dataVer()||"-",m:Object.fromEntries(up.map(x=>[x.visit_no,Array.isArray(x.raw)?x.raw:null])),all:!!replace};QDB.set("raw",RAWC)}catch(e){}
+  await loadData();renderQueue();toast(`تم رفع ${up.length.toLocaleString("en-US")} مخالفة خلال ${Math.max(1,Math.round((Date.now()-t0)/1000))} ثانية`+(dup?` — حُذف ${dup.toLocaleString("en-US")} مكرر (نفس معرف المخالفة)`:" — لا يوجد مكرر")+(multi?` — ${multi.toLocaleString("en-US")} رقم زيارة تحته أكثر من مخالفة حُفظت كل مخالفة مستقلة`:""));
 }
 
 /* ===================== نسيت كلمة المرور ===================== */
