@@ -3537,12 +3537,21 @@ function renderReport(){
 $("#fxXls").onclick=e=>exportRawXls(e.currentTarget);
 $("#fxPdf").onclick=e=>exportRawPdf(e.currentTarget);
 const PK_COL="الحالة التفصيلية";
+/* ذاكرة مؤقتة لأعمدة التقرير الشامل الكاملة: تُجلب مرة واحدة لكل رفع، وبعدها التنزيل فوري */
+let RAWC=null;
+async function rawGet(keys,btn){const v=DATA_VER||"-";const set=t=>{try{btn.textContent=t}catch(e){}};
+  if(!RAWC||RAWC.v!==v){RAWC={v,m:{},all:false};try{const c=await QDB.get("raw");if(c&&c.v===v&&c.m){RAWC=c}}catch(e){}}
+  const need=keys.filter(k=>!(k in RAWC.m));
+  if(need.length&&!RAWC.all){
+    if(need.length>3000){set("جارٍ جلب التقرير الشامل كاملاً…");const q=await fetchAll("quality_queue","visit_no,raw","جارٍ جلب أعمدة التقرير الشامل");q.forEach(x=>{RAWC.m[x.visit_no]=Array.isArray(x.raw)?x.raw:null});RAWC.all=true}
+    else{let done=0;set("جارٍ جلب البيانات… 0%");const chunks=[];for(let i=0;i<need.length;i+=250)chunks.push(need.slice(i,i+250));let next=0;
+      const worker=async()=>{while(next<chunks.length){const c=chunks[next++];const {data,error}=await sbTry(()=>sb.from("quality_queue").select("visit_no,raw").in("visit_no",c));if(error)throw error;c.forEach(k=>{if(!(k in RAWC.m))RAWC.m[k]=null});(data||[]).forEach(x=>{RAWC.m[x.visit_no]=Array.isArray(x.raw)?x.raw:null});done+=c.length;set(`جارٍ جلب البيانات… ${Math.round(done/need.length*100)}%`)}};
+      await Promise.all(Array.from({length:Math.min(6,chunks.length)},worker))}
+    const snap=RAWC;setTimeout(()=>{QDB.set("raw",snap).catch?.(()=>{})},50)}
+  const out={};keys.forEach(k=>{const a=RAWC.m[k];if(a)out[k]=a});return out}
 async function rawTable(L,btn){
   const H0=(REPORT_COLS&&REPORT_COLS.length)?REPORT_COLS:DEFAULT_REPORT_COLS;
-  const keys=L.map(r=>r.vno),raw={};let done=0;btn.textContent="جارٍ جلب البيانات… 0%";
-  const chunks=[];for(let i=0;i<keys.length;i+=200)chunks.push(keys.slice(i,i+200));let next=0;
-  const worker=async()=>{while(next<chunks.length){const c=chunks[next++];const {data,error}=await sb.from("quality_queue").select("visit_no,raw").in("visit_no",c);if(error)throw error;(data||[]).forEach(x=>{if(Array.isArray(x.raw))raw[x.visit_no]=x.raw});done+=c.length;btn.textContent=`جارٍ جلب البيانات… ${Math.round(done/keys.length*100)}%`}};
-  await Promise.all(Array.from({length:Math.min(4,chunks.length)},worker));
+  const raw=await rawGet(L.map(r=>r.vno),btn);
   const FB={"رقم الزيارة":r=>r.visit||r.vno,"معرف المخالفة":r=>r.vid,"المنطقة":r=>r.region,"المحافظة":r=>r.sector,"اسم المفتش":r=>r.officer,"وصف بند اللائحة":r=>r.item,"نوع العقار":r=>r.prop,"نوع المخالفة":r=>r.sev,"حالة الزيارة":r=>r.vvisit,"حالة المخالفة":r=>r.vstat,"قرار مدير الرقابة":r=>r.dec,"سبب القرار":r=>r.reason,"حالة الزيارة لدى أمين اللجنة":r=>r.amin,"تاريخ اعتماد القرار":r=>r.decDate,"تاريخ بدء الزيارة":r=>r.date,"اسم المخالف":r=>r.name};
   let miss=0;const full=L.map(r=>{const a=raw[r.vno];if(a)return H0.map((_,j)=>a[j]??"");miss++;return H0.map(h=>FB[h]?(FB[h](r)??""):"")});
   const keep=H0.map((h,j)=>full.some(row=>String(row[j]??"").trim()!==""));
@@ -3560,6 +3569,13 @@ async function exportRawXls(btn,LL,TT){
   try{
     const {H,rows,miss}=await rawTable(L,btn);
     btn.textContent="جارٍ تجهيز الملف…";await new Promise(r=>setTimeout(r,30));
+    const fnm=`${TT?TT.replace(/[\\/:*?"<>|]/g,"-").replace(/\s+/g,"-"):"المخالفات-"+fileTag()}-${stamp().replace(/\//g,"-")}.xlsx`,XT="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
+    if(rows.length>8000){let X=null;try{X=await xlsxMain()}catch(e){}
+      if(X){const ws=X.utils.aoa_to_sheet([H].concat(rows));ws["!cols"]=H.map(h=>({wch:Math.min(40,Math.max(14,String(h).length+4))}));ws["!autofilter"]={ref:X.utils.encode_range({s:{r:0,c:0},e:{r:rows.length,c:H.length-1}})};
+        const wb=X.utils.book_new();X.utils.book_append_sheet(wb,ws,"المخالفات");wb.Workbook={Views:[{RTL:true}]};const out=X.write(wb,{bookType:"xlsx",type:"array",compression:true});
+        await deliver(new Blob([out],{type:XT}),fnm,XT);
+        if(miss)setTimeout(()=>toast(`${miss.toLocaleString("en-US")} مخالفة رُفعت قبل هذا التحديث فظهرت أعمدتها الأساسية فقط. أعد رفع التقرير الشامل لتكتمل كل الأعمدة.`),1500);
+        btn.disabled=false;btn.textContent=old;return}}
     const EX=await exceljs();const wb=new EX.Workbook();wb.creator=me.full_name;wb.created=new Date();
     const ws=wb.addWorksheet("المخالفات",{views:[{rightToLeft:true,state:"frozen",ySplit:1}]});
     ws.columns=H.map(h=>({header:h,width:Math.min(40,Math.max(14,String(h).length+4))}));
