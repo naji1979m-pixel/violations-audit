@@ -1337,6 +1337,10 @@ function renderQueue(){
     if(qFilter==="ret"&&s!=="ret")return false;if(qFilter==="hqret"&&s!=="hqret")return false;if(qFilter==="rdy"&&!isRdy(r.vno))return false;if(qFilter==="inc"&&s!=="inc")return false; if(qFilter==="ok"&&s!=="ok")return false;if(qFilter==="ext"&&s!=="ext")return false;if(qFilter==="aret"&&s!=="aret")return false;if(qFilter==="arch"&&s!=="arch")return false;if(qFilter==="work"&&!WK.includes(s))return false;if(qFilter==="sent"&&!isSent(r.vno))return false;
     if(qSearch){const h=r._h||norm([r.vno,r.vid,r.officer,r.item,r.region,r.sector,r.name].join(" "));return h.includes(norm(qSearch))||r.vno.toLowerCase().includes(qSearch.toLowerCase())}
     return true});
+  /* معاملاتي/المسترجعة/المعتمدة: تظهر كل معاملاتك في المرحلة حتى لو كانت خارج التصفية أو لم تعد في الملف الشامل الحالي — نفس طريقة حساب الرقم */
+  let wkOut=0;if(SOLO&&SOLO!=="new"){const rm=rowMap(),inF=new Set(list.map(r=>r.vno));
+    Object.entries(audits).forEach(([id,a])=>{if(id==="manual"||!a||!a.f||inF.has(id))return;const f=a.f,r=rm[id]||{vno:id,visit:f.vno||id,vid:f.vid||"",type:a.type==null?-1:a.type,item:f.item||"",officer:f.officer||"",region:f.region||a.region||"",sector:f.gov||a.sector||"",date:f.date||"",name:f.name||"",_syn:1};
+      if(!wkPick(r,SOLO))return;if(qSearch){const h=norm([r.visit,r.vno,r.vid,r.officer,r.item,r.region,r.sector,r.name].join(" "));if(!h.includes(norm(qSearch))&&!String(r.vno).toLowerCase().includes(qSearch.toLowerCase()))return}list.push(r);wkOut++})}
   {const RK={hqret:0,aret:1,new:2,prog:3,inc:3,ret:3,pend:4,ok:5,ext:6,arch:7};const rk=r=>{const k=statusOf(r.vno);return RK[k]??5};list.sort((x,y)=>rk(x)-rk(y))}
   const canRes=permOv("reserve",canEditAudit),resN=list.filter(r=>!reserved(audits[r.vno])).length;
   body.innerHTML=`<div class="queue-tools"><input class="in" id="qSearch" placeholder="بحث برقم الزيارة أو المفتش أو المحافظة" value="${esc(qSearch)}"></div>
