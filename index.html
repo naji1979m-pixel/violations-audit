@@ -1330,7 +1330,9 @@ function renderQueue(){
   rows.forEach(r=>{const s=statusOf(r.vno);counts[s]++;if(WK.includes(s))counts.work++;if(isMine(r.vno))counts.mine++;if(isRdy(r.vno))counts.rdy++;if(isSent(r.vno))counts.sent++});const pc=k=>rows.length?Math.round(counts[k]/rows.length*1000)/10+"%":"0%";
   $("#qCount").textContent=`${rows.length} مخالفة`;
   const fl=[["all","الكل"]].concat(canEditAudit()?[["mine","📌 معاملاتي"]]:[]).concat([["ok","معتمدة من الجودة"],["rdy","معتمدة — لم تُرفع في ممتثل"],["pend","بانتظار مراجعة المركز"],["hqret","مسترجعة من الجودة"],["inc","غير مكتملة المرفقات"],["ret","معادة للمفتش"],["prog","قيد التدقيق"],["new","غير مقيّمة"]]);
+  const SOLO=typeof WKV!=="undefined"&&WK_SOLO.includes(WKV)&&page==="audit"?WKV:"";
   const list=rows.filter(r=>{const s=statusOf(r.vno);
+    if(SOLO&&!wkPick(r,SOLO))return false;
     if(qFilter==="mine"&&!isMine(r.vno))return false;if(qFilter==="new"&&s!=="new")return false;if(qFilter==="pend"&&s!=="pend")return false;if(qFilter==="prog"&&s!=="prog")return false;
     if(qFilter==="ret"&&s!=="ret")return false;if(qFilter==="hqret"&&s!=="hqret")return false;if(qFilter==="rdy"&&!isRdy(r.vno))return false;if(qFilter==="inc"&&s!=="inc")return false; if(qFilter==="ok"&&s!=="ok")return false;if(qFilter==="ext"&&s!=="ext")return false;if(qFilter==="aret"&&s!=="aret")return false;if(qFilter==="arch"&&s!=="arch")return false;if(qFilter==="work"&&!WK.includes(s))return false;if(qFilter==="sent"&&!isSent(r.vno))return false;
     if(qSearch){const h=r._h||norm([r.vno,r.vid,r.officer,r.item,r.region,r.sector,r.name].join(" "));return h.includes(norm(qSearch))||r.vno.toLowerCase().includes(qSearch.toLowerCase())}
@@ -1339,7 +1341,7 @@ function renderQueue(){
   const canRes=permOv("reserve",canEditAudit),resN=list.filter(r=>!reserved(audits[r.vno])).length;
   body.innerHTML=`<div class="queue-tools"><input class="in" id="qSearch" placeholder="بحث برقم الزيارة أو المفتش أو المحافظة" value="${esc(qSearch)}"></div>
    ${canRes?`<div class="qres"><label class="qres-b" title="ملف إكسل فيه أرقام الزيارات أو معرفات المخالفات">📥 حجز من ملف إكسل<input type="file" id="resXl" accept=".xlsx,.xls,.csv" hidden></label>${qSearch.trim()&&resN?`<button type="button" class="qres-b" id="resSr">📌 حجز نتائج البحث (${resN.toLocaleString("en-US")})</button>`:""}<span class="qres-s">احجز مخالفاتك قبل العمل بدون اتصال، فتظهر لغيرك «محجوزة» باسمك</span></div>`:""}
-   ${qPipe(counts,rows.length)}   <div class="q-lh" id="qList"><b>${esc(qFilter==="all"?"كل المخالفات":(QP_L[qFilter]||""))}</b><span>${list.length.toLocaleString("en-US")} مخالفة</span><span class="sp"></span><button type="button" class="btn2 q-x" id="qPdf">📄 PDF</button><button type="button" class="btn2 q-x" id="qXls">📊 Excel</button></div>
+   ${SOLO?wkSteps(SOLO):qPipe(counts,rows.length)}   <div class="q-lh" id="qList"><b>${esc(SOLO?WK_T[SOLO]:qFilter==="all"?"كل المخالفات":(QP_L[qFilter]||""))}</b><span>${list.length.toLocaleString("en-US")} مخالفة</span><span class="sp"></span><button type="button" class="btn2 q-x" id="qPdf">📄 PDF</button><button type="button" class="btn2 q-x" id="qXls">📊 Excel</button></div>
    <div class="queue">${list.length?list.slice(0,60).map(r=>{const s=statusOf(r.vno);const t=r.type>=0?GUIDE[r.type].name:(r.item||"بند غير محدد");
      return `<button type="button" class="qrow" data-id="${esc(r.vno)}" aria-current="${current===r.vno}"><span class="id">${esc(r.visit||r.vno)}</span><span class="badge ${ST[s][1]}">${ST[s][0]}</span>${s==="ext"?`<span class="badge b-ok" title="${esc(pkStage(r))}">${r.mgr?"✓ اعتمدها "+esc(r.mgr):"✓ "+esc(pkStage(r).replace(/^[٠-٩]+\.\s*/,""))}</span>`:""}${(()=>{const a=audits[r.vno];if(!a||!a._owner||!["prog","inc","pend","hqret"].includes(s))return "";return a._owner===me.id?`<span class="badge b-mine">📌 معاملتي</span>`:`<span class="badge b-lock">🔒 محجوزة لـ ${esc(userName(a._owner,a.auditor))}</span>`})()}${r.pkind===PK_RET?`<span class="badge b-pkret">مسترجعة</span>`:r.pkind===PK_PREV?`<span class="badge b-pkprev">عادت بعد اعتماد</span>`:""}<span class="t">${esc(t)}</span><span class="m">${esc(r.officer)} — ${esc([r.region,r.sector].filter(Boolean).join(" — "))} — ${esc(r.date)}</span></button>`}).join(""):`<div class="empty">لا توجد مخالفات بهذا التصنيف</div>`}</div>${list.length>60?`<div class="sub" style="margin-top:6px">يظهر أول 60 من ${list.length}، استخدم البحث للوصول لغيرها.</div>`:""}${qSearch?qOutside(qSearch,list):""}
    `;
@@ -1348,6 +1350,7 @@ function renderQueue(){
   {const ex=(kind,btn)=>{const T=qFilter==="all"?"كل المخالفات":(QP_L[qFilter]||"المخالفات");actExport(btn,kind,T,list.map(r=>actRowOf(r.vno)),qFilter)};if($("#qPdf"))$("#qPdf").onclick=e=>ex("pdf",e.currentTarget);if($("#qXls"))$("#qXls").onclick=e=>ex("xls",e.currentTarget)}$$("[data-qact]").forEach(b=>b.onclick=()=>actOpen(b.dataset.qact));try{actNotify()}catch(e){}
   if($("#resXl"))$("#resXl").onchange=resXl;if($("#resSr"))$("#resSr").onclick=()=>reserveMany(list.map(r=>r.vno),0);
   $$(".qrow").forEach(b=>b.onclick=()=>{openAudit(b.dataset.id);window.scrollTo({top:$("#typeSel").closest("section").offsetTop-8,behavior:"smooth"})});
+  if(SOLO){$("#qCount").textContent=`${list.length.toLocaleString("en-US")} معاملة`;wkMoved(SOLO,list.map(r=>r.vno))}else WK_PREV={k:"",ids:null};
 }
 
 /* ===================== حجز المخالفات قبل العمل بدون اتصال ===================== */
@@ -1384,7 +1387,11 @@ function pickSample(){const c=Object.entries(audits).filter(([k,a])=>k!=="manual
 function renderDone(){
   if($("#dSample")){$("#dSample").hidden=!(isMgrR());$("#dSample").onclick=pickSample}
   const body=$("#doneBody");if(!body)return;
-  let hb=$("#hqRevBox");if(!hb){hb=document.createElement("div");hb.id="hqRevBox";body.parentNode.insertBefore(hb,body)}hb.innerHTML=hqRevBlock();bindHqRev();
+  let hb=$("#hqRevBox");if(!hb){hb=document.createElement("div");hb.id="hqRevBox";body.parentNode.insertBefore(hb,body)}
+  {const sk=page==="audit"&&typeof WKV!=="undefined"&&(WKV==="hqrev"||WKV==="done")?WKV:"";let sb2=$("#wkStD");if(!sb2){sb2=document.createElement("div");sb2.id="wkStD";body.parentNode.insertBefore(sb2,hb)}sb2.innerHTML=sk?`<h2 style="margin:0 0 6px">${esc(WK_T[sk])}</h2>`+wkSteps(sk):"";
+    if(sk==="hqrev"){const ids=Object.entries(audits).filter(([id,a])=>a&&a.f&&a.status==="pend"&&canApprove(a)).map(([id])=>id),P=WK_PREV;WK_PREV={k:"hqrev",ids:new Set(ids)};
+      if(P.k==="hqrev"&&P.ids&&current&&P.ids.has(current)&&!WK_PREV.ids.has(current)){const a=audits[current];if(a)wkBanner(a.status==="ok"?`✅ اعتُمدت المعاملة <b dir="ltr">${esc(a.f.vno||current)}</b> وانتقلت إلى «المعتمدة — بانتظار الرفع في ممتثل» لدى المدقق`:`↩︎ أُعيدت المعاملة <b dir="ltr">${esc(a.f.vno||current)}</b> للمدقق في «المسترجعة من الجودة»`,"")}}}
+  hb.innerHTML=hqRevBlock();bindHqRev();
   const all=doneList();$("#dCount").textContent=all.length?`${all.length} معاملة`:"";
   const q=dSearch.trim().toLowerCase().replace(/\s+/g,"");
   const list=q?all.filter(({a})=>String(a.f.vno||"").toLowerCase().replace(/\s+/g,"").includes(q)):all;
@@ -2073,7 +2080,41 @@ function aiGuideRel(q){const n=s=>norm(s).split(" ").filter(w=>w.length>2).map(w
 let WKV="all";
 const NAV_WK=[["all","كل المخالفات"],["new","المخالفات بانتظار التدقيق"],["mine","معاملاتي قيد التدقيق"],["hqret","المسترجعة من الجودة"],["hqrev","مراجعة جودة المركز الرئيسي"],["rdy","المعتمدة — بانتظار الرفع في ممتثل"],["done","المعاملات المنجزة"]];
 function wkVisible(k){if(!me)return false;if(["new","mine","hqret","rdy"].includes(k))return canEditAudit();if(k==="hqrev")return typeof isHqRev==="function"&&isHqRev();return true}
-function workApply(k){const F={all:"all",new:"new",mine:"mine",hqret:"hqret",rdy:"rdy"};
+
+/* ===== صفحات مستقلة لكل مرحلة في «العمل اليومي» — المعاملة تنتقل تلقائياً للمرحلة التالية ===== */
+const WK_SOLO=["new","mine","hqret","rdy"];
+const WK_STEPS=[["new","1","بانتظار التدقيق","احجز المخالفة وابدأ تدقيقها"],["mine","2","قيد التدقيق","أكمل المتطلبات ثم اضغط «استكمل»"],["hqrev","3","مراجعة جودة المركز","يراجعها أخصائي الجودة ويعتمدها أو يعيدها"],["rdy","4","الرفع في ممتثل","اطبع المستند وارفعه في ممتثل"],["done","5","المنجزة","اكتملت المعاملة"]];
+const WK_T={new:"المخالفات بانتظار التدقيق",mine:"معاملاتي قيد التدقيق",hqret:"المسترجعة من الجودة",hqrev:"مراجعة جودة المركز الرئيسي",rdy:"المعتمدة — بانتظار الرفع في ممتثل",done:"المعاملات المنجزة"};
+function wkBody(p){const on=p==="audit"&&typeof WKV!=="undefined"&&WKV!=="all";document.body.classList.toggle("wk-solo",on);if(on)document.body.dataset.wk=WKV;else delete document.body.dataset.wk;
+  const h=document.querySelector("#queueBlock>h2");if(h&&h.firstChild&&h.firstChild.nodeType===3)h.firstChild.textContent=(on&&WK_T[WKV]?WK_T[WKV]:"المخالفات بانتظار التدقيق")+" "}
+function wkPick(r,k){const a=audits[r.vno],own=a&&a._owner===me.id,ap=(a&&a.f&&a.f._ap)||{};if(extDone(r))return false;
+  if(k==="new")return !reserved(a);if(!own||!a.f)return false;
+  if(k==="mine")return !a.status&&ap.state!=="returned"||a.status==="ret";
+  if(k==="hqret")return !a.status&&ap.state==="returned";
+  if(k==="rdy")return a.status==="ok"&&!a.f._sent;return false}
+function wkWhere(id){const a=audits[id],r=rowMap()[id];if(r&&extDone(r))return "done";if(!a||!reserved(a))return "new";if(a._owner!==me.id)return "";const ap=(a.f&&a.f._ap)||{};
+  if(a.status==="pend")return "pend";if(a.status==="ok")return a.f._sent?"done":"rdy";if(a.status==="ret")return "mine";if(ap.state==="returned")return "hqret";return "mine"}
+function wkSteps(k){let C={};try{C=tkCounts()}catch(e){}const N={new:C.new,mine:C.prog,hqrev:isHqRev()?C.rev:C.pend,rdy:C.rdy,done:null};const cur=k==="hqret"?"mine":k;
+  return `<div class="wk-st">${WK_STEPS.filter(([key])=>key!=="hqrev"||isHqRev()||canEditAudit()).map(([key,no,l,d])=>`<button type="button" class="wk-s${key===cur?" on":""}" data-wkgo="${key==="hqrev"&&!isHqRev()?"done":key}" title="${esc(d)}"><i>${no}</i><span>${esc(l)}${N[key]!=null?` <b>${(N[key]||0).toLocaleString("en-US")}</b>`:""}</span></button>`).join('<span class="wk-ar">←</span>')}</div>
+   <div class="wk-hint">${k==="hqret"?"↩︎ أعادها أخصائي الجودة بملاحظات — صحّحها ثم اضغط «استكمل» فتعود لمراجعة الجودة.":esc((WK_STEPS.find(x=>x[0]===k)||[])[3]||"")+" — عند إنجازها تنتقل تلقائياً للمرحلة التالية."}</div>`}
+let WK_PREV={k:"",ids:null};
+function wkMoved(k,ids){const P=WK_PREV;WK_PREV={k,ids:new Set(ids)};if(P.k!==k||!P.ids||!current||!P.ids.has(current)||WK_PREV.ids.has(current))return;
+  const w=wkWhere(current);if(!w||w===k)return;const L={new:"المخالفات بانتظار التدقيق",mine:"معاملاتي قيد التدقيق",hqret:"المسترجعة من الجودة",pend:"بانتظار مراجعة جودة المركز",rdy:"المعتمدة — بانتظار الرفع في ممتثل",done:"المعاملات المنجزة"};
+  const go2=w==="pend"?(isHqRev()?"hqrev":"done"):w;wkBanner(`✅ انتقلت المعاملة <b dir="ltr">${esc((audits[current]&&audits[current].f&&audits[current].f.vno)||current)}</b> إلى «${esc(L[w]||w)}»`,go2)}
+function wkBanner(html,k){let b=document.getElementById("wkMove");if(!b){b=document.createElement("div");b.id="wkMove";document.body.appendChild(b)}
+  b.innerHTML=`<span>${html}</span>${k?`<button type="button" class="btn2 pri" id="wkMvGo">فتح ↗</button>`:""}<button type="button" class="btn2" id="wkMvX">✕</button>`;b.hidden=false;clearTimeout(b._t);b._t=setTimeout(()=>{b.hidden=true},9000);
+  $("#wkMvX").onclick=()=>{b.hidden=true};const g=$("#wkMvGo");if(g)g.onclick=()=>{b.hidden=true;navGo("w",k)}}
+document.addEventListener("click",e=>{const b=e.target.closest&&e.target.closest("[data-wkgo]");if(!b)return;e.preventDefault();navGo("w",b.dataset.wkgo)});
+(function(){const st=document.createElement("style");st.textContent=`body.wk-solo[data-wk=new] #doneBlock,body.wk-solo[data-wk=mine] #doneBlock,body.wk-solo[data-wk=hqret] #doneBlock,body.wk-solo[data-wk=rdy] #doneBlock{display:none}
+body.wk-solo[data-wk=hqrev] #queueBlock,body.wk-solo[data-wk=done] #queueBlock{display:none}body.wk-solo[data-wk=hqrev] #doneBlock>h2,body.wk-solo[data-wk=hqrev] #doneBody,body.wk-solo[data-wk=hqrev] #dSearch{display:none!important}body.wk-solo[data-wk=done] #hqRevBox{display:none}
+body.wk-solo #queueBody .qp,body.wk-solo #queueBody .qact{display:none}
+.wk-st{display:flex;flex-wrap:wrap;align-items:center;gap:6px;margin:4px 0 6px}.wk-s{display:flex;align-items:center;gap:6px;background:#F1F4F8;border:1px solid #DCE3EB;border-radius:999px;padding:5px 12px 5px 6px;font:inherit;font-size:13px;color:#33435A;cursor:pointer}
+.wk-s i{font-style:normal;display:grid;place-items:center;width:22px;height:22px;border-radius:50%;background:#C9D6E8;color:#fff;font-weight:800;font-size:12px}.wk-s b{color:#1C437E}.wk-s.on{background:#1C437E;border-color:#1C437E;color:#fff}.wk-s.on i{background:#fff;color:#1C437E}.wk-s.on b{color:#fff}.wk-ar{color:#9AB3D6;font-weight:800}
+.wk-hint{font-size:13px;color:#5B6B82;margin:0 0 10px}
+#wkMove{position:fixed;bottom:18px;left:50%;transform:translateX(-50%);z-index:9500;background:#0B2347;color:#fff;border-radius:14px;padding:10px 12px;display:flex;align-items:center;gap:10px;box-shadow:0 12px 30px rgba(0,0,0,.35);max-width:calc(100vw - 24px);font-size:14px}#wkMove[hidden]{display:none}#wkMove .btn2{padding:6px 12px}`;document.head.appendChild(st)})();
+function workApply(k){wkBody("audit");if(WK_SOLO.includes(k)){qFilter="all";try{renderQueue()}catch(e){}setTimeout(()=>{const e=$("#queueBlock");if(e)e.scrollIntoView({block:"start",behavior:"smooth"})},80);return}
+  if(k==="hqrev"||k==="done"){try{renderDone()}catch(e){}setTimeout(()=>{const e=$("#doneBlock");if(e)e.scrollIntoView({block:"start",behavior:"smooth"})},80);return}
+  const F={all:"all",new:"new",mine:"mine",hqret:"hqret",rdy:"rdy"};
   const to=sel=>setTimeout(()=>{const e=$(sel);if(e)e.scrollIntoView({block:"start",behavior:"smooth"})},80);
   if(F[k]){qFilter=F[k];try{renderQueue()}catch(e){}to("#queueBlock");return}
   try{renderDone()}catch(e){}if(k==="hqrev")to("#hqRevBox");else to("#doneBlock")}
@@ -3172,7 +3213,7 @@ function bindNavEd(){if(!$("#navEdBlock"))return;let O=navOrder();const redraw=(
   $("#neReset").onclick=()=>{if(!confirm("إرجاع ترتيب القوائم وأسمائها للافتراضي؟"))return;O=NAV_DEF.map(x=>x.slice());NAV_LB={};redraw()};
   $("#neSave").onclick=async()=>{const {error}=await sb.from("quality_settings").upsert({key:"nav",value:{v:NAV_V,items:navOrder(),labels:NAV_LB,by:me.full_name,at:new Date().toISOString()},updated_at:new Date().toISOString()});if(error){toast("تعذر الحفظ: "+error.message);return}try{localStorage.setItem("jawda-nav",JSON.stringify(navOrder()));localStorage.setItem("jawda-navv",String(NAV_V));localStorage.setItem("jawda-navlb",JSON.stringify(NAV_LB))}catch(e){}toast("✓ حُفظ ترتيب القوائم وأسماؤها — يظهر لكل الموظفين عند فتح المنصة أو «تحديث»")}}
 function navGo(t,k){const p=PAGES.find(x=>x[0]===k);if(t==="p"&&p&&!pageOK(p)){toast("ليس لديك صلاحية الدخول لهذه البوابة — يمكنك طلبها من «طلب الصلاحيات»");return}
-  navClose();if(t==="h"){HOMEV=k;go("dash");return}if(t==="v"){HQV=k;go("hq");return}if(t==="u"){USV=k;go("users");return}if(t==="w"){WKV=k;go("audit");setTimeout(()=>workApply(k),60);return}go(k)}
+  navClose();if(t==="h"){HOMEV=k;go("dash");return}if(t==="v"){HQV=k;go("hq");return}if(t==="u"){USV=k;go("users");return}if(t==="w"){WKV=k;WK_KEEP=true;go("audit");setTimeout(()=>workApply(k),60);return}go(k)}
 function navClose(){$$("#tabs .nv-g.open,#tabs .nv-g.hov").forEach(g=>g.classList.remove("open","hov"))}
 function buildTabs(){try{txUI()}catch(e){}try{ptUI()}catch(e){}const {G,ok}=navGroups();
   $("#tabs").innerHTML=G.map(g=>{const lk=!g.it&&!g.k.startsWith("_")&&!ok(g.k);const ic=HOME_IC[g.k]||(g.k==="_rep"?"chart":g.k==="_unit"?"map":g.k==="_work"?"check":g.k==="_know"?"cap":g.k==="_exec"?"star":g.k==="_adm"?"user":"eye");
@@ -3406,7 +3447,8 @@ document.addEventListener("keydown",e=>{if(e.key==="Escape")navClose()});
 const PG_HERO={audit:["المخالفات والتدقيق","اختر مخالفة من القائمة وابدأ تدقيقها وفق دليل دراسة المخالفات وآلية ضبطها","check"],report:["تقارير التدقيق","مؤشرات جودة التدقيق حسب الوحدة والموظف وبند اللائحة","xls"],team:["أداء الموظفين","إنجاز موظفي الجودة ونتائج تدقيقهم","clock"],users:["الإدارة والهيكل","الحسابات والصلاحيات والهيكل التنظيمي","search"],flow:["متابعة مسار المعاملات","المعاملات من التدقيق حتى اعتماد الجودة والإرسال في ممتثل — المدد والاسترجاعات وأسبابها","clock"],prd:["التقارير الدورية","تقرير أداء المخالفات الأسبوعي والشهري أو لأي فترة تحددها — PDF وPowerPoint بنموذج العرض المعتمد","chart"],lib:["مكتبة الأنظمة والتعاميم","الأدلة الإجرائية والأنظمة واللوائح والتعاميم والنماذج الخاصة بإدارة المخالفات والتعديات","book"]};
 function pgHero(p){const h=PG_HERO[p],el=$("#pgHero");if(!el)return;if(!h){el.hidden=true;return}el.hidden=false;el.innerHTML=`<span class="ic">${hqIc(h[2],24)}</span><div><h2>${h[0]}</h2><p>${h[1]}</p></div>`}
 (function(){const pg=document.querySelector('.pg[data-pg="audit"]');if(!pg||pg.querySelector(".aud-side"))return;const side=document.createElement("div");side.className="aud-side";const main=document.createElement("div");main.className="aud-main";[...pg.children].forEach(c=>{(c.id==="queueBlock"||c.id==="doneBlock"?side:main).appendChild(c)});pg.appendChild(side);pg.appendChild(main)})();
-function go(p){setTimeout(()=>{try{sessPg()}catch(e){}},60);if(!PAGES.find(x=>x[0]===p&&pageOK(x)))p=isTrainee(me)?"acad":"dash";page=p;try{localStorage.setItem("vv:page",p)}catch(e){}try{permPill();const vw=permView(p);if(p==="audit"&&vw!==go._vw&&typeof renderAll==="function")renderAll();go._vw=p==="audit"?vw:go._vw}catch(e){}
+let WK_KEEP=false;
+function go(p){setTimeout(()=>{try{sessPg()}catch(e){}},60);if(p==="audit"&&!WK_KEEP&&typeof WKV!=="undefined")WKV="all";WK_KEEP=false;try{wkBody(p)}catch(e){}if(!PAGES.find(x=>x[0]===p&&pageOK(x)))p=isTrainee(me)?"acad":"dash";page=p;try{localStorage.setItem("vv:page",p)}catch(e){}try{permPill();const vw=permView(p);if(p==="audit"&&vw!==go._vw&&typeof renderAll==="function")renderAll();go._vw=p==="audit"?vw:go._vw}catch(e){}
   $$(".pg").forEach(x=>x.hidden=x.dataset.pg!==p);$$("[data-go]").forEach(b=>b.setAttribute("aria-current",String(b.dataset.go===p)));try{$$("#tabs .nv-g").forEach(g=>{const k=g.dataset.grp,on=navActive(k,p);const b=g.querySelector(".nv-b");if(b)b.setAttribute("aria-current",String(on))})}catch(e){}
   $("#auditBar").hidden=p!=="audit";$("#upBtn").hidden=p!=="audit"||!canUpload();
   if(p==="dash")renderDash();if(p==="report")renderReport();if(p==="team")renderTeam();if(p==="users")renderUsers();document.body.classList.toggle("hqwide",p==="hq"||p==="exec"||p==="flow"||p==="perf"||p==="acad"||p==="lib"||p==="prd"||p==="south"||p==="north"||p==="dash");document.body.classList.toggle("home-on",p==="dash");RD_BASE=null;RD_SCOPE="";pgHero(p);if(p==="hq")renderHQ();if(p==="exec")renderExec();if(p==="flow")renderFlow();if(p==="perf")renderPerf();if(p==="acad"){AC.courses=null;renderAcad()}if(p==="lib")renderLib();if(p==="prd")renderPrd();if(p==="south"){stUse(SOUTH_CX);renderSouth();if(STV==="reg")stLoadReg()}if(p==="north"){stUse(NORTH_CX);renderSouth();if(STV==="reg")stLoadReg()}window.scrollTo(0,0)}
